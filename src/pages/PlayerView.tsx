@@ -15,6 +15,7 @@ import { getTeamTheme } from '../lib/teamThemes';
 import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
 import { TwemojiText } from '../components/TwemojiText';
 import { DiceBearStyle, generateAvatarDataUri, generateRandomSeed } from '../lib/dicebear';
+import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 
 export default function PlayerView() {
   const { code } = useParams<{ code: string }>();
@@ -87,6 +88,17 @@ export default function PlayerView() {
   const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>({});
   const [isDoubleModalOpen, setIsDoubleModalOpen] = useState(false);
   const [isRepModalOpen, setIsRepModalOpen] = useState(false);
+
+  // Estados de Bingo sincronizados en móvil
+  const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>(() => {
+    const saved = localStorage.getItem(`party_bingo_drawn_${roomCode}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(() => {
+    const saved = localStorage.getItem(`party_bingo_current_${roomCode}`);
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
 
   // Instancia de sincronización multi-pantalla como jugador móvil
   const roomSync = useMemo(() => getRoomSync(roomCode, 'player'), [roomCode]);
@@ -245,6 +257,14 @@ export default function PlayerView() {
         if (playerRef.current) {
           roomSync.broadcast({ type: 'PLAYER_JOINED', payload: playerRef.current });
         }
+      } else if (event.type === 'BINGO_STATE_UPDATE') {
+        setBingoCurrentBall(event.payload.currentBall);
+        setBingoDrawnBalls(event.payload.drawnBalls);
+        setBingoIsSpinning(!!event.payload.isSpinning);
+        try {
+          localStorage.setItem(`party_bingo_current_${roomCode}`, JSON.stringify(event.payload.currentBall));
+          localStorage.setItem(`party_bingo_drawn_${roomCode}`, JSON.stringify(event.payload.drawnBalls));
+        } catch {}
       }
     });
 
@@ -791,17 +811,9 @@ export default function PlayerView() {
             </div>
           </div>
 
-          {/* ESCENARIO DEL MÓVIL SEGÚN MINIJUEGO */}
-          {room.current_game === 'duel' ? (
-            <div className="my-auto text-center p-6 bg-slate-900/80 border border-slate-800 rounded-3xl">
-              <Swords className="w-12 h-12 text-purple-400 mx-auto mb-3 animate-bounce" />
-              <h3 className="text-xl font-black uppercase text-white mb-2">Duelo en Marcha</h3>
-              <p className="text-xs text-slate-400">
-                Atento a la prueba física o reto en la TV. El anfitrión asignará los puntos.
-              </p>
-            </div>
-          ) : (
-            /* PULSADOR 3D GIGANTE */
+          {/* ESCENARIO DEL MÓVIL SEGÚN TIPO DE MINIJUEGO */}
+          {activeGame.engine === 'buzzer' ? (
+            /* PULSADOR 3D GIGANTE EXCLUSIVO PARA JUEGOS DE PULSADOR */
             <div className="my-auto flex flex-col items-center w-full">
               {mySensoryLimitation && (
                 <div className="w-full max-w-xs bg-purple-950/90 border-2 border-purple-400 rounded-2xl p-3 mb-4 text-center shadow-lg animate-pulse">
@@ -862,32 +874,221 @@ export default function PlayerView() {
                 )}
               </div>
             </div>
-          )}
+          ) : activeGame.id === 'bingo' ? (
+            /* 🎱 VISTA EN VIVO DE BINGO (SIN PULSADOR) */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-500/30 mb-3">
+                  <span>🎱</span> BINGO EN VIVO
+                </div>
 
-          {/* TARJETA PRIVADA SECRETA */}
-          {room.current_game === 'challenges' && (
-            <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-3 shadow-md">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-300">Tarjeta Privada de Reto</span>
-                <button
-                  onClick={() => setSecretCardVisible(!secretCardVisible)}
-                  className="text-xs text-amber-400 font-bold flex items-center gap-1"
-                >
-                  {secretCardVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  <span>{secretCardVisible ? 'Ocultar' : 'Ver Palabra'}</span>
-                </button>
+                {/* BOLA EN PANTALLA */}
+                <div className="flex flex-col items-center justify-center my-2 min-h-[140px]">
+                  {bingoIsSpinning ? (
+                    <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex flex-col items-center justify-center shadow-xl border-4 border-amber-200 animate-spin">
+                      <span className="text-3xl">🎱</span>
+                    </div>
+                  ) : bingoCurrentBall ? (
+                    (() => {
+                      const theme = getBingoBallTheme(bingoCurrentBall);
+                      const nick = BINGO_NICKNAMES[bingoCurrentBall];
+                      return (
+                        <div className="flex flex-col items-center animate-bounce-short">
+                          <div
+                            className={`w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 shadow-2xl relative select-none ${theme.bgGradient} ${theme.border} ${theme.shadow}`}
+                          >
+                            <div className="absolute top-2 left-4 w-6 h-3 bg-white/40 rounded-full blur-[1px] -rotate-12 pointer-events-none" />
+                            <span className={`text-5xl font-black font-arcade tracking-tighter ${theme.ballTextClass}`}>
+                              {bingoCurrentBall}
+                            </span>
+                          </div>
+                          {nick && (
+                            <span className="mt-2.5 text-xs font-black uppercase tracking-wider text-amber-300 bg-amber-950/70 border border-amber-500/30 px-3 py-1 rounded-full shadow-sm">
+                              "{nick}"
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="w-28 h-28 rounded-full bg-slate-800/80 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 p-2 text-center">
+                      <span className="text-2xl mb-1">🎱</span>
+                      <span className="text-[10px] font-bold">Esperando extracción</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* CONTADOR DE BOLAS */}
+                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                  <span className="font-bold">Bolas extraídas:</span>
+                  <span className="font-black text-amber-400 text-sm">
+                    {bingoDrawnBalls.length} <span className="text-[11px] text-slate-500">/ 90</span>
+                  </span>
+                </div>
+
+                {/* BOLAS RECIENTES */}
+                {bingoDrawnBalls.length > 0 && (
+                  <div className="mt-2.5 flex items-center justify-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 mr-1">Previas:</span>
+                    {bingoDrawnBalls.slice(-5).reverse().map((num, idx) => {
+                      const ballTheme = getBingoBallTheme(num);
+                      return (
+                        <span
+                          key={`${num}-${idx}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black shadow-sm ${ballTheme.bgGradient} ${ballTheme.ballTextClass} ${idx === 0 ? 'ring-2 ring-amber-400' : 'opacity-70'}`}
+                        >
+                          {num}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* RECORDATORIO DE PREMIOS */}
+                <div className="mt-3 grid grid-cols-2 gap-2 text-left">
+                  <div className="bg-slate-950/60 border border-blue-500/30 rounded-xl p-2">
+                    <div className="text-[10px] font-black uppercase text-blue-400">📏 Línea</div>
+                    <div className="text-xs font-bold text-slate-200">+5 puntos</div>
+                  </div>
+                  <div className="bg-slate-950/60 border border-amber-500/30 rounded-xl p-2">
+                    <div className="text-[10px] font-black uppercase text-amber-400">🎱 BINGO</div>
+                    <div className="text-xs font-bold text-slate-200">+15 puntos</div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 mt-3 font-semibold">
+                  Juega con tu cartón físico. Si completas Línea o Bingo, ¡avisa al anfitrión!
+                </p>
               </div>
+            </div>
+          ) : activeGame.id === 'mimica' ? (
+            /* 🎭 MÍMICA */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-black uppercase tracking-wider border border-purple-500/30 mb-3">
+                  <span>🎭</span> PRUEBA DE MÍMICA
+                </div>
+                <h3 className="text-lg font-black uppercase text-white mb-1">{activeGame.title}</h3>
+                <p className="text-xs text-slate-400 mb-3">
+                  Atento a tu compañero que actúa en el centro de la sala. ¡No se puede hablar ni emitir sonidos!
+                </p>
 
-              {secretCardVisible && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-2 pt-2 border-t border-slate-800 text-xs text-slate-300"
-                >
-                  <p className="font-bold text-amber-300 mb-1">Palabra Clave: "Paella Valenciana"</p>
-                  <p className="text-[11px] text-slate-400">Prohibidas: Arroz, Marisco, Sartén, Domingo</p>
-                </motion.div>
-              )}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-300">¿Eres el actor de tu equipo?</span>
+                    <button
+                      onClick={() => setSecretCardVisible(!secretCardVisible)}
+                      className="text-xs text-amber-400 font-bold flex items-center gap-1 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20"
+                    >
+                      {secretCardVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      <span>{secretCardVisible ? 'Ocultar' : 'Ver Instrucción'}</span>
+                    </button>
+                  </div>
+
+                  {secretCardVisible && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 pt-3 border-t border-slate-800 text-xs text-slate-300"
+                    >
+                      <p className="font-bold text-amber-300 mb-1">Pide al anfitrión tu palabra o reto asignado.</p>
+                      <p className="text-[11px] text-red-300 font-bold">🚫 ¡Totalmente prohibido hablar, susurrar o hacer ruido!</p>
+                    </motion.div>
+                  )}
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-medium mt-2">
+                  El anfitrión controlará el tiempo y asignará los puntos al terminar.
+                </div>
+              </div>
+            </div>
+          ) : activeGame.id === 'drawing' ? (
+            /* 🎨 TELÉFONO DIBUJADO */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-black uppercase tracking-wider border border-indigo-500/30 mb-3">
+                  <span>🎨</span> TELÉFONO DIBUJADO
+                </div>
+                <h3 className="text-lg font-black uppercase text-white mb-1">Prueba en Papel Físico</h3>
+                <p className="text-xs text-slate-400 mb-3">
+                  Dibuja y escribe en los folios de papel siguiendo las indicaciones del anfitrión en la sala.
+                </p>
+                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1.5 text-xs text-slate-300">
+                  <div className="font-bold text-amber-300">Mecánica de la cadena:</div>
+                  <div>🎯 J1 dibuja palabra secreta ➔ J2 adivina ➔ J3 dibuja...</div>
+                  <div className="text-[11px] text-slate-400 pt-1">
+                    El host asignará los puntos al final según los resultados y el humor.
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeGame.id === 'torneo_juegos' ? (
+            /* 🎮 TORNEO DE JUEGOS */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border-2 border-emerald-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30 mb-3">
+                  <span>🎮</span> TORNEO DE MESA
+                </div>
+                <h3 className="text-lg font-black uppercase text-white mb-1">UNO • Dominó • Parchís</h3>
+                <p className="text-xs text-slate-400 mb-3">
+                  Partidas presenciales en la sala. ¡Concéntrate en tu partida física con los rivales!
+                </p>
+                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs text-slate-300">
+                  <div>🥇 1.º Campeón: +5 pts</div>
+                  <div>🥈 2.º Subcampeón: +3 pts</div>
+                  <div>🥉 3.º Puesto: +2 pts</div>
+                  <div className="text-[11px] text-slate-400 pt-1">El anfitrión registrará la clasificación al acabar.</div>
+                </div>
+              </div>
+            </div>
+          ) : activeGame.id === 'un_dos_tres' ? (
+            /* ⚡ 1, 2, 3 ¿YA? */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border-2 border-orange-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-[11px] font-black uppercase tracking-wider border border-orange-500/30 mb-3">
+                  <span>⚡</span> 1, 2, 3 ¿YA?
+                </div>
+                <h3 className="text-lg font-black uppercase text-white mb-1">¡5 Segundos para 3 Respuestas!</h3>
+                <p className="text-xs text-slate-400 mb-3">
+                  Turnos por equipo. Cuando el anfitrión dé la señal, debéis decir 3 respuestas válidas en voz alta.
+                </p>
+                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs text-slate-300">
+                  <div>⏱️ 5 segundos exactos sin vacilar</div>
+                  <div>💀 Si fallas o dudas quedas eliminado</div>
+                  <div>🏆 Gana el último equipo superviviente</div>
+                </div>
+              </div>
+            </div>
+          ) : activeGame.id === 'beer_pong' ? (
+            /* 🍺 BEER PONG */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-500/30 mb-3">
+                  <span>🍺</span> BEER PONG
+                </div>
+                <h3 className="text-lg font-black uppercase text-white mb-1">Partida en Mesa</h3>
+                <p className="text-xs text-slate-400 mb-3">
+                  Encesta las bolas en los vasos rivales. ¡Buena puntería a todos los tiradores!
+                </p>
+                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-300">
+                  <span>🎯 +1 punto por vaso encestado | 🏆 +5 campeón</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* OTRA PRUEBA PRESENCIAL O RETO */
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+                <div className="text-4xl mb-2">{activeGame.emoji}</div>
+                <h3 className="text-xl font-black uppercase text-white mb-1">{activeGame.title}</h3>
+                <p className="text-xs text-slate-400 mb-3">{activeGame.description}</p>
+                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs text-slate-300">
+                  <span className="font-bold text-amber-400 block mb-1">Instrucciones:</span>
+                  {activeGame.rules.slice(0, 3).map((r, i) => (
+                    <div key={i}>{r}</div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

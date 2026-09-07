@@ -34,10 +34,19 @@ import {
   Disc,
   Volume2,
   VolumeX,
+  HelpCircle,
+  Skull,
+  Dices,
+  Beer,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
 import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState } from '../lib/types';
+import { OFFICIAL_TRIVIA_QUESTIONS, TriviaQuestion } from '../lib/triviaData';
+import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDosTresData';
+import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
+import { BingoRoulette } from '../components/BingoRoulette';
+import { getBingoBallTheme } from '../lib/bingoUtils';
 import { soundFX } from '../lib/audio';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
 import { RoomSync, getRoomSync } from '../lib/roomSync';
@@ -235,6 +244,33 @@ export default function TvView() {
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
   const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
 
+  // Estados específicos para Trivial
+  const [triviaIndex, setTriviaIndex] = useState(0);
+  const [triviaRevealed, setTriviaRevealed] = useState(false);
+  const [triviaReboundActive, setTriviaReboundActive] = useState(false);
+  const [remoteTriviaQuestion, setRemoteTriviaQuestion] = useState<TriviaQuestion | null>(null);
+  const currentTriviaQuestion = remoteTriviaQuestion || OFFICIAL_TRIVIA_QUESTIONS[triviaIndex % OFFICIAL_TRIVIA_QUESTIONS.length] || OFFICIAL_TRIVIA_QUESTIONS[0];
+
+  // Estados específicos para 1, 2, 3 ¿Ya?
+  const [udtPromptIndex, setUdtPromptIndex] = useState(0);
+  const [udtActiveTeamId, setUdtActiveTeamId] = useState<string | undefined>(undefined);
+  const [udtEliminatedTeamIds, setUdtEliminatedTeamIds] = useState<string[]>([]);
+  const [udtCountdown, setUdtCountdown] = useState<number | null>(null);
+  const [udtIsTimerRunning, setUdtIsTimerRunning] = useState(false);
+  const [remoteUdtChallenge, setRemoteUdtChallenge] = useState<UnDosTresChallenge | null>(null);
+  const currentUdtChallenge = remoteUdtChallenge || OFFICIAL_UN_DOS_TRES_CHALLENGES[udtPromptIndex % OFFICIAL_UN_DOS_TRES_CHALLENGES.length] || OFFICIAL_UN_DOS_TRES_CHALLENGES[0];
+
+  // Estados específicos para BINGO
+  const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(null);
+  const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>([]);
+  const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
+
+  // Estados específicos para Mímica
+  const [mimicaActiveTeamId, setMimicaActiveTeamId] = useState<string | undefined>(undefined);
+  const [mimicaHitsCount, setMimicaHitsCount] = useState(0);
+  const [mimicaTimerSeconds, setMimicaTimerSeconds] = useState<number | null>(null);
+  const [mimicaIsRunning, setMimicaIsRunning] = useState(false);
+
   // Juego activo según ID
   const activeGame: GameDefinition = useMemo(() => {
     const found = GAMES_CATALOG.find((g) => g.id === room.active_game_id);
@@ -401,6 +437,34 @@ export default function TvView() {
         if (event.payload.isActive) {
           soundFX.playBuzzer();
         }
+      } else if (event.type === 'TRIVIA_STATE_UPDATE') {
+        setTriviaIndex(event.payload.questionIndex);
+        setTriviaRevealed(event.payload.isRevealed);
+        setTriviaReboundActive(event.payload.isReboundActive);
+        if (event.payload.questionData) {
+          setRemoteTriviaQuestion(event.payload.questionData);
+        }
+        if (event.payload.isRevealed) {
+          triggerVictoryConfetti();
+        }
+      } else if (event.type === 'UN_DOS_TRES_STATE') {
+        setUdtPromptIndex(event.payload.promptIndex);
+        setUdtActiveTeamId(event.payload.activeTeamId);
+        setUdtEliminatedTeamIds(event.payload.eliminatedTeamIds);
+        setUdtCountdown(event.payload.countdownSeconds);
+        setUdtIsTimerRunning(event.payload.isTimerRunning);
+        if (event.payload.challengeData) {
+          setRemoteUdtChallenge(event.payload.challengeData);
+        }
+      } else if (event.type === 'BINGO_STATE_UPDATE') {
+        setBingoCurrentBall(event.payload.currentBall);
+        setBingoDrawnBalls(event.payload.drawnBalls);
+        setBingoIsSpinning(!!event.payload.isSpinning);
+      } else if (event.type === 'MIMICA_STATE_UPDATE') {
+        setMimicaActiveTeamId(event.payload.activeTeamId);
+        setMimicaHitsCount(event.payload.hitsCount);
+        setMimicaTimerSeconds(event.payload.timerSeconds);
+        setMimicaIsRunning(event.payload.isRunning);
       } else if (event.type === 'PLAY_SOUND') {
         soundFX.playSound(event.payload.sound);
       } else if (event.type === 'LAUNCH_TIMER') {
@@ -415,6 +479,39 @@ export default function TvView() {
       unsubscribe();
     };
   }, [roomSync, resetBuzzer]);
+
+  // Temporizador interactivo para 1, 2, 3 ¿Ya?
+  useEffect(() => {
+    if (!udtIsTimerRunning || udtCountdown === null || udtCountdown <= 0) return;
+    const interval = setInterval(() => {
+      setUdtCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          soundFX.playFail();
+          setUdtIsTimerRunning(false);
+          return 0;
+        }
+        soundFX.playTick();
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [udtIsTimerRunning, udtCountdown]);
+
+  // Temporizador interactivo para Mímica
+  useEffect(() => {
+    if (!mimicaIsRunning || mimicaTimerSeconds === null || mimicaTimerSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setMimicaTimerSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          soundFX.playFail();
+          setMimicaIsRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [mimicaIsRunning, mimicaTimerSeconds]);
 
 
   // Temporizador interactivo con audio de cuenta atrás
@@ -591,9 +688,14 @@ export default function TvView() {
                         <span className="text-base">{g.emoji}</span>
                         <h4 className="text-xs font-black text-white truncate">{g.title}</h4>
                       </div>
-                      <span className="text-[10px] uppercase font-bold text-amber-400/80 block">
-                        {g.category}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] uppercase font-bold text-amber-400/80">
+                          {g.category}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono font-bold">
+                          {g.engine === 'buzzer' ? '⚡ Pulsador TV' : '🎲 Presencial'}
+                        </span>
+                      </div>
                       <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
                         {g.description}
                       </p>
@@ -1627,7 +1729,127 @@ export default function TvView() {
                         </div>
                       </motion.div>
                     );
-                  })() : (
+                  })() : activeGame.id === 'trivial' ? (
+                    /* ESCENARIO ESPECIAL TRIVIAL CON PREGUNTAS Y REBOTE */
+                    <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+                      <div className="w-full bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                        {/* Glows */}
+                        <div className="absolute -top-24 left-1/4 w-96 h-48 bg-indigo-500/20 blur-[100px] pointer-events-none" />
+                        <div className="absolute -bottom-24 right-1/4 w-96 h-48 bg-purple-500/20 blur-[100px] pointer-events-none" />
+
+                        {/* Header: Categoría + Indicador de Rebote */}
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 z-20 relative">
+                          <div className="bg-slate-950/80 backdrop-blur-md border border-indigo-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-indigo-300 shadow-lg">
+                            <span className="text-base">{currentTriviaQuestion.categoryEmoji}</span>
+                            <span className="uppercase">{currentTriviaQuestion.category}</span>
+                            <span className="text-slate-500">•</span>
+                            <span className="text-white/90 font-mono">Pregunta {triviaIndex + 1}</span>
+                          </div>
+
+                          {triviaReboundActive && !triviaRevealed && (
+                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-wider animate-bounce shadow-lg shadow-purple-500/40">
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>¡REBOTE ABIERTO! CUALQUIERA PUEDE PULSAR (+1 pt)</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tarjeta de Pregunta */}
+                        <div className="p-6 md:p-8 rounded-2xl bg-slate-950/80 border border-indigo-500/30 text-center shadow-inner my-2">
+                          <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
+                            {currentTriviaQuestion.question}
+                          </h2>
+                        </div>
+
+                        {/* Opciones Tipo Test (si las tiene) o Badge de Pregunta Abierta */}
+                        {currentTriviaQuestion.options && currentTriviaQuestion.options.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
+                            {currentTriviaQuestion.options.map((opt, oIdx) => {
+                              const letters = ['A', 'B', 'C', 'D'];
+                              const isCorrectOpt = triviaRevealed && (
+                                currentTriviaQuestion.correctAnswer.toLowerCase().includes(opt.toLowerCase()) ||
+                                opt.toLowerCase().includes(currentTriviaQuestion.correctAnswer.toLowerCase())
+                              );
+                              return (
+                                <div
+                                  key={oIdx}
+                                  className={`p-4 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${
+                                    isCorrectOpt
+                                      ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow-[0_0_20px_rgba(52,211,153,0.4)] scale-105'
+                                      : 'bg-slate-950/60 border-slate-800 text-slate-300'
+                                  }`}
+                                >
+                                  <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                                    isCorrectOpt ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-indigo-300'
+                                  }`}>
+                                    {letters[oIdx]}
+                                  </span>
+                                  <span className="font-bold text-sm sm:text-base">{opt}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="my-4 py-2 px-4 rounded-xl bg-slate-950/50 border border-slate-800 inline-block text-xs font-bold text-slate-400">
+                            💬 Pregunta Abierta — Quien sepa la respuesta, ¡pulsa el botón para responder!
+                          </div>
+                        )}
+
+                        {/* Revelación de Solución */}
+                        {triviaRevealed && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-emerald-950/80 border-2 border-emerald-400/60 text-center shadow-xl"
+                          >
+                            <span className="text-[10px] uppercase font-black tracking-widest text-emerald-300 block mb-1">
+                              🎉 RESPUESTA CORRECTA
+                            </span>
+                            <div className="text-2xl sm:text-3xl font-black text-emerald-200">
+                              {currentTriviaQuestion.correctAnswer}
+                            </div>
+                            {currentTriviaQuestion.hint && (
+                              <p className="text-xs text-emerald-400/80 mt-1 italic">
+                                💡 {currentTriviaQuestion.hint}
+                              </p>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {/* Turno activo de respuesta o espera */}
+                        <AnimatePresence mode="wait">
+                          {buzzerLocked && buzzerWinner ? (
+                            <motion.div
+                              key="buzzer-active"
+                              initial={{ opacity: 0, y: 15 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0 }}
+                              className="mt-5 p-4 rounded-2xl border-2 border-amber-400 bg-amber-500/10 backdrop-blur-md flex items-center justify-between shadow-xl"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-3xl animate-bounce">⚡</span>
+                                <div className="text-left">
+                                  <span className="text-[10px] uppercase font-black text-amber-300">
+                                    {triviaReboundActive ? '¡Rebote cazado por:' : '¡Pulsó primero:'}
+                                  </span>
+                                  <div className="text-xl font-black text-white">{buzzerWinner.teamName}</div>
+                                </div>
+                              </div>
+                              <div className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                                <span>Respondiendo en directo...</span>
+                              </div>
+                            </motion.div>
+                          ) : !triviaRevealed && (
+                            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-center gap-2 text-xs font-bold text-indigo-300">
+                              <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping" />
+                              <span>Pulsa el botón de tu móvil para responder</span>
+                            </div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+                  ) : (
                     <motion.div
                       key="waiting"
                       initial={{ opacity: 0 }}
@@ -1650,29 +1872,226 @@ export default function TvView() {
             </div>
           )}
 
-          {/* MOTOR B: CADENA / DIBUJAR / RETOS */}
+          {/* MOTOR B: CADENA / RETOS PRESENCIALES Y JUEGOS */}
           {activeGame.engine === 'challenges' && (
-            <div className="w-full text-center max-w-3xl bg-slate-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-3">
-                <Palette className="w-4 h-4" /> Cadena de 5 Pasos
-              </div>
-              <h2 className="text-3xl font-black text-white mb-2">
-                Teléfono Descalabrado de Dibujo
-              </h2>
-              <p className="text-xs text-slate-400 max-w-lg mx-auto mb-6">
-                J1 ve palabra y dibuja ➔ J2 adivina ➔ J3 dibuja ➔ J4 adivina ➔ J5 dibuja la obra final.
-              </p>
+            <div className="w-full text-center max-w-4xl mx-auto">
+              {activeGame.id === 'un_dos_tres' ? (
+                /* ESCENARIO 1, 2, 3 ¿YA? */
+                <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
+                    <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                      <span>⚡</span> 1, 2, 3 ¿YA? — {currentUdtChallenge.level} (Nivel {currentUdtChallenge.levelNumber})
+                    </div>
+                    <div className="text-xs text-slate-400 uppercase font-bold">
+                      Turnos por equipo • 5 Segundos • Eliminación directa
+                    </div>
+                  </div>
 
-              {/* Temporizador gigante */}
-              <div className="my-4">
-                <div className={`text-7xl font-black font-mono ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-amber-400'}`}>
-                  {timerSeconds !== null ? `${timerSeconds}s` : '--'}
+                  {/* TEMPORIZADOR GIGANTE DE 5 SEGUNDOS */}
+                  <div className="my-6">
+                    <div className={`text-8xl sm:text-9xl font-black font-mono transition-all ${
+                      udtCountdown !== null && udtCountdown <= 2
+                        ? 'text-red-500 animate-pulse scale-110'
+                        : udtCountdown !== null && udtCountdown > 0
+                        ? 'text-amber-400'
+                        : 'text-slate-600'
+                    }`}>
+                      {udtCountdown !== null ? `${udtCountdown}s` : '5s'}
+                    </div>
+                    <p className="text-sm font-bold uppercase tracking-wider text-slate-400 mt-2">
+                      {udtIsTimerRunning ? '¡Cuenta atrás en marcha! ¡Di 3 respuestas!' : 'Esperando que el Host lance el tiempo'}
+                    </p>
+                  </div>
+
+                  {/* RETO ACTIVO */}
+                  <div className="p-6 rounded-2xl bg-slate-950/80 border border-amber-400/30 my-4 shadow-inner">
+                    <span className="text-xs uppercase font-bold text-amber-400/80 block mb-1">
+                      {currentUdtChallenge.category}
+                    </span>
+                    <h2 className="text-2xl sm:text-4xl font-black text-white">
+                      {currentUdtChallenge.prompt}
+                    </h2>
+                  </div>
+
+                  {/* ESTADO DE LOS EQUIPOS: TURNO ACTIVO Y ELIMINADOS */}
+                  <div className="mt-6 pt-4 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                    {activeTeams.map((team) => {
+                      const isEliminated = udtEliminatedTeamIds.includes(team.id);
+                      const isCurrentTurn = udtActiveTeamId === team.id;
+                      const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+                      return (
+                        <div
+                          key={team.id}
+                          className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center ${
+                            isEliminated
+                              ? 'bg-slate-950/40 border-red-900/50 opacity-40'
+                              : isCurrentTurn
+                              ? 'bg-amber-500/20 border-amber-400 shadow-lg scale-105'
+                              : 'bg-slate-950/60 border-slate-800'
+                          }`}
+                        >
+                          <span className={`w-3 h-3 rounded-full ${catalog.twBg} mb-1`} />
+                          <span className="text-xs font-black text-white truncate max-w-full">{team.name}</span>
+                          <span className={`text-[10px] font-black uppercase mt-1 ${
+                            isEliminated ? 'text-red-400' : isCurrentTurn ? 'text-amber-300 font-bold' : 'text-slate-400'
+                          }`}>
+                            {isEliminated ? '💀 ELIMINADO' : isCurrentTurn ? '🎙️ EN JUEGO' : 'EN ESPERA'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : activeGame.id === 'bingo' ? (
+                /* ESCENARIO BINGO INTERACTIVO EN TV CON RULETA Y PANEL SIN SCROLL */
+                <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                  {/* CABECERA COMPACTA */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-500/30">
+                      <span>🎰</span> RULETA Y BOMBO VIRTUAL (1 - 90)
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs font-bold">
+                      <span className="px-3 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        📏 Línea: +5 pts
+                      </span>
+                      <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        🎱 BINGO: +15 pts
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">
-                ⏱️ Tiempo y puntuación controlados en directo por el Anfitrión
-              </div>
+                  {/* LAYOUT EN 2 COLUMNAS PARA QUE TODO QUEPA EN PANTALLA SIN SCROLL */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                    {/* COLUMNA IZQUIERDA: BOMBO / RULETA */}
+                    <div className="lg:col-span-4 flex flex-col items-center justify-center">
+                      <BingoRoulette
+                        currentBall={bingoCurrentBall}
+                        drawnBalls={bingoDrawnBalls}
+                        isSpinning={bingoIsSpinning}
+                      />
+                    </div>
+
+                    {/* COLUMNA DERECHA: PANEL COMPLETO DE LOS 90 NÚMEROS (10x9, SIN SCROLL) */}
+                    <div className="lg:col-span-8 p-3 sm:p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner flex flex-col justify-center">
+                      <div className="flex items-center justify-between mb-2.5 px-1">
+                        <span className="text-[11px] uppercase font-bold text-slate-400">
+                          Panel de Números Extraídos:
+                        </span>
+                        <span className="text-[11px] font-mono text-amber-400 font-black">
+                          {bingoDrawnBalls.length} de 90 bolas
+                        </span>
+                      </div>
+
+                      {/* 10 columnas x 9 filas: los 90 números con legibilidad óptima para blanco */}
+                      <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
+                        {Array.from({ length: 90 }, (_, i) => i + 1).map((num) => {
+                          const isDrawn = bingoDrawnBalls.includes(num);
+                          const isCurrent = bingoCurrentBall === num;
+                          const theme = getBingoBallTheme(num);
+                          return (
+                            <div
+                              key={num}
+                              className={`h-6 sm:h-7 rounded-md flex items-center justify-center text-[11px] sm:text-xs font-mono font-black transition-all ${
+                                isCurrent
+                                  ? `bg-gradient-to-tr ${theme.bgGradient} ${theme.gridTextClass} scale-110 shadow-lg ring-2 ${
+                                      theme.isLightColor ? 'ring-amber-400 text-slate-950 border border-slate-400' : 'ring-white text-white'
+                                    } z-10 animate-pulse`
+                                  : isDrawn
+                                  ? `bg-gradient-to-tr ${theme.bgGradient} ${theme.gridTextClass} shadow-sm opacity-95 ${
+                                      theme.isLightColor ? 'border border-slate-400 font-extrabold' : ''
+                                    }`
+                                  : 'bg-slate-900/90 text-slate-500 border border-slate-800/80 hover:border-slate-700'
+                              }`}
+                              style={
+                                !isDrawn && !isCurrent
+                                  ? { borderColor: theme.isLightColor ? '#94a3b840' : `${theme.colorHex}30` }
+                                  : undefined
+                              }
+                            >
+                              {num}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : activeGame.id === 'mimica' ? (
+                /* ESCENARIO MÍMICA */
+                <div className="bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-4">
+                    <span>🎭</span> PRUEBA DE MÍMICA
+                  </div>
+                  <h2 className="text-3xl sm:text-5xl font-black text-white mb-2 uppercase">
+                    ¡PROHIBIDO HABLAR O EMITIR SONIDOS!
+                  </h2>
+                  <p className="text-sm text-slate-400 max-w-lg mx-auto mb-6">
+                    El actor interpreta el reto que le dio el anfitrión en su móvil. ¡Su equipo debe adivinar antes de que acabe el tiempo!
+                  </p>
+
+                  <div className="flex items-center justify-center gap-8 my-6">
+                    <div className="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 text-center min-w-[160px]">
+                      <span className="text-xs uppercase font-bold text-slate-400 block mb-1">Tiempo Restante</span>
+                      <div className="text-6xl font-black font-mono text-amber-400">
+                        {mimicaTimerSeconds !== null ? `${mimicaTimerSeconds}s` : '90s'}
+                      </div>
+                    </div>
+                    <div className="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 text-center min-w-[160px]">
+                      <span className="text-xs uppercase font-bold text-slate-400 block mb-1">Aciertos Ronda</span>
+                      <div className="text-6xl font-black font-mono text-emerald-400">
+                        {mimicaHitsCount}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    🤫 El presentador tiene las tarjetas secretas y controla el tiempo en su móvil
+                  </div>
+                </div>
+              ) : activeGame.id === 'beer_pong' ? (
+                /* ESCENARIO BEER PONG */
+                <div className="bg-slate-900/90 border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-4">
+                    <span>🍺</span> ARENA BEER PONG
+                  </div>
+                  <h2 className="text-3xl sm:text-5xl font-black text-white mb-2 uppercase">
+                    TORNEO DE TIROS Y VASOS
+                  </h2>
+                  <p className="text-sm text-slate-400 max-w-lg mx-auto mb-6">
+                    Prueba presencial con vasos de colores y pelotas de ping pong. ¡Cada vaso encestado suma +1 pt y el último vaso +5 pts!
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 my-4">
+                    {activeTeams.map((team) => {
+                      const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+                      return (
+                        <div key={team.id} className="p-4 rounded-2xl bg-slate-950/80 border-2 border-slate-800 flex flex-col items-center">
+                          <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2`} />
+                          <span className="text-sm font-black text-white">{team.name}</span>
+                          <span className="text-2xl font-black text-amber-400 font-mono mt-1">{team.score} pts</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* TELÉFONO DIBUJADO */
+                <div className="bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-3">
+                    <Palette className="w-4 h-4" /> Teléfono Dibujado en Papel Real
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">
+                    Cadena Cósmica de Arte
+                  </h2>
+                  <p className="text-xs text-slate-400 max-w-lg mx-auto mb-6">
+                    J1 dibuja en papel ➔ J2 adivina ➔ J3 dibuja ➔ J4 adivina ➔ J5 dibuja la obra final. ¡Puntuación al final por acierto y desastre artístico!
+                  </p>
+                  <div className="my-4">
+                    <div className={`text-7xl font-black font-mono ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-amber-400'}`}>
+                      {timerSeconds !== null ? `${timerSeconds}s` : '--'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1680,7 +2099,7 @@ export default function TvView() {
           {activeGame.engine === 'duel' && (
             <div className="w-full max-w-4xl bg-slate-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl text-center">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider mb-3">
-                <Swords className="w-4 h-4" /> Torneo de Mesa: {activeGame.title}
+                <Swords className="w-4 h-4" /> Torneo de Mesa: {activeGame.title} (UNO, Dominó, Parchís)
               </div>
               <h2 className="text-3xl md:text-5xl font-black font-arcade uppercase text-white mb-2">
                 CLASIFICACIÓN FINAL

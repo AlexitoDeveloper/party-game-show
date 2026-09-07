@@ -5,6 +5,9 @@ import { PowerCardsState, PowerCard } from './powerCards';
 import { BabyPhotoItem } from './babyPhotosData';
 import { SongTrack } from './musicData';
 
+import { TriviaQuestion } from './triviaData';
+import { UnDosTresChallenge } from './unDosTresData';
+
 export type RoomRole = 'host' | 'tv' | 'player';
 
 export type RoomSyncEvent =
@@ -22,6 +25,10 @@ export type RoomSyncEvent =
   | { type: 'BUZZER_RESET' }
   | { type: 'MUSIC_STATE_UPDATE'; payload: { trackIndex: number; isPlaying: boolean; isRevealed: boolean; category?: string; trackData?: SongTrack } }
   | { type: 'MOVIE_STATE_UPDATE'; payload: { movieIndex: number; frameLevel: 1 | 2 | 3 | 4; isRevealed: boolean; categoryFilter?: string; movieData?: MovieItem } }
+  | { type: 'TRIVIA_STATE_UPDATE'; payload: { questionIndex: number; isRevealed: boolean; isReboundActive: boolean; questionData?: TriviaQuestion } }
+  | { type: 'UN_DOS_TRES_STATE'; payload: { promptIndex: number; activeTeamId?: string; eliminatedTeamIds: string[]; countdownSeconds: number | null; isTimerRunning: boolean; challengeData?: UnDosTresChallenge } }
+  | { type: 'BINGO_STATE_UPDATE'; payload: { currentBall: number | null; drawnBalls: number[]; isSpinning?: boolean } }
+  | { type: 'MIMICA_STATE_UPDATE'; payload: { activeTeamId?: string; hitsCount: number; timerSeconds: number | null; isRunning: boolean } }
   | { type: 'POWER_CARDS_STATE_UPDATE'; payload: PowerCardsState }
   | { type: 'POWER_CARD_ANIMATION'; payload: { type: 'deal' | 'play'; teamName: string; card: PowerCard; targetName?: string; teamId?: string; teamColorHex?: string; teamThemeIndex?: number; sensoryLimitation?: string; recoveredCard?: PowerCard } }
   | { type: 'DISMISS_POWER_CARD_ANIMATION' }

@@ -46,6 +46,11 @@ import {
   Shuffle,
   Trash2,
   X,
+  Check,
+  HelpCircle,
+  Timer,
+  Skull,
+  Beer,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { soundFX } from '../lib/audio';
@@ -58,6 +63,10 @@ import { MOVIES_DATABASE, DEV_MOCK_MOVIES, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
 import { SongTrack } from '../lib/musicData';
 import { searchSpotifyTracks, fetchSpotifyPlaylistTracks } from '../lib/spotify';
+import { OFFICIAL_TRIVIA_QUESTIONS, TriviaQuestion } from '../lib/triviaData';
+import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDosTresData';
+import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
+import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 import PowerCardView from '../components/PowerCardView';
 import {
   PowerCardsState,
@@ -358,6 +367,373 @@ export default function HostView() {
     setBabyPhotoRevealed(false);
     resetBuzzer();
     syncBabyPhotoState(idx, false);
+  };
+
+  // ==========================================================================
+  // 🧠 PREGUNTAS TRIVIAL - ESTADO Y HANDLERS
+  // ==========================================================================
+  const [triviaBank] = useState<TriviaQuestion[]>(OFFICIAL_TRIVIA_QUESTIONS);
+  const [triviaIndex, setTriviaIndex] = useState(0);
+  const [triviaRevealed, setTriviaRevealed] = useState(false);
+  const [triviaReboundActive, setTriviaReboundActive] = useState(false);
+
+  const currentTriviaQuestion: TriviaQuestion =
+    triviaBank[triviaIndex % triviaBank.length] || OFFICIAL_TRIVIA_QUESTIONS[0];
+
+  const syncTriviaState = (idx: number, isRev: boolean, isRebound: boolean, targetQ?: TriviaQuestion) => {
+    roomSync.broadcast({
+      type: 'TRIVIA_STATE_UPDATE',
+      payload: {
+        questionIndex: idx,
+        isRevealed: isRev,
+        isReboundActive: isRebound,
+        questionData: targetQ || triviaBank[idx % triviaBank.length] || currentTriviaQuestion,
+      },
+    });
+  };
+
+  const handleNextTrivia = () => {
+    const nextIdx = (triviaIndex + 1) % triviaBank.length;
+    setTriviaIndex(nextIdx);
+    setTriviaRevealed(false);
+    setTriviaReboundActive(false);
+    resetBuzzer();
+    syncTriviaState(nextIdx, false, false);
+  };
+
+  const handlePrevTrivia = () => {
+    const prevIdx = (triviaIndex - 1 + triviaBank.length) % triviaBank.length;
+    setTriviaIndex(prevIdx);
+    setTriviaRevealed(false);
+    setTriviaReboundActive(false);
+    resetBuzzer();
+    syncTriviaState(prevIdx, false, false);
+  };
+
+  const handleRandomTrivia = () => {
+    const randIdx = Math.floor(Math.random() * triviaBank.length);
+    setTriviaIndex(randIdx);
+    setTriviaRevealed(false);
+    setTriviaReboundActive(false);
+    resetBuzzer();
+    syncTriviaState(randIdx, false, false);
+  };
+
+  const handleToggleTriviaReveal = () => {
+    const nextRev = !triviaRevealed;
+    setTriviaRevealed(nextRev);
+    syncTriviaState(triviaIndex, nextRev, triviaReboundActive);
+  };
+
+  const handleValidateTriviaHit = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, 2);
+    }
+    setTriviaRevealed(true);
+    setTriviaReboundActive(false);
+    resetBuzzer();
+    syncTriviaState(triviaIndex, true, false);
+    soundFX.playVictory();
+  };
+
+  const handleValidateTriviaFail = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, -1);
+    }
+    setTriviaReboundActive(true);
+    resetBuzzer();
+    syncTriviaState(triviaIndex, triviaRevealed, true);
+    soundFX.playFail();
+  };
+
+  const handleValidateTriviaReboundHit = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, 1);
+    }
+    setTriviaRevealed(true);
+    setTriviaReboundActive(false);
+    resetBuzzer();
+    syncTriviaState(triviaIndex, true, false);
+    soundFX.playVictory();
+  };
+
+  // ==========================================================================
+  // ⚡ 1, 2, 3 ¿YA? - ESTADO Y HANDLERS
+  // ==========================================================================
+  const [udtBank] = useState<UnDosTresChallenge[]>(OFFICIAL_UN_DOS_TRES_CHALLENGES);
+  const [udtPromptIndex, setUdtPromptIndex] = useState(0);
+  const [udtActiveTeamIndex, setUdtActiveTeamIndex] = useState(0);
+  const [udtEliminatedTeamIds, setUdtEliminatedTeamIds] = useState<string[]>([]);
+  const [udtCountdown, setUdtCountdown] = useState<number | null>(null);
+  const [udtIsTimerRunning, setUdtIsTimerRunning] = useState(false);
+
+  const currentUdtChallenge =
+    udtBank[udtPromptIndex % udtBank.length] || OFFICIAL_UN_DOS_TRES_CHALLENGES[0];
+
+  const aliveTeams = teams.filter((t) => t.is_active && !udtEliminatedTeamIds.includes(t.id));
+  const currentUdtTeam =
+    aliveTeams[udtActiveTeamIndex % (aliveTeams.length || 1)] || teams.find((t) => t.is_active);
+
+  const syncUdtState = (
+    promptIdx: number,
+    activeTeamId?: string,
+    eliminated: string[] = udtEliminatedTeamIds,
+    countdown: number | null = udtCountdown,
+    isRunning: boolean = udtIsTimerRunning,
+    targetChallenge?: UnDosTresChallenge
+  ) => {
+    roomSync.broadcast({
+      type: 'UN_DOS_TRES_STATE',
+      payload: {
+        promptIndex: promptIdx,
+        activeTeamId: activeTeamId || currentUdtTeam?.id,
+        eliminatedTeamIds: eliminated,
+        countdownSeconds: countdown,
+        isTimerRunning: isRunning,
+        challengeData: targetChallenge || udtBank[promptIdx % udtBank.length],
+      },
+    });
+  };
+
+  const handleStartUdtTimer = () => {
+    setUdtCountdown(5);
+    setUdtIsTimerRunning(true);
+    syncUdtState(udtPromptIndex, currentUdtTeam?.id, udtEliminatedTeamIds, 5, true);
+  };
+
+  const handlePassUdtRound = () => {
+    setUdtIsTimerRunning(false);
+    setUdtCountdown(null);
+    const nextPrompt = (udtPromptIndex + 1) % udtBank.length;
+    const nextTeamIdx = (udtActiveTeamIndex + 1) % (aliveTeams.length || 1);
+    setUdtPromptIndex(nextPrompt);
+    setUdtActiveTeamIndex(nextTeamIdx);
+    const nextTeam = aliveTeams[nextTeamIdx];
+    syncUdtState(nextPrompt, nextTeam?.id, udtEliminatedTeamIds, null, false);
+    soundFX.playSuccess();
+  };
+
+  const handleEliminateUdtTeam = () => {
+    if (!currentUdtTeam) return;
+    const nextEliminated = [...udtEliminatedTeamIds, currentUdtTeam.id];
+    setUdtEliminatedTeamIds(nextEliminated);
+    setUdtIsTimerRunning(false);
+    setUdtCountdown(null);
+    soundFX.playFail();
+
+    const remaining = teams.filter((t) => t.is_active && !nextEliminated.includes(t.id));
+    if (remaining.length === 1) {
+      // ¡ÚLTIMO EQUIPO EN PIE GANA!
+      handleScoreChange(remaining[0].id, 5);
+      soundFX.playVictory();
+    }
+
+    const nextTeamIdx = udtActiveTeamIndex % (remaining.length || 1);
+    setUdtActiveTeamIndex(nextTeamIdx);
+    syncUdtState(udtPromptIndex, remaining[nextTeamIdx]?.id, nextEliminated, null, false);
+  };
+
+  const handleResetUdtRound = () => {
+    setUdtEliminatedTeamIds([]);
+    setUdtPromptIndex(0);
+    setUdtActiveTeamIndex(0);
+    setUdtCountdown(null);
+    setUdtIsTimerRunning(false);
+    syncUdtState(0, teams.find((t) => t.is_active)?.id, [], null, false);
+  };
+
+  // ==========================================================================
+  // 🎱 BINGO - ESTADO Y HANDLERS
+  // ==========================================================================
+  const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>([]);
+  const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(null);
+  const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
+
+  const handleDrawBingoBall = () => {
+    const available = Array.from({ length: 90 }, (_, i) => i + 1).filter(
+      (n) => !bingoDrawnBalls.includes(n)
+    );
+    if (available.length === 0) {
+      alert('¡Se han extraído todas las 90 bolas del bombo!');
+      return;
+    }
+    if (bingoIsSpinning) return;
+
+    setBingoIsSpinning(true);
+    roomSync.broadcast({
+      type: 'BINGO_STATE_UPDATE',
+      payload: { currentBall: bingoCurrentBall, drawnBalls: bingoDrawnBalls, isSpinning: true },
+    });
+
+    setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * available.length);
+      const drawn = available[randomIndex];
+      const nextDrawn = [...bingoDrawnBalls, drawn];
+      setBingoCurrentBall(drawn);
+      setBingoDrawnBalls(nextDrawn);
+      setBingoIsSpinning(false);
+      roomSync.broadcast({
+        type: 'BINGO_STATE_UPDATE',
+        payload: { currentBall: drawn, drawnBalls: nextDrawn, isSpinning: false },
+      });
+    }, 2200);
+  };
+
+  const handleResetBingo = () => {
+    if (window.confirm('¿Reiniciar todas las bolas del bombo de Bingo?')) {
+      setBingoDrawnBalls([]);
+      setBingoCurrentBall(null);
+      setBingoIsSpinning(false);
+      roomSync.broadcast({
+        type: 'BINGO_STATE_UPDATE',
+        payload: { currentBall: null, drawnBalls: [], isSpinning: false },
+      });
+    }
+  };
+
+  // ==========================================================================
+  // 🎭 MÍMICA - ESTADO Y HANDLERS
+  // ==========================================================================
+  const [mimicaCards] = useState<MimicaCard[]>(OFFICIAL_MIMICA_CARDS);
+  const [mimicaCardIndex, setMimicaCardIndex] = useState(0);
+  const [mimicaHitsCount, setMimicaHitsCount] = useState(0);
+  const [mimicaTimerSeconds, setMimicaTimerSeconds] = useState<number | null>(90);
+  const [mimicaIsRunning, setMimicaIsRunning] = useState(false);
+
+  const currentMimicaCard: MimicaCard =
+    mimicaCards[mimicaCardIndex % mimicaCards.length] || OFFICIAL_MIMICA_CARDS[0];
+
+  const syncMimicaState = (
+    hits: number = mimicaHitsCount,
+    timer: number | null = mimicaTimerSeconds,
+    isRunning: boolean = mimicaIsRunning
+  ) => {
+    roomSync.broadcast({
+      type: 'MIMICA_STATE_UPDATE',
+      payload: {
+        activeTeamId: selectedTeamCatalog ? teams.find(t => t.team_index === selectedTeamCatalog.index)?.id : undefined,
+        hitsCount: hits,
+        timerSeconds: timer,
+        isRunning: isRunning,
+      },
+    });
+  };
+
+  const handleNextMimicaCard = () => {
+    const nextIdx = (mimicaCardIndex + 1) % mimicaCards.length;
+    setMimicaCardIndex(nextIdx);
+  };
+
+  const handlePickRandomMimicaCard = () => {
+    const randIdx = Math.floor(Math.random() * mimicaCards.length);
+    setMimicaCardIndex(randIdx);
+  };
+
+  const handleStartMimicaTimer = (secs: number = 90) => {
+    setMimicaTimerSeconds(secs);
+    setMimicaIsRunning(true);
+    syncMimicaState(mimicaHitsCount, secs, true);
+  };
+
+  const handlePauseMimicaTimer = () => {
+    setMimicaIsRunning(false);
+    syncMimicaState(mimicaHitsCount, mimicaTimerSeconds, false);
+  };
+
+  const handleAddMimicaHit = () => {
+    const nextHits = mimicaHitsCount + 1;
+    setMimicaHitsCount(nextHits);
+    soundFX.playSuccess();
+    syncMimicaState(nextHits, mimicaTimerSeconds, mimicaIsRunning);
+    handleNextMimicaCard();
+  };
+
+  const handleResetMimicaRound = () => {
+    setMimicaHitsCount(0);
+    setMimicaTimerSeconds(90);
+    setMimicaIsRunning(false);
+    syncMimicaState(0, 90, false);
+  };
+
+  // ==========================================================================
+  // 🎨 TELÉFONO DIBUJADO - GENERADOR DE FRASES SECRETAS
+  // ==========================================================================
+  const DRAWING_SECRET_PROMPTS = [
+    'Astronauta montando a caballo en la Luna',
+    'Perrito caliente surfeando una ola de ketchup',
+    'Pingüino camarero tropezando con una bandeja de pizzas',
+    'Dinosaurio intentando bailar flamenco con tacones',
+    'Pirata con pata de palo jugando al baloncesto',
+    'Gato con gafas de sol tomando el sol en una tumbona',
+    'Superhéroe planchando su capa en una nube',
+    'Pulpo DJ mezclando música en una discoteca submarina',
+  ];
+  const [drawingPromptIndex, setDrawingPromptIndex] = useState(0);
+  const currentDrawingPrompt = DRAWING_SECRET_PROMPTS[drawingPromptIndex % DRAWING_SECRET_PROMPTS.length];
+
+  const handleRandomDrawingPrompt = () => {
+    const nextIdx = (drawingPromptIndex + 1) % DRAWING_SECRET_PROMPTS.length;
+    setDrawingPromptIndex(nextIdx);
+  };
+
+  // ==========================================================================
+  // 🎬 ADIVINA LA PELÍCULA - VALIDACIÓN AUTOMÁTICA SEGÚN PISTAS
+  // ==========================================================================
+  const autoMoviePoints = movieFrameLevel === 1 ? 5 : movieFrameLevel === 2 ? 3 : 1;
+
+  const handleValidateMovieHitAuto = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (!targetTeam) {
+      alert('Selecciona un equipo primero');
+      return;
+    }
+
+    handleScoreChange(targetTeam.id, autoMoviePoints);
+    setMovieRevealed(true);
+    if (isLocked) {
+      resetBuzzer();
+    }
+    syncMovieState(movieIndex, movieFrameLevel, true);
+    soundFX.playVictory();
+  };
+
+  const handleValidateMovieMissAuto = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, -1);
+    }
+    if (isLocked) {
+      resetBuzzer();
+    }
+    soundFX.playFail();
   };
 
   // ==========================================================================
@@ -2872,6 +3248,34 @@ export default function HostView() {
                 </div>
               </div>
 
+              {/* VALIDACIÓN AUTOMÁTICA SEGÚN EMOJIS EN PANTALLA (PETICIÓN USUARIO) */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-amber-300 uppercase">
+                    Puntuación Automática:
+                  </span>
+                  <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs">
+                    {movieFrameLevel === 1 ? 'Nivel 1 (2 Emojis) = +5 pts' : movieFrameLevel === 2 ? 'Nivel 2 (4 Emojis) = +3 pts' : 'Nivel 3/4 (Pistas) = +1 pt'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={handleValidateMovieHitAuto}
+                    className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Validar Acierto (+{autoMoviePoints} pts)</span>
+                  </button>
+                  <button
+                    onClick={handleValidateMovieMissAuto}
+                    className="px-3 py-2.5 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1 active:scale-95 transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                    <span>Fallo (-1)</span>
+                  </button>
+                </div>
+              </div>
+
               {/* SELECTOR DE NIVEL DE PISTA / EMOJIS */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
                 <div className="flex flex-wrap items-center gap-2">
@@ -3045,6 +3449,450 @@ export default function HostView() {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* CONTROL ESPECÍFICO: PREGUNTAS TRIVIAL */}
+          {activeGame.id === 'trivial' && (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{currentTriviaQuestion.categoryEmoji}</span>
+                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                    Pregunta {triviaIndex + 1}/{triviaBank.length} — {currentTriviaQuestion.category}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {triviaReboundActive && (
+                    <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-black animate-pulse">
+                      🔄 Rebote Activo (+1 pt)
+                    </span>
+                  )}
+                  <button
+                    onClick={handleRandomTrivia}
+                    className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5"
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                    <span>Aleatoria</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* TARJETA CHIVATO SECRETO PARA EL HOST */}
+              <div className="bg-slate-950/80 border border-indigo-500/30 rounded-2xl p-4 shadow-lg space-y-3">
+                <div className="text-xs uppercase font-bold text-indigo-400">
+                  {currentTriviaQuestion.options ? 'Pregunta Tipo Test (Opciones en TV)' : 'Pregunta Abierta Directa'}
+                </div>
+                <h3 className="text-lg font-black text-white">
+                  {currentTriviaQuestion.question}
+                </h3>
+
+                {currentTriviaQuestion.options && (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {currentTriviaQuestion.options.map((opt, oIdx) => (
+                      <div
+                        key={oIdx}
+                        className={`p-2 rounded-xl border ${
+                          currentTriviaQuestion.correctAnswer.toLowerCase().includes(opt.toLowerCase())
+                            ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300 font-black'
+                            : 'bg-slate-900 border-slate-800 text-slate-300'
+                        }`}
+                      >
+                        {String.fromCharCode(65 + oIdx)}) {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-black text-emerald-400 block">Respuesta Correcta:</span>
+                    <span className="text-sm font-black text-white">{currentTriviaQuestion.correctAnswer}</span>
+                  </div>
+                  {currentTriviaQuestion.hint && (
+                    <span className="text-xs text-slate-400 italic">Pista: {currentTriviaQuestion.hint}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* BOTONES DE VALIDACIÓN Y REBOTE */}
+              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-indigo-300 uppercase">
+                    Veredicto del Host:
+                  </span>
+                  {winner ? (
+                    <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs">
+                      Equipo: {winner.teamName}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400">Pulsador libre</span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  {triviaReboundActive ? (
+                    <button
+                      onClick={handleValidateTriviaReboundHit}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Validar Rebote (+1 pt)</span>
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleValidateTriviaHit}
+                        className="flex-1 sm:flex-none px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Correcto (+2 pts)</span>
+                      </button>
+                      <button
+                        onClick={handleValidateTriviaFail}
+                        className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Fallo y Rebote (-1 pt)</span>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={handleToggleTriviaReveal}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                      triviaRevealed
+                        ? 'bg-amber-400 text-slate-950 border-amber-300'
+                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    {triviaRevealed ? 'Ocultar Solución TV' : 'Mostrar Solución TV'}
+                  </button>
+                </div>
+              </div>
+
+              {/* NAVEGADOR DE PREGUNTAS */}
+              <div className="flex items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
+                <button
+                  onClick={handlePrevTrivia}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 active:scale-95"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-bold text-slate-400">
+                  Pregunta {triviaIndex + 1} de {triviaBank.length}
+                </span>
+                <button
+                  onClick={handleNextTrivia}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95"
+                >
+                  <span>Siguiente Pregunta</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CONTROL ESPECÍFICO: 1, 2, 3 ¿YA? */}
+          {activeGame.id === 'un_dos_tres' && (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-400" />
+                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                    1, 2, 3 ¿Ya? — Nivel {currentUdtChallenge.levelNumber} ({currentUdtChallenge.level})
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400">
+                    Supervivientes: {aliveTeams.length}/{activeTeams.length}
+                  </span>
+                  <button
+                    onClick={handleResetUdtRound}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700"
+                  >
+                    Reset Ronda
+                  </button>
+                </div>
+              </div>
+
+              {/* RETO ACTIVO Y RESPUESTAS MODELO PARA EL HOST */}
+              <div className="bg-slate-950/80 border border-amber-400/30 rounded-2xl p-4 shadow-lg space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-bold text-amber-400">
+                    {currentUdtChallenge.category}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 font-mono font-black text-xs">
+                    Turno: {currentUdtTeam?.name}
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-black text-white">
+                  {currentUdtChallenge.prompt}
+                </h3>
+
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                    Ejemplos válidos para comprobar al vuelo:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentUdtChallenge.examples.map((ex, eIdx) => (
+                      <span
+                        key={eIdx}
+                        className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-medium"
+                      >
+                        {ex}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* CONTROLES DEL TEMPORIZADOR Y ELIMINACIÓN */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  onClick={handleStartUdtTimer}
+                  className="p-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <Timer className="w-4 h-4" />
+                  <span>⏱️ Iniciar 5 Segundos</span>
+                </button>
+                <button
+                  onClick={handlePassUdtRound}
+                  className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>✅ Superado (Siguiente)</span>
+                </button>
+                <button
+                  onClick={handleEliminateUdtTeam}
+                  className="p-3 rounded-2xl bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <Skull className="w-4 h-4" />
+                  <span>💀 Fallo (Eliminar)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CONTROL ESPECÍFICO: BINGO */}
+          {activeGame.id === 'bingo' && (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎱</span>
+                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                    Bombo Virtual de BINGO (Bolas extraídas: {bingoDrawnBalls.length}/90)
+                  </span>
+                </div>
+                <button
+                  onClick={handleResetBingo}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700"
+                >
+                  Reiniciar Bombo
+                </button>
+              </div>
+
+              {/* BOLA ACTUAL Y ACCIÓN DE SACAR BOLA CON RULETA */}
+              <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {(() => {
+                    const theme = getBingoBallTheme(bingoCurrentBall);
+                    const nick = bingoCurrentBall ? BINGO_NICKNAMES[bingoCurrentBall] : null;
+                    return (
+                      <>
+                        <div
+                          className={`w-16 h-16 rounded-full bg-gradient-to-tr ${theme.bgGradient} border-2 ${theme.border} ${theme.ballTextClass} font-mono text-3xl flex items-center justify-center shadow-lg transition-all ${
+                            bingoIsSpinning ? 'animate-spin' : ''
+                          } ${theme.isLightColor ? 'ring-2 ring-slate-400' : ''}`}
+                        >
+                          {bingoIsSpinning ? '?' : bingoCurrentBall || '—'}
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-black text-amber-400 block">
+                            {bingoIsSpinning ? 'Ruleta en marcha...' : 'Última Bola:'}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-black text-white">
+                              {bingoIsSpinning ? '¡Girando bombo!' : bingoCurrentBall ? `Bola ${bingoCurrentBall}` : 'Ninguna bola aún'}
+                            </span>
+                            {nick && !bingoIsSpinning && (
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
+                                {nick}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <button
+                  onClick={handleDrawBingoBall}
+                  disabled={bingoIsSpinning}
+                  className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-sm uppercase font-black flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all ${
+                    bingoIsSpinning
+                      ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                      : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950'
+                  }`}
+                >
+                  {bingoIsSpinning ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Girando Ruleta...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🎰 ¡Girar Ruleta y Sacar Bola!</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* BOTONES DE PREMIO DIRECTO */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    const targetTeam = selectedTeamCatalog
+                      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+                      : teams.find((t) => t.is_active);
+                    if (targetTeam) {
+                      handleScoreChange(targetTeam.id, 5);
+                      soundFX.playVictory();
+                    } else {
+                      alert('Selecciona un equipo primero para cantar Línea');
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-1.5"
+                >
+                  <span>📏 Cantar Línea (+5 pts)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const targetTeam = selectedTeamCatalog
+                      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+                      : teams.find((t) => t.is_active);
+                    if (targetTeam) {
+                      handleScoreChange(targetTeam.id, 15);
+                      soundFX.playVictory();
+                    } else {
+                      alert('Selecciona un equipo primero para cantar BINGO');
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-lg"
+                >
+                  <span>🎱 ¡Cantar BINGO! (+15 pts)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CONTROL ESPECÍFICO: MÍMICA */}
+          {activeGame.id === 'mimica' && (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎭</span>
+                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                    Mímica Secreta ({mimicaCardIndex + 1}/{mimicaCards.length})
+                  </span>
+                </div>
+                <button
+                  onClick={handlePickRandomMimicaCard}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1"
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Aleatorio</span>
+                </button>
+              </div>
+
+              {/* TARJETA SECRETA DEL ACTOR (SOLO VISIBLE PARA EL HOST) */}
+              <div className="bg-slate-950/80 border border-purple-500/40 rounded-2xl p-4 shadow-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-bold text-purple-400">
+                    {currentMimicaCard.categoryEmoji} {currentMimicaCard.category}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 text-[10px] font-bold">
+                    Dificultad: {currentMimicaCard.difficulty}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-black text-white">
+                  {currentMimicaCard.title}
+                </h3>
+
+                {currentMimicaCard.clueOrDetail && (
+                  <p className="text-xs text-slate-300 italic bg-purple-950/40 p-2.5 rounded-xl border border-purple-800/40">
+                    💡 Cómo actuarlo: {currentMimicaCard.clueOrDetail}
+                  </p>
+                )}
+              </div>
+
+              {/* CONTROLES DE TIEMPO Y ACIERTOS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  onClick={() => (mimicaIsRunning ? handlePauseMimicaTimer() : handleStartMimicaTimer(90))}
+                  className={`p-3 rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md ${
+                    mimicaIsRunning
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  }`}
+                >
+                  <Timer className="w-4 h-4" />
+                  <span>{mimicaIsRunning ? 'Pausar Tiempo' : 'Iniciar 90s'}</span>
+                </button>
+
+                <button
+                  onClick={handleAddMimicaHit}
+                  className="p-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>🎯 +1 Acierto ({mimicaHitsCount})</span>
+                </button>
+
+                <button
+                  onClick={handleNextMimicaCard}
+                  className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs uppercase flex items-center justify-center gap-1"
+                >
+                  <span>Siguiente Tarjeta</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CONTROL ESPECÍFICO: TELÉFONO DIBUJADO */}
+          {activeGame.id === 'drawing' && (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎨</span>
+                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                    Teléfono Dibujado — Frase Secreta Inicial
+                  </span>
+                </div>
+                <button
+                  onClick={handleRandomDrawingPrompt}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1"
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Nueva Frase</span>
+                </button>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-purple-500/30 text-center">
+                <span className="text-[10px] uppercase font-bold text-purple-400 block mb-1">
+                  Frase Secreta para susurrar al Jugador 1:
+                </span>
+                <div className="text-lg font-black text-white">
+                  "{currentDrawingPrompt}"
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-400 text-center">
+                📝 Se juega presencialmente en papel real. Al terminar la cadena, asigna las puntuaciones en los botones superiores.
+              </p>
             </div>
           )}
         </section>
