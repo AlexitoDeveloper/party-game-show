@@ -586,32 +586,34 @@ export default function PlayerView() {
 
   return (
     <main
-      className="min-h-[100dvh] w-full bg-slate-950 text-white font-sans flex flex-col justify-between p-5 transition-colors duration-500 relative overflow-hidden select-none"
+      className="min-h-[100dvh] w-full bg-[#08080c] text-white font-sans flex flex-col justify-between p-5 transition-colors duration-500 relative overflow-hidden select-none"
       style={{
-        backgroundColor: selectedTeam ? '#060a12' : '#020617',
+        backgroundColor: selectedTeam ? '#090910' : '#07070a',
       }}
     >
-      {/* Resplandor neón adaptativo según el equipo seleccionado */}
-      {selectedTeam && (
+      {/* Resplandor cálido de latón / color de equipo adaptativo */}
+      {selectedTeam ? (
         <div
-          className="absolute inset-0 opacity-25 pointer-events-none transition-all duration-700"
+          className="absolute inset-0 opacity-20 pointer-events-none transition-all duration-700"
           style={{
             background: `radial-gradient(circle at 50% 40%, ${selectedTeam.colorHex} 0%, transparent 70%)`,
           }}
         />
+      ) : (
+        <div className="absolute inset-0 deco-sunburst-bg opacity-20 pointer-events-none" />
       )}
 
-      {/* HEADER DEL MÓVIL */}
-      <header className="flex items-center justify-between border-b border-slate-800/80 pb-3 z-10">
+      {/* HEADER DEL MÓVIL (PLACA DE LATÓN VINTAGE) */}
+      <header className="flex items-center justify-between border-b border-[#d4af37]/35 pb-3 z-10">
         <div>
-          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">SALA</span>
-          <span className="text-2xl font-black font-mono text-amber-400 block leading-none">{roomCode}</span>
+          <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-200/70 block">SALA</span>
+          <span className="text-2xl font-broadway text-gold-gradient block leading-none">{roomCode}</span>
         </div>
 
         {isJoined && (
           <div className="flex items-center gap-2.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700/80 p-0.5 overflow-hidden flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-[#0c0c14] border-2 border-[#d4af37]/50 p-0.5 overflow-hidden flex items-center justify-center shadow-md">
                 <img
                   src={generateAvatarDataUri(player?.avatar_seed || avatarSeed || nickname, (player?.avatar_style as any) || avatarStyle)}
                   alt="Avatar"
@@ -619,16 +621,16 @@ export default function PlayerView() {
                 />
               </div>
               {player?.badge_emoji && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow">
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#0c0c14] border border-[#d4af37] flex items-center justify-center shadow">
                   <TwemojiText className="text-[10px]">{player.badge_emoji}</TwemojiText>
                 </div>
               )}
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block leading-tight">JUGADOR</span>
+              <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-200/70 block leading-tight">JUGADOR</span>
               <div className="flex items-center gap-1.5 justify-end">
-                <span className="text-sm font-black text-white">{nickname}</span>
+                <span className="text-sm font-broadway uppercase tracking-wide text-white">{nickname}</span>
                 {selectedTeam && (
                   <span className={`w-2.5 h-2.5 rounded-full ${selectedTeam.twBg}`} />
                 )}
@@ -640,11 +642,11 @@ export default function PlayerView() {
 
       {/* CONTENIDO PRINCIPAL */}
       {!isJoined ? (
-        /* PASO 1: INTRODUCIR NOMBRE Y CREAR IDENTIDAD VISUAL */
+        /* PASO 1: INTRODUCIR NOMBRE Y CREAR IDENTIDAD VISUAL (PASE VIP) */
         <div className="flex-1 flex flex-col justify-center my-auto z-10 max-w-sm mx-auto w-full py-2">
           <div className="text-center mb-4">
-            <h2 className="text-3xl font-black uppercase tracking-wider font-arcade text-white">¿Quién eres?</h2>
-            <p className="text-xs text-slate-400 mt-1">Elige tu avatar para el show</p>
+            <h2 className="text-3xl font-broadway uppercase tracking-wider text-gold-gradient">Pase de Acceso</h2>
+            <p className="text-xs font-vintage text-amber-100/70 mt-1">Regístrate para la velada clandestina</p>
           </div>
 
           <form onSubmit={handleJoin} className="space-y-4">
@@ -655,7 +657,7 @@ export default function PlayerView() {
               placeholder="Tu alias o apodo"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-3.5 text-center text-xl font-black text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 shadow-inner"
+              className="w-full bg-[#0f0f18] border-2 border-[#d4af37]/50 rounded-2xl px-4 py-3.5 text-center text-xl font-broadway uppercase tracking-wider text-gold-gradient placeholder:text-amber-200/30 focus:outline-none focus:border-[#d4af37] shadow-inner"
             />
 
             {/* SELECTOR INTERACTIVO DE AVATAR */}
@@ -669,9 +671,9 @@ export default function PlayerView() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-base py-4 rounded-2xl uppercase tracking-wider shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+              className="w-full bg-gold-gradient text-slate-950 font-broadway font-black text-base py-4 rounded-2xl uppercase tracking-wider shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
             >
-              Conectar al Show
+              Entrar al Club
             </button>
           </form>
         </div>
@@ -679,8 +681,8 @@ export default function PlayerView() {
         /* PASO 2: ELEGIR EQUIPO */
         <div className="flex-1 flex flex-col justify-center my-4 z-10 max-w-md mx-auto w-full">
           <div className="text-center mb-4">
-            <h2 className="text-2xl font-black uppercase font-arcade tracking-wide">Elige tu Bando</h2>
-            <p className="text-xs text-slate-400">Tu pulsador se teñirá del color de tu equipo</p>
+            <h2 className="text-2xl font-broadway uppercase tracking-wider text-gold-gradient">Elige tu Bando</h2>
+            <p className="text-xs font-vintage text-amber-100/70">Tu pulsador de latón se teñirá del color de tu mesa</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -691,15 +693,15 @@ export default function PlayerView() {
                   key={cat.index}
                   whileTap={{ scale: 0.94 }}
                   onClick={() => handleSelectTeam(cat)}
-                  className={`p-4 rounded-2xl border-2 text-left flex flex-col justify-between bg-slate-900/80 ${cat.twBorder} shadow-lg transition-all`}
+                  className={`p-4 rounded-2xl border-2 text-left flex flex-col justify-between bg-[#0e0e16]/90 ${cat.twBorder} shadow-lg transition-all`}
                 >
                   <div className="flex items-center justify-between w-full mb-3">
                     {getTeamIcon(cat.index)}
                     <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg}`} />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Equipo {cat.index}</span>
-                    <span className={`text-base font-black uppercase ${cat.twText}`}>{cat.name}</span>
+                    <span className="text-[10px] uppercase font-vintage font-bold text-amber-200/70 block">Mesa {cat.index}</span>
+                    <span className={`text-base font-broadway uppercase tracking-wide ${cat.twText}`}>{cat.name}</span>
                   </div>
                 </motion.button>
               );
@@ -712,20 +714,20 @@ export default function PlayerView() {
           <div className={`w-24 h-24 rounded-3xl ${selectedTeam.twBg} ${selectedTeam.index === 5 ? 'border-2 border-zinc-500' : ''} flex items-center justify-center shadow-2xl ${selectedTeam.twGlow} mb-4`}>
             {getTeamIcon(selectedTeam.index, selectedTeam.index === 4 || selectedTeam.index === 3)}
           </div>
-          <span className="text-xs uppercase font-bold tracking-widest text-slate-400 block">Tu Equipo</span>
-          <h2 className={`text-3xl font-black font-arcade uppercase ${selectedTeam.twText} mb-2`}>
+          <span className="text-xs uppercase font-vintage tracking-widest text-amber-200/70 block">Tu Bando</span>
+          <h2 className={`text-3xl font-broadway uppercase tracking-wider ${selectedTeam.twText} mb-2`}>
             {selectedTeam.name}
           </h2>
-          <p className="text-slate-300 text-sm">
-            ¡Estás dentro! Mira a la TV mientras el anfitrión arranca el show.
+          <p className="text-amber-100/80 font-vintage text-sm">
+            ¡Estás en la lista! Mira a la gran pantalla mientras da comienzo el espectáculo.
           </p>
-          <div className="mt-6 flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full">
+          <div className="mt-6 flex items-center gap-2 text-xs font-vintage font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            Conectado al Lobby
+            Esperando al Gran Anfitrión
           </div>
           <button
             onClick={() => setSelectedTeam(null)}
-            className="mt-4 text-xs text-slate-400 underline hover:text-white"
+            className="mt-4 text-xs font-vintage text-amber-300/70 underline hover:text-white"
           >
             Cambiar de bando
           </button>
@@ -733,33 +735,33 @@ export default function PlayerView() {
       ) : room.status === 'presentation' ? (
         /* PASO 3B: EN PRESENTACIÓN */
         <div className="flex-1 flex flex-col justify-center items-center my-auto z-10 max-w-sm mx-auto text-center space-y-4">
-          <div className="w-20 h-20 rounded-3xl bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center shadow-2xl animate-pulse">
-            <Sparkles className="w-10 h-10 text-purple-300" />
+          <div className="w-20 h-20 rounded-3xl bg-[#14141e] border-2 border-[#d4af37] flex items-center justify-center shadow-deco-gold animate-pulse">
+            <Sparkles className="w-10 h-10 text-amber-300" />
           </div>
           <div>
-            <span className="text-xs uppercase font-black tracking-widest text-amber-400 block">
-              ¡ATENTOS A LA PANTALLA!
+            <span className="text-xs uppercase font-vintage tracking-widest text-amber-300 block">
+              ¡ATENTOS A LA GRAN PANTALLA!
             </span>
-            <h2 className="text-2xl font-black uppercase text-white mt-1">
+            <h2 className="text-2xl font-broadway uppercase tracking-wider text-gold-gradient mt-1">
               Presentación Oficial
             </h2>
-            <p className="text-slate-300 text-xs mt-1">
-              El anfitrión está proyectando los 10 minijuegos y el funcionamiento de las Cartas de Poder en la TV.
+            <p className="text-amber-100/70 font-vintage text-xs mt-1">
+              El maestro de ceremonias proyecta los 10 desafíos y las cartas de casino en la TV.
             </p>
           </div>
 
-          <div className={`p-3 rounded-2xl bg-slate-900/90 border border-slate-800 w-full text-center`}>
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Tu Equipo</span>
+          <div className="p-3 rounded-2xl bg-[#0c0c14]/90 border border-[#d4af37]/40 w-full text-center">
+            <span className="text-[10px] text-amber-200/70 uppercase font-vintage font-bold block">Tu Bando</span>
             <div className="flex items-center justify-center gap-2 mt-1">
               <span className={`w-3 h-3 rounded-full ${selectedTeam.twBg}`} />
-              <span className={`text-base font-black uppercase ${selectedTeam.twText}`}>
+              <span className={`text-base font-broadway uppercase tracking-wide ${selectedTeam.twText}`}>
                 {selectedTeam.name}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/30 px-4 py-2 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
+          <div className="flex items-center gap-2 text-xs font-vintage font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             <span>Presentación en directo en la TV</span>
           </div>
         </div>
@@ -768,16 +770,16 @@ export default function PlayerView() {
         <div className="flex-1 flex flex-col justify-between my-2 pb-20 z-10 max-w-sm mx-auto w-full items-center">
           {/* BANNER DE EQUIPO Y JUEGO ACTIVO */}
           <div className="w-full space-y-2">
-            <div className="w-full flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 shadow-md">
+            <div className="w-full flex items-center justify-between bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl px-4 py-2.5 shadow-md">
               <div className="flex items-center gap-2">
                 <span className={`w-3 h-3 rounded-full ${selectedTeam.twBg}`} />
-                <span className={`text-xs font-black uppercase ${selectedTeam.twText}`}>
+                <span className={`text-xs font-broadway uppercase tracking-wide ${selectedTeam.twText}`}>
                   {selectedTeam.name}
                 </span>
               </div>
               <button
                 onClick={() => setSelectedTeam(null)}
-                className="text-[10px] text-slate-400 hover:text-white uppercase font-bold"
+                className="text-[10px] text-amber-300/80 hover:text-white uppercase font-vintage font-bold"
               >
                 Cambiar Bando
               </button>
@@ -786,14 +788,14 @@ export default function PlayerView() {
             {/* ROL DE CAPITÁN Y BOTÓN DE DOBLE O NADA */}
             <div className="w-full flex items-center justify-between gap-2 px-1">
               {player?.is_captain ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-black uppercase shadow-sm">
-                  <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase shadow-sm">
+                  <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
                   <span>👑 Eres el Capitán</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold">
-                  <UserCheck className="w-3 h-3 text-slate-400" />
-                  <span>Miembro de Equipo</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14141e] border border-[#d4af37]/25 text-amber-200/70 text-[10px] font-vintage font-bold">
+                  <UserCheck className="w-3 h-3 text-amber-400" />
+                  <span>Miembro de Mesa</span>
                 </div>
               )}
 
@@ -802,72 +804,72 @@ export default function PlayerView() {
                 <button
                   onClick={() => setIsDoubleModalOpen(true)}
                   disabled={!!(myTeamId && captainGambles[myTeamId])}
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 transition-all shadow-md active:scale-95 ${
+                  className={`px-3 py-1 rounded-full text-[10px] font-broadway uppercase tracking-wider flex items-center gap-1 transition-all shadow-md active:scale-95 ${
                     myTeamId && captainGambles[myTeamId]
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 opacity-70'
-                      : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/30'
+                      ? 'bg-amber-500/20 text-amber-300 border border-[#d4af37]/50 opacity-70'
+                      : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold font-black'
                   }`}
                 >
-                  <Star className="w-3 h-3" />
+                  <Star className="w-3 h-3 fill-current" />
                   <span>{myTeamId && captainGambles[myTeamId] ? '🔥 Doble o Nada Activo' : '⭐ Doble o Nada'}</span>
                 </button>
               )}
             </div>
 
             {/* Pastilla identificativa del juego actual */}
-            <div className="w-full bg-slate-900/60 border border-slate-800/80 rounded-2xl px-3 py-2 flex items-center justify-between backdrop-blur-sm">
+            <div className="w-full bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-2xl px-3 py-2 flex items-center justify-between backdrop-blur-sm shadow-sm">
               <div className="flex items-center gap-2">
                 <span className="text-xl">{activeGame.emoji}</span>
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-amber-400 tracking-wider block">
+                  <span className="text-[9px] uppercase font-vintage font-bold text-amber-300 tracking-wider block">
                     {activeGame.category}
                   </span>
-                  <span className="text-xs font-black text-white block truncate max-w-[190px]">
+                  <span className="text-xs font-broadway text-white block truncate max-w-[190px]">
                     {activeGame.title}
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700">
+              <span className="text-[10px] font-vintage font-bold text-amber-200/90 px-2.5 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30">
                 {activeGame.engine === 'buzzer' ? '⚡ Pulsador' : activeGame.engine === 'challenges' ? '🎨 Reto' : '🎲 Mesa'}
               </span>
             </div>
 
-            {/* ALERTAS Y LIMITACIONES ACTIVAS DE CARTAS DE PODER EN TODAS LAS PRUEBAS */}
+            {/* ALERTAS Y LIMITACIONES ACTIVAS DE CARTAS DE PODER (ESTILO DESPACHO / TELEGRAMA) */}
             {hasTeamShield && (
               <div className="w-full bg-blue-950/80 border-2 border-blue-400 rounded-2xl px-3 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
                 <span className="text-base">🛡️</span>
-                <span className="text-xs font-black uppercase text-blue-200">
-                  ¡Escudo Protector Activo! Tu equipo está blindado contra ataques rivales.
+                <span className="text-xs font-vintage font-black uppercase text-blue-200">
+                  ¡Escudo Protector Activo! Tu mesa está blindada contra ataques rivales.
                 </span>
               </div>
             )}
 
             {isBanned && (
-              <div className="w-full bg-red-950/90 border-2 border-red-500 rounded-2xl px-3 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
+              <div className="w-full bg-[#380b12]/90 border-2 border-red-500 rounded-2xl px-3 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
                 <span className="text-base">🚫</span>
-                <span className="text-xs font-black uppercase text-red-200">
+                <span className="text-xs font-vintage font-black uppercase text-red-200">
                   ¡Baneado para esta prueba! No puedes participar en este minijuego.
                 </span>
               </div>
             )}
 
             {myForcedChange && (
-              <div className="w-full bg-amber-950/90 border-2 border-amber-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
-                <span className="text-[10px] font-black uppercase text-amber-300 block">
+              <div className="w-full bg-[#2a1a05]/95 border-2 border-amber-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
+                <span className="text-[10px] font-broadway uppercase tracking-wider text-amber-300 block">
                   🔄 Cambio Forzoso Activo
                 </span>
-                <span className="text-xs font-bold text-white block">
+                <span className="text-xs font-vintage font-bold text-white block">
                   El rival ha obligado a sustituir a <strong className="text-amber-300">{myForcedChange}</strong>.
                 </span>
               </div>
             )}
 
             {myLimitation && (
-              <div className="w-full bg-purple-950/90 border-2 border-purple-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
-                <span className="text-[10px] font-black uppercase text-purple-300 block">
+              <div className="w-full bg-[#1e0a2e]/95 border-2 border-purple-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
+                <span className="text-[10px] font-broadway uppercase tracking-wider text-purple-300 block">
                   {myLimitation.title}
                 </span>
-                <span className="text-xs font-bold text-white block">
+                <span className="text-xs font-vintage font-bold text-white block">
                   {myLimitation.rule}
                 </span>
               </div>
@@ -880,23 +882,23 @@ export default function PlayerView() {
             <div className="my-auto flex flex-col items-center w-full">
 
               {isBanned ? (
-                <div className="w-64 h-64 rounded-full bg-red-950/80 border-8 border-red-600 flex flex-col items-center justify-center p-6 text-center shadow-inner animate-pulse">
+                <div className="w-64 h-64 rounded-full bg-[#2a0808]/95 border-8 border-red-700 flex flex-col items-center justify-center p-6 text-center shadow-inner animate-pulse deco-card-frame">
                   <span className="text-4xl mb-2">🚫</span>
-                  <span className="text-sm font-black font-arcade uppercase text-red-300">
+                  <span className="text-sm font-broadway uppercase text-red-300">
                     ¡ESTÁS BANEADO!
                   </span>
-                  <span className="text-[11px] text-red-200 font-bold mt-1 max-w-[170px]">
-                    Un rival te ha bloqueado el pulsador durante esta prueba
+                  <span className="text-[11px] font-vintage text-red-200 font-bold mt-1 max-w-[170px]">
+                    Un rival te ha sellado el timbre durante esta prueba
                   </span>
                 </div>
               ) : captainDuel?.isActive && !player?.is_captain ? (
-                <div className="w-64 h-64 rounded-full bg-slate-900 border-8 border-slate-800 flex flex-col items-center justify-center p-6 text-center shadow-inner opacity-75">
-                  <ShieldAlert className="w-12 h-12 text-amber-400 mb-2" />
-                  <span className="text-sm font-black font-arcade uppercase text-amber-300">
+                <div className="w-64 h-64 rounded-full bg-[#0c0c14]/95 border-8 border-[#d4af37]/50 flex flex-col items-center justify-center p-6 text-center shadow-deco-gold opacity-85 deco-card-frame">
+                  <ShieldAlert className="w-12 h-12 text-[#d4af37] mb-2" />
+                  <span className="text-sm font-broadway uppercase text-gold-gradient">
                     DUELO DE CAPITANES
                   </span>
-                  <span className="text-[11px] text-slate-400 font-bold mt-1 max-w-[170px]">
-                    Solo tu Capitán 👑 puede pulsar en esta prueba
+                  <span className="text-[11px] font-vintage text-amber-200/80 font-bold mt-1 max-w-[170px]">
+                    Solo tu Capitán 👑 puede presionar en este reto
                   </span>
                 </div>
               ) : (
@@ -912,17 +914,17 @@ export default function PlayerView() {
               <div className="mt-4 h-14 flex items-center justify-center text-center px-2">
                 {isLocked ? (
                   isMeWinner ? (
-                    <span className="text-sm font-black text-emerald-400 uppercase tracking-wider block">
+                    <span className="text-sm font-broadway text-gold-gradient uppercase tracking-wider block drop-shadow-md">
                       🎉 ¡HAS SIDO EL MÁS RÁPIDO! RESPONDE AHORA
                     </span>
                   ) : (
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    <span className="text-xs font-vintage font-bold text-amber-200/70 uppercase tracking-wider block">
                       Otro equipo ha pulsado primero ({winner?.teamName})
                     </span>
                   )
                 ) : (
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest block">
-                    Mantén el dedo listo sobre el pulsador
+                  <span className="text-xs font-vintage font-bold text-amber-300/80 uppercase tracking-widest block">
+                    Mantén el dedo listo sobre el timbre de bronce
                   </span>
                 )}
               </div>
@@ -930,15 +932,15 @@ export default function PlayerView() {
           ) : activeGame.id === 'bingo' ? (
             /* 🎱 VISTA EN VIVO DE BINGO (SIN PULSADOR) */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-500/30 mb-3">
-                  <span>🎱</span> BINGO EN VIVO
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                  <span>🎱</span> BINGO DE SALÓN EN VIVO
                 </div>
 
                 {/* BOLA EN PANTALLA */}
                 <div className="flex flex-col items-center justify-center my-2 min-h-[140px]">
                   {bingoIsSpinning ? (
-                    <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex flex-col items-center justify-center shadow-xl border-4 border-amber-200 animate-spin">
+                    <div className="w-28 h-28 rounded-full bg-gold-gradient flex flex-col items-center justify-center shadow-deco-gold border-4 border-[#f5eedb] animate-spin">
                       <span className="text-3xl">🎱</span>
                     </div>
                   ) : bingoCurrentBall ? (
@@ -948,15 +950,15 @@ export default function PlayerView() {
                       return (
                         <div className="flex flex-col items-center animate-bounce-short">
                           <div
-                            className={`w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 shadow-2xl relative select-none ${theme.bgGradient} ${theme.border} ${theme.shadow}`}
+                            className={`w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 shadow-deco-gold relative select-none ${theme.bgGradient} ${theme.border} ${theme.shadow}`}
                           >
                             <div className="absolute top-2 left-4 w-6 h-3 bg-white/40 rounded-full blur-[1px] -rotate-12 pointer-events-none" />
-                            <span className={`text-5xl font-black font-arcade tracking-tighter ${theme.ballTextClass}`}>
+                            <span className={`text-5xl font-broadway tracking-tighter ${theme.ballTextClass}`}>
                               {bingoCurrentBall}
                             </span>
                           </div>
                           {nick && (
-                            <span className="mt-2.5 text-xs font-black uppercase tracking-wider text-amber-300 bg-amber-950/70 border border-amber-500/30 px-3 py-1 rounded-full shadow-sm">
+                            <span className="mt-2.5 text-xs font-broadway uppercase tracking-wider text-slate-950 bg-gold-gradient border border-[#f5eedb]/40 px-3 py-1 rounded-full shadow-sm">
                               "{nick}"
                             </span>
                           )}
@@ -964,31 +966,31 @@ export default function PlayerView() {
                       );
                     })()
                   ) : (
-                    <div className="w-28 h-28 rounded-full bg-slate-800/80 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 p-2 text-center">
+                    <div className="w-28 h-28 rounded-full bg-[#07070a]/90 border-2 border-dashed border-[#d4af37]/40 flex flex-col items-center justify-center text-amber-300/60 p-2 text-center">
                       <span className="text-2xl mb-1">🎱</span>
-                      <span className="text-[10px] font-bold">Esperando extracción</span>
+                      <span className="text-[10px] font-vintage font-bold">Esperando extracción de bola</span>
                     </div>
                   )}
                 </div>
 
                 {/* CONTADOR DE BOLAS */}
-                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <div className="mt-3 pt-3 border-t border-[#d4af37]/30 flex items-center justify-between text-xs text-amber-200/80 font-vintage">
                   <span className="font-bold">Bolas extraídas:</span>
-                  <span className="font-black text-amber-400 text-sm">
-                    {bingoDrawnBalls.length} <span className="text-[11px] text-slate-500">/ 90</span>
+                  <span className="font-broadway text-gold-gradient text-sm">
+                    {bingoDrawnBalls.length} <span className="text-[11px] text-amber-200/50">/ 90</span>
                   </span>
                 </div>
 
                 {/* BOLAS RECIENTES */}
                 {bingoDrawnBalls.length > 0 && (
                   <div className="mt-2.5 flex items-center justify-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 mr-1">Previas:</span>
+                    <span className="text-[10px] uppercase font-vintage font-bold text-amber-300/60 mr-1">Previas:</span>
                     {bingoDrawnBalls.slice(-5).reverse().map((num, idx) => {
                       const ballTheme = getBingoBallTheme(num);
                       return (
                         <span
                           key={`${num}-${idx}`}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black shadow-sm ${ballTheme.bgGradient} ${ballTheme.ballTextClass} ${idx === 0 ? 'ring-2 ring-amber-400' : 'opacity-70'}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-broadway font-black shadow-sm ${ballTheme.bgGradient} ${ballTheme.ballTextClass} ${idx === 0 ? 'ring-2 ring-amber-400' : 'opacity-70'}`}
                         >
                           {num}
                         </span>
@@ -999,42 +1001,42 @@ export default function PlayerView() {
 
                 {/* RECORDATORIO DE PREMIOS */}
                 <div className="mt-3 grid grid-cols-2 gap-2 text-left">
-                  <div className="bg-slate-950/60 border border-blue-500/30 rounded-xl p-2">
-                    <div className="text-[10px] font-black uppercase text-blue-400">📏 Línea</div>
-                    <div className="text-xs font-bold text-slate-200">+5 puntos</div>
+                  <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2 shadow-inner">
+                    <div className="text-[10px] font-broadway uppercase text-amber-300">📏 Línea</div>
+                    <div className="text-xs font-vintage font-bold text-white">+5 puntos</div>
                   </div>
-                  <div className="bg-slate-950/60 border border-amber-500/30 rounded-xl p-2">
-                    <div className="text-[10px] font-black uppercase text-amber-400">🎱 BINGO</div>
-                    <div className="text-xs font-bold text-slate-200">+15 puntos</div>
+                  <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2 shadow-inner">
+                    <div className="text-[10px] font-broadway uppercase text-gold-gradient">🎱 BINGO</div>
+                    <div className="text-xs font-vintage font-bold text-white">+15 puntos</div>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-400 mt-3 font-semibold">
-                  Juega con tu cartón físico. Si completas Línea o Bingo, ¡avisa al anfitrión!
+                <p className="text-[11px] text-amber-200/70 mt-3 font-vintage font-semibold">
+                  Juega con tu cartón físico. Si completas Línea o Bingo, ¡avisa al anfitrión en directo!
                 </p>
               </div>
             </div>
           ) : activeGame.id === 'mimica' ? (
             /* 🎭 MÍMICA */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-black uppercase tracking-wider border border-purple-500/30 mb-3">
-                  <span>🎭</span> PRUEBA DE MÍMICA
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                  <span>🎭</span> TEATRO DE CINE MUDO
                 </div>
-                <h3 className="text-lg font-black uppercase text-white mb-1">{activeGame.title}</h3>
-                <p className="text-xs text-slate-400 mb-3">
+                <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">{activeGame.title}</h3>
+                <p className="text-xs font-vintage text-amber-100/80 mb-3">
                   Atento a tu compañero que actúa en el centro de la sala. ¡No se puede hablar ni emitir sonidos!
                 </p>
 
-                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-left">
+                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-3 text-left">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-300">¿Eres el actor de tu equipo?</span>
+                    <span className="text-xs font-vintage font-bold text-amber-200">¿Eres el actor de tu equipo?</span>
                     <button
                       onClick={() => setSecretCardVisible(!secretCardVisible)}
-                      className="text-xs text-amber-400 font-bold flex items-center gap-1 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20"
+                      className="text-xs text-slate-950 font-broadway font-black flex items-center gap-1 bg-gold-gradient px-2.5 py-1 rounded-lg border border-[#f5eedb]/50 shadow-sm active:scale-95"
                     >
                       {secretCardVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{secretCardVisible ? 'Ocultar' : 'Ver Instrucción'}</span>
+                      <span>{secretCardVisible ? 'Ocultar' : 'Ver Despacho'}</span>
                     </button>
                   </div>
 
@@ -1042,15 +1044,18 @@ export default function PlayerView() {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-3 pt-3 border-t border-slate-800 text-xs text-slate-300"
+                      className="mt-3 pt-3 border-t border-[#d4af37]/30 text-xs font-vintage text-amber-100"
                     >
-                      <p className="font-bold text-amber-300 mb-1">Pide al anfitrión tu palabra o reto asignado.</p>
-                      <p className="text-[11px] text-red-300 font-bold">🚫 ¡Totalmente prohibido hablar, susurrar o hacer ruido!</p>
+                      <div className="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-[#d4af37] font-broadway text-[10px] uppercase mb-1">
+                        TELEGRAMA SECRETO
+                      </div>
+                      <p className="font-bold text-amber-200 mb-1">Solicita al anfitrión tu palabra o tarjeta secreta.</p>
+                      <p className="text-[11px] text-red-300 font-bold">🚫 ¡Totalmente prohibido hablar, susurrar o emitir ruidos!</p>
                     </motion.div>
                   )}
                 </div>
 
-                <div className="text-[11px] text-slate-400 font-medium mt-2">
+                <div className="text-[11px] text-amber-300/70 font-vintage font-medium mt-2">
                   El anfitrión controlará el tiempo y asignará los puntos al terminar.
                 </div>
               </div>
@@ -1058,20 +1063,20 @@ export default function PlayerView() {
           ) : activeGame.id === 'drawing' ? (
             /* 🎨 TELÉFONO DIBUJADO */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-black uppercase tracking-wider border border-indigo-500/30 mb-3">
-                  <span>🎨</span> TELÉFONO DIBUJADO
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                  <span>🎨</span> TALLER DE CARICATURAS
                 </div>
-                <h3 className="text-lg font-black uppercase text-white mb-1">Prueba en Papel Físico</h3>
-                <p className="text-xs text-slate-400 mb-3">
-                  El <strong>Jugador 1</strong> decide libremente qué dibujar para iniciar la cadena. Dibuja y escribe en los folios de papel siguiendo los turnos.
+                <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">Cadena en Papel Físico</h3>
+                <p className="text-xs font-vintage text-amber-100/80 mb-3">
+                  El <strong>Jugador 1</strong> decide libremente qué dibujar para iniciar la cadena. Dibuja y escribe en los folios siguiendo los turnos.
                 </p>
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1.5 text-xs text-slate-300">
-                  <div className="font-bold text-amber-300">Mecánica de la cadena:</div>
+                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-3 text-left space-y-1.5 text-xs font-vintage text-amber-100/90">
+                  <div className="font-broadway text-amber-300">Mecánica de la cadena:</div>
                   <div>💡 J1 piensa su idea y dibuja (sin frases impuestas)</div>
                   <div>✍️ J2 adivina por escrito y oculta el dibujo anterior</div>
                   <div>🎨 J3 dibuja lo escrito... ¡hasta la revelación final!</div>
-                  <div className="text-[11px] text-slate-400 pt-1">
+                  <div className="text-[11px] text-amber-300/70 pt-1 font-vintage">
                     El anfitrión asignará los puntos al final según los resultados y el humor.
                   </div>
                 </div>
@@ -1080,34 +1085,34 @@ export default function PlayerView() {
           ) : activeGame.id === 'torneo_juegos' ? (
             /* 🎮 TORNEO DE JUEGOS */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border-2 border-emerald-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30 mb-3">
-                  <span>🎮</span> TORNEO DE MESA
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                  <span>🎮</span> SALÓN DE JUEGOS CLANDESTINOS
                 </div>
-                <h3 className="text-lg font-black uppercase text-white mb-1">UNO • Dominó • Parchís</h3>
-                <p className="text-xs text-slate-400 mb-3">
+                <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">UNO • Dominó • Parchís</h3>
+                <p className="text-xs font-vintage text-amber-100/80 mb-3">
                   Partidas presenciales en la sala. ¡Concéntrate en tu partida física con los rivales!
                 </p>
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs text-slate-300">
+                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-3 text-left space-y-1 text-xs font-vintage text-amber-100/90">
                   <div>🥇 1.º Campeón: +5 pts</div>
                   <div>🥈 2.º Subcampeón: +3 pts</div>
                   <div>🥉 3.º Puesto: +2 pts</div>
-                  <div className="text-[11px] text-slate-400 pt-1">El anfitrión registrará la clasificación al acabar.</div>
+                  <div className="text-[11px] text-amber-300/70 pt-1">El anfitrión registrará la clasificación al acabar.</div>
                 </div>
               </div>
             </div>
           ) : activeGame.id === 'un_dos_tres' ? (
             /* ⚡ 1, 2, 3 ¿YA? */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border-2 border-orange-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-[11px] font-black uppercase tracking-wider border border-orange-500/30 mb-3">
-                  <span>⚡</span> 1, 2, 3 ¿YA?
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                  <span>⚡</span> 1, 2, 3 ¿YA? (5s)
                 </div>
-                <h3 className="text-lg font-black uppercase text-white mb-1">¡5 Segundos para 3 Respuestas!</h3>
-                <p className="text-xs text-slate-400 mb-3">
+                <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">¡5 Segundos para 3 Respuestas!</h3>
+                <p className="text-xs font-vintage text-amber-100/80 mb-3">
                   Turnos por equipo. Cuando el anfitrión dé la señal, debéis decir 3 respuestas válidas en voz alta.
                 </p>
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs text-slate-300">
+                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-3 text-left space-y-1 text-xs font-vintage text-amber-100/90">
                   <div>⏱️ 5 segundos exactos sin vacilar</div>
                   <div>💀 Si fallas o dudas quedas eliminado</div>
                   <div>🏆 Gana el último equipo superviviente</div>
@@ -1117,15 +1122,15 @@ export default function PlayerView() {
           ) : activeGame.id === 'beer_pong' ? (
             /* 🍺 BEER PONG */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-500/30 mb-3">
-                  <span>🍺</span> BEER PONG
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                  <span>🍺</span> TABERNA SPEAKEASY
                 </div>
-                <h3 className="text-lg font-black uppercase text-white mb-1">Partida en Mesa</h3>
-                <p className="text-xs text-slate-400 mb-3">
+                <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">Beer Pong en Mesa</h3>
+                <p className="text-xs font-vintage text-amber-100/80 mb-3">
                   Encesta las bolas en los vasos rivales. ¡Buena puntería a todos los tiradores!
                 </p>
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-300">
+                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2.5 text-xs font-vintage text-amber-100/90">
                   <span>🎯 +1 punto por vaso encestado | 🏆 +5 campeón</span>
                 </div>
               </div>
@@ -1133,12 +1138,12 @@ export default function PlayerView() {
           ) : (
             /* OTRA PRUEBA PRESENCIAL O RETO */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
                 <div className="text-4xl mb-2">{activeGame.emoji}</div>
-                <h3 className="text-xl font-black uppercase text-white mb-1">{activeGame.title}</h3>
-                <p className="text-xs text-slate-400 mb-3">{activeGame.description}</p>
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs text-slate-300">
-                  <span className="font-bold text-amber-400 block mb-1">Instrucciones:</span>
+                <h3 className="text-xl font-broadway uppercase text-gold-gradient mb-1">{activeGame.title}</h3>
+                <p className="text-xs font-vintage text-amber-100/80 mb-3">{activeGame.description}</p>
+                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-3 text-left space-y-1 text-xs font-vintage text-amber-100/90">
+                  <span className="font-broadway text-gold-gradient block mb-1">Instrucciones:</span>
                   {activeGame.rules.slice(0, 3).map((r, i) => (
                     <div key={i}>{r}</div>
                   ))}
@@ -1159,7 +1164,7 @@ export default function PlayerView() {
         </div>
       )}
 
-      {/* BOTÓN FLOTANTE: CARTAS DE PODER DEL EQUIPO */}
+      {/* BOTÓN FLOTANTE: NAIPES DE PODER DEL EQUIPO */}
       {isJoined && selectedTeam && (
         <div className="fixed bottom-10 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
           <motion.button
@@ -1168,29 +1173,29 @@ export default function PlayerView() {
             onClick={() => setIsCardModalOpen(true)}
             className={`pointer-events-auto px-5 py-2.5 rounded-full border-2 shadow-2xl flex items-center gap-2.5 backdrop-blur-xl transition-all ${
               myTeamCards.length > 0
-                ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 border-amber-400/80 text-white shadow-[0_0_25px_rgba(251,191,36,0.4)] animate-pulse'
-                : 'bg-slate-900/90 border-slate-700 text-slate-400'
+                ? 'bg-gold-gradient border-[#f5eedb] text-slate-950 shadow-deco-gold font-broadway font-black animate-pulse'
+                : 'bg-[#0c0c14]/95 border-[#d4af37]/30 text-amber-200/60 font-vintage font-bold'
             }`}
           >
             <span className="text-lg select-none">🃏</span>
-            <span className="text-xs font-black uppercase tracking-wider">
-              Cartas de Poder ({myTeamCards.length})
+            <span className="text-xs font-broadway uppercase tracking-wider">
+              Naipes de Poder ({myTeamCards.length})
             </span>
           </motion.button>
         </div>
       )}
 
-      {/* MODAL COLECCIONABLE DE CARTAS DE PODER */}
+      {/* MODAL COLECCIONABLE DE NAIPES DE PODER (ESTILO SPEAKEASY) */}
       {isCardModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col justify-end sm:justify-center items-center p-4 select-none">
-          <div className="bg-slate-900 border-2 border-indigo-500/50 rounded-3xl w-full max-w-sm max-h-[85vh] overflow-y-auto p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/95 backdrop-blur-xl flex flex-col justify-end sm:justify-center items-center p-4 select-none">
+          <div className="bg-[#0c0c14] border-2 border-[#d4af37]/60 rounded-3xl w-full max-w-sm max-h-[85vh] overflow-y-auto p-5 shadow-deco-gold space-y-4 deco-card-frame">
+            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🃏</span>
                 <div>
-                  <h3 className="text-sm font-black text-white uppercase">Cartas de tu Equipo</h3>
-                  <span className="text-[10px] text-slate-400">
-                    {selectedTeam?.name} • Mazo Común
+                  <h3 className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">Naipes de tu Bando</h3>
+                  <span className="text-[10px] font-vintage text-amber-200/70">
+                    {selectedTeam?.name} • Baraja de Casino
                   </span>
                 </div>
               </div>
@@ -1199,7 +1204,7 @@ export default function PlayerView() {
                   setIsCardModalOpen(false);
                   setSelectedCardToPlay(null);
                 }}
-                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                className="p-1.5 bg-[#14141e] border border-[#d4af37]/30 rounded-full text-amber-200 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>

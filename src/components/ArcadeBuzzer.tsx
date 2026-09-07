@@ -79,11 +79,11 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
         />
       )}
 
-      {/* 2. Chasis exterior / Anillo base (Efecto metálico oscuro biselado) */}
-      <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full arcade-buzzer-base p-3 flex items-center justify-center">
-        {/* Anillo de contraste interno */}
-        <div className="w-full h-full rounded-full bg-slate-950/80 p-2.5 border-2 border-white/10 shadow-inner flex items-center justify-center">
-          {/* 3. Botón físico pulsable 3D */}
+      {/* 2. Chasis exterior / Anillo base (Efecto latón y caoba Art Deco biselado) */}
+      <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full arcade-buzzer-base p-3.5 flex items-center justify-center shadow-2xl">
+        {/* Anillo de contraste concéntrico de madera oscura y latón */}
+        <div className="w-full h-full rounded-full bg-[#120e09] p-3 border-2 border-[#d4af37]/60 shadow-inner flex items-center justify-center">
+          {/* 3. Botón físico pulsable 3D estilo timbre de casino */}
           <motion.button
             key={isLocked ? 'buzzer-locked' : 'buzzer-ready'}
             type="button"
@@ -94,28 +94,28 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
             transition={{ type: 'spring', stiffness: 600, damping: 30 }}
             className={`w-full h-full rounded-full relative overflow-hidden flex flex-col items-center justify-center p-6 border-4 transition-colors duration-150 select-none ${
               isDisabledState
-                ? 'bg-slate-800 border-slate-700 opacity-60 cursor-not-allowed shadow-none'
-                : `${theme.twBg} border-white/40 cursor-pointer active:translate-y-1`
+                ? 'bg-[#1a1a24] border-[#2d2d3d] opacity-60 cursor-not-allowed shadow-none'
+                : `${theme.twBg} border-[#f3e5ab]/70 cursor-pointer active:translate-y-1`
             }`}
             style={{
               boxShadow: isDisabledState
                 ? 'none'
-                : `0 12px 0 rgba(0, 0, 0, 0.55), 0 18px 24px rgba(0, 0, 0, 0.5), inset 0 2px 6px rgba(255, 255, 255, 0.45)`,
+                : `0 14px 0 rgba(18, 14, 9, 0.9), 0 20px 30px rgba(0, 0, 0, 0.7), inset 0 2px 6px rgba(255, 255, 255, 0.55), 0 0 0 2px #d4af37`,
             }}
           >
             {/* 4. Reflejo especular cúpula (Dome Specular highlight) */}
             <div className="absolute inset-0 arcade-buzzer-dome pointer-events-none rounded-full" />
 
-            {/* 5. Ondas de impacto (Ripples) al pulsar */}
+            {/* 5. Ondas de impacto doradas al pulsar */}
             <AnimatePresence>
               {ripples.map((r) => (
                 <motion.span
                   key={r.id}
-                  initial={{ scale: 0, opacity: 0.6 }}
+                  initial={{ scale: 0, opacity: 0.7 }}
                   animate={{ scale: 3.5, opacity: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.6, ease: 'easeOut' }}
-                  className="absolute rounded-full bg-white/40 pointer-events-none w-20 h-20"
+                  className="absolute rounded-full bg-[#f3e5ab]/50 pointer-events-none w-20 h-20"
                   style={{
                     left: r.x - 40,
                     top: r.y - 40,
@@ -127,19 +127,19 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
               ))}
             </AnimatePresence>
 
-            {/* 6. Contenido del pulsador (Icono y texto de alto contraste) */}
+            {/* 6. Contenido del pulsador (Tipografía Broadway de 1930) */}
             <div className="relative z-10 flex flex-col items-center justify-center text-center">
               {isDisabledState ? (
                 <>
-                  <Radio className="w-14 h-14 mb-2 text-slate-500" />
-                  <span className="text-2xl font-black font-arcade uppercase tracking-wider text-slate-500">
+                  <Radio className="w-12 h-12 mb-1.5 text-slate-500" />
+                  <span className="text-xl sm:text-2xl font-black font-broadway uppercase tracking-widest text-slate-500">
                     BLOQUEADO
                   </span>
                 </>
               ) : isDuelActive ? (
                 <>
-                  <Swords className={`w-14 h-14 mb-2 ${theme.twContrastText} animate-bounce drop-shadow-md`} />
-                  <span className={`text-3xl font-black font-arcade uppercase tracking-wider ${theme.twContrastText} drop-shadow-sm`}>
+                  <Swords className={`w-14 h-14 mb-2 ${theme.twContrastText} animate-bounce drop-shadow-lg`} />
+                  <span className={`text-3xl font-black font-broadway uppercase tracking-widest ${theme.twContrastText} drop-shadow-md`}>
                     ¡DUELO!
                   </span>
                 </>
@@ -163,12 +163,12 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
                         ? 'Target'
                         : 'Sun'
                     }
-                    size={56}
+                    size={52}
                     weight="fill"
                     glow={true}
-                    className={`mb-2 ${theme.twContrastText} animate-pulse drop-shadow-md`}
+                    className={`mb-1.5 ${theme.twContrastText} animate-pulse drop-shadow-lg`}
                   />
-                  <span className={`text-3xl sm:text-4xl font-black font-arcade uppercase tracking-wider ${theme.twContrastText} drop-shadow-sm`}>
+                  <span className={`text-2xl sm:text-3xl font-black font-broadway uppercase tracking-widest ${theme.twContrastText} drop-shadow-md`}>
                     ¡PULSAR!
                   </span>
                 </>

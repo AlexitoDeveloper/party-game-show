@@ -2338,20 +2338,20 @@ export default function HostView() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none">
-      {/* HEADER ANFITRIÓN */}
-      <header className="flex items-center justify-between border-b border-slate-800 pb-3 gap-2">
+    <main className="min-h-screen bg-[#08080c] text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none">
+      {/* HEADER ANFITRIÓN (CONSOLA DE RADIO / PIT BOSS 1930s) */}
+      <header className="flex items-center justify-between border-b border-[#d4af37]/35 pb-3 gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-white truncate">
+            <h1 className="text-xl sm:text-2xl font-broadway uppercase tracking-wider text-gold-gradient truncate">
               Sala {roomCode}
             </h1>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
+            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-broadway uppercase tracking-wider ${
               room.status === 'lobby'
-                ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                ? 'bg-amber-500/15 text-amber-300 border border-[#d4af37]/40'
                 : room.status === 'presentation'
-                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                ? 'bg-gold-gradient text-slate-950 font-black'
+                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
             }`}>
               {room.status === 'lobby' ? 'Lobby' : room.status === 'presentation' ? 'Presentación' : 'En Juego'}
             </span>
@@ -2362,42 +2362,42 @@ export default function HostView() {
           <Link
             to={`/room/${roomCode}/tv`}
             target="_blank"
-            className="bg-slate-900 hover:bg-slate-800 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1 transition-all"
+            className="bg-[#0c0c14] hover:bg-[#14141e] border-2 border-[#d4af37]/40 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-vintage font-bold text-amber-200 flex items-center gap-1.5 transition-all shadow-sm"
             title="Abrir pantalla TV"
           >
             <Tv className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Abrir TV</span>
-            <span className="sm:hidden">TV</span>
+            <span className="hidden sm:inline font-broadway text-xs">Abrir TV</span>
+            <span className="sm:hidden font-broadway text-xs">TV</span>
           </Link>
-          <div className="bg-slate-900 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 text-indigo-300">
-            <Users className="w-3.5 h-3.5" />
-            <span className="font-mono">{players.length}</span>
-            <span className="hidden sm:inline font-mono">conectados</span>
+          <div className="bg-[#0c0c14] border border-[#d4af37]/30 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-vintage font-bold flex items-center gap-1.5 text-amber-300 shadow-sm">
+            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <span className="font-broadway">{players.length}</span>
+            <span className="hidden sm:inline font-vintage">conectados</span>
           </div>
         </div>
       </header>
 
       {/* BARRA DE ESTADO GLOBAL Y BOTÓN PRINCIPAL */}
-      <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all flex items-center justify-between gap-2.5 shadow-xl ${
+      <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 transition-all flex items-center justify-between gap-2.5 shadow-deco-gold ${
         room.status === 'playing'
-          ? 'bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-slate-900 border-amber-400/40'
+          ? 'bg-[#0c0c14]/95 border-[#d4af37]/60'
           : room.status === 'presentation'
-          ? 'bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-slate-900 border-purple-400/40'
-          : 'bg-slate-900/90 border-slate-800'
+          ? 'bg-[#120f18]/95 border-[#d4af37]/60'
+          : 'bg-[#0c0c14]/90 border-[#d4af37]/35'
       }`}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="text-2xl sm:text-3xl p-1.5 sm:p-2 bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-700 flex-shrink-0">
+          <div className="text-2xl sm:text-3xl p-1.5 sm:p-2 bg-[#14141e] rounded-xl sm:rounded-2xl border border-[#d4af37]/30 flex-shrink-0 shadow-inner">
             {room.status === 'presentation' ? '✨' : activeGame.emoji}
           </div>
           <div className="min-w-0">
-            <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 block truncate">
+            <span className="text-[9px] uppercase font-vintage font-bold tracking-widest text-amber-300 block truncate">
               {room.status === 'lobby'
                 ? 'SALA EN ESPERA'
                 : room.status === 'presentation'
                 ? 'PRESENTACIÓN EN TV'
                 : activeGame.category}
             </span>
-            <span className="text-sm sm:text-base font-black text-white block truncate">
+            <span className="text-sm sm:text-base font-broadway uppercase tracking-wide text-white block truncate">
               {room.status === 'lobby'
                 ? 'Lobby de Convocatoria'
                 : room.status === 'presentation'
@@ -2413,7 +2413,7 @@ export default function HostView() {
             <>
               <button
                 onClick={() => handleFinishTest()}
-                className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-red-600/30 active:scale-95 transition-all border border-red-400/40"
+                className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-broadway text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-red-600/30 active:scale-95 transition-all border border-red-400/40"
                 title="Finalizar prueba actual, limpiar efectos y abrir veredicto"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -2423,7 +2423,7 @@ export default function HostView() {
 
               <button
                 onClick={handleReturnToLobby}
-                className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-black text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
+                className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
                 title="Volver al Lobby"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
@@ -2434,7 +2434,7 @@ export default function HostView() {
             <>
               <button
                 onClick={() => handleSelectGame(GAMES_CATALOG[0])}
-                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+                className="bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
                 title="Iniciar Prueba 1: Adivina la Canción"
               >
                 <Play className="w-3.5 h-3.5 fill-slate-950" />
@@ -2444,7 +2444,7 @@ export default function HostView() {
 
               <button
                 onClick={handleReturnToLobby}
-                className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-black text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
+                className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
                 title="Volver al Lobby"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
@@ -2454,7 +2454,7 @@ export default function HostView() {
           ) : (
             <button
               onClick={() => handleSelectGame(GAMES_CATALOG[0])}
-              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+              className="bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
               title="Comenzar con el primer minijuego"
             >
               <Play className="w-3.5 h-3.5 fill-slate-950" />
@@ -2467,12 +2467,12 @@ export default function HostView() {
 
       {/* MANDO REMOTO DE LA PRESENTACIÓN EN MÓVIL (CUANDO STATUS ES PRESENTATION) */}
       {room.status === 'presentation' && (
-        <div className="p-3 sm:p-4 bg-purple-950/40 border-2 border-purple-500/50 rounded-2xl sm:rounded-3xl space-y-3 shadow-xl">
+        <div className="p-3 sm:p-4 bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 rounded-2xl sm:rounded-3xl space-y-3 shadow-deco-gold">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+            <span className="text-xs font-broadway uppercase tracking-wider text-gold-gradient flex items-center gap-1.5">
               <span>📽️</span> Mando de Diapositivas en TV:
             </span>
-            <span className="text-[11px] font-bold text-slate-400">
+            <span className="text-[11px] font-vintage text-amber-200/70">
               Diapositiva {(room.presentation_slide || 0) + 1} de 2
             </span>
           </div>
@@ -2480,10 +2480,10 @@ export default function HostView() {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handleSetPresentationSlide(0)}
-              className={`p-2.5 sm:p-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              className={`p-2.5 sm:p-3 rounded-xl border text-xs font-broadway uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
                 (room.presentation_slide || 0) === 0
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/30'
-                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+                  ? 'bg-gold-gradient text-slate-950 border-[#f5eedb] shadow-deco-gold font-black'
+                  : 'bg-[#14141e] text-amber-200/70 border-[#d4af37]/30 hover:bg-[#1a1a28]'
               }`}
             >
               <span>🏆</span>
@@ -2491,10 +2491,10 @@ export default function HostView() {
             </button>
             <button
               onClick={() => handleSetPresentationSlide(1)}
-              className={`p-2.5 sm:p-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              className={`p-2.5 sm:p-3 rounded-xl border text-xs font-broadway uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
                 (room.presentation_slide || 0) === 1
-                  ? 'bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-500/30'
-                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+                  ? 'bg-gold-gradient text-slate-950 border-[#f5eedb] shadow-deco-gold font-black'
+                  : 'bg-[#14141e] text-amber-200/70 border-[#d4af37]/30 hover:bg-[#1a1a28]'
               }`}
             >
               <span>🃏</span>
@@ -2505,13 +2505,13 @@ export default function HostView() {
       )}
 
       {/* BARRA DE NAVEGACIÓN POR PESTAÑAS (TABS DEL ANFITRIÓN: 5 COLUMNAS EN MÓVIL) */}
-      <nav className="sticky top-2 z-30 grid grid-cols-5 gap-1 p-1 bg-slate-900/95 border border-slate-800 rounded-2xl shadow-xl backdrop-blur-xl">
+      <nav className="sticky top-2 z-30 grid grid-cols-5 gap-1 p-1 bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-2xl shadow-deco-gold backdrop-blur-xl">
         <button
           onClick={() => setActiveTab('live')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
             activeTab === 'live'
-              ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
-              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+              ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
+              : 'bg-[#14141e]/80 hover:bg-[#1c1c2b] text-amber-200/70 hover:text-white border border-[#d4af37]/20 font-medium'
           }`}
           title="Consola en directo"
         >
@@ -2524,17 +2524,17 @@ export default function HostView() {
 
         <button
           onClick={() => setActiveTab('cards')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
             activeTab === 'cards'
-              ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
-              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+              ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
+              : 'bg-[#14141e]/80 hover:bg-[#1c1c2b] text-amber-200/70 hover:text-white border border-[#d4af37]/20 font-medium'
           }`}
           title="Cartas de poder"
         >
           <span className="text-base sm:text-sm">🃏</span>
           <span className="truncate">Cartas</span>
           {powerCards.activeEffects.length > 0 && (
-            <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded-full font-black">
+            <span className="text-[9px] bg-slate-950 text-amber-300 border border-amber-400 px-1 rounded-full font-black">
               {powerCards.activeEffects.length}
             </span>
           )}
@@ -3159,16 +3159,16 @@ export default function HostView() {
 
           {/* CONTROLES ESPECÍFICOS PARA ADIVINA LA PELÍCULA CON EMOJIS */}
           {room.active_game_id === 'movies' && (
-            <div className="pt-4 border-t border-slate-800 space-y-4">
+            <div className="pt-4 border-t border-[#d4af37]/30 space-y-4">
               {/* BARRA DE GESTIÓN DE PACK / PROTECCIÓN ANTI-SPOILERS */}
-              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+              <div className="bg-[#0c0c14]/95 border border-[#d4af37]/40 rounded-2xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-deco-gold">
                 <div className="flex items-center gap-2">
-                  <PackageCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <PackageCheck className="w-4 h-4 text-[#d4af37] shrink-0" />
                   <div>
-                    <span className="text-slate-400 font-medium">Pack Activo: </span>
-                    <strong className="text-white font-semibold">{activePackName}</strong>
+                    <span className="text-amber-200/70 font-vintage font-medium">Pack Activo: </span>
+                    <strong className="text-white font-broadway">{activePackName}</strong>
                     {activePackName.includes('Demo') && (
-                      <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-vintage">
                         🛡️ Modo Anti-Spoiler Activo
                       </span>
                     )}
@@ -3178,7 +3178,7 @@ export default function HostView() {
                 <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                   <button
                     onClick={handleLoadOfficialPack}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black flex items-center gap-1.5 transition-all shadow-sm border border-[#f5eedb]/40 text-xs uppercase"
                     title="Cargar las 21 películas oficiales para la fiesta"
                   >
                     <Sparkle className="w-3.5 h-3.5" />
@@ -3186,8 +3186,8 @@ export default function HostView() {
                     <span className="sm:hidden">Oficial</span>
                   </button>
 
-                  <label className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
-                    <FolderUp className="w-3.5 h-3.5" />
+                  <label className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-vintage font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
+                    <FolderUp className="w-3.5 h-3.5 text-amber-400" />
                     <span className="hidden sm:inline">Subir JSON</span>
                     <span className="sm:hidden">JSON</span>
                     <input type="file" accept=".json" onChange={handleUploadJson} className="hidden" />
@@ -3196,7 +3196,7 @@ export default function HostView() {
                   {!activePackName.includes('Demo') && (
                     <button
                       onClick={handleResetToDemo}
-                      className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-[11px] font-medium"
+                      className="px-2.5 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200/60 hover:text-white border border-[#d4af37]/30 text-[11px] font-vintage"
                       title="Volver a las películas de prueba para seguir desarrollando sin spoilers"
                     >
                       <span className="hidden sm:inline">Modo Demo</span>
@@ -3208,8 +3208,8 @@ export default function HostView() {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <Film className="w-5 h-5 text-amber-400" />
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <Film className="w-5 h-5 text-[#d4af37]" />
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     Película en Pantalla ({movieIndex + 1}/{filteredMovies.length})
                   </span>
                 </div>
@@ -3220,10 +3220,10 @@ export default function HostView() {
                     <button
                       key={cat}
                       onClick={() => handleCategoryFilterChange(cat)}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-vintage font-bold whitespace-nowrap transition-all ${
                         movieCategoryFilter === cat
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          ? 'bg-gold-gradient text-slate-950 shadow-md font-black border border-[#f5eedb]/50'
+                          : 'bg-[#14141e] text-amber-200/70 hover:text-white border border-[#d4af37]/30'
                       }`}
                     >
                       {cat === 'Taquillazos' ? '🍿 Taquillazos' : cat === 'Disney / Pixar' ? '🏰 Disney / Pixar' : cat === 'Terror' ? '👻 Terror' : '🎬 Todos'}
@@ -3233,49 +3233,49 @@ export default function HostView() {
               </div>
 
               {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN */}
-              <div className="bg-slate-950/80 border border-amber-400/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{currentMovie.genreEmoji}</span>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                       {currentMovie.category} • Año {currentMovie.year}
                     </span>
                   </div>
-                  <h3 className="text-xl font-black text-white">
+                  <h3 className="text-xl font-broadway text-gold-gradient">
                     {currentMovie.title}
                     {currentMovie.originalTitle && currentMovie.originalTitle !== currentMovie.title && (
-                      <span className="text-xs text-slate-400 font-normal ml-2">({currentMovie.originalTitle})</span>
+                      <span className="text-xs text-amber-200/60 font-editorial font-normal ml-2">({currentMovie.originalTitle})</span>
                     )}
                   </h3>
                   {currentMovie.director && (
-                    <p className="text-xs text-slate-400">
-                      Director: <span className="text-slate-200 font-semibold">{currentMovie.director}</span>
+                    <p className="text-xs font-vintage text-amber-200/70">
+                      Director: <span className="text-white font-broadway">{currentMovie.director}</span>
                     </p>
                   )}
 
                   {/* Emojis mostrados por fases al host */}
                   <div className="flex flex-wrap items-center gap-2 py-1">
-                    <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-700 text-base">
-                      <span className="text-[10px] text-amber-400 font-black uppercase">P1 (2 emojis):</span>
+                    <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
+                      <span className="text-[10px] text-amber-400 font-broadway uppercase">P1 (2 emojis):</span>
                       {currentMovie.emojisStage1.map((em, idx) => (
                         <span key={idx}>{em}</span>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-700 text-base">
-                      <span className="text-[10px] text-sky-400 font-black uppercase">P2 (4 emojis):</span>
+                    <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
+                      <span className="text-[10px] text-sky-400 font-broadway uppercase">P2 (4 emojis):</span>
                       {currentMovie.emojisStage2.map((em, idx) => (
                         <span key={idx}>{em}</span>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-700 text-base">
-                      <span className="text-[10px] text-emerald-400 font-black uppercase">P3 (Completo):</span>
+                    <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
+                      <span className="text-[10px] text-emerald-400 font-broadway uppercase">P3 (Completo):</span>
                       {currentMovie.emojisFull.map((em, idx) => (
                         <span key={idx}>{em}</span>
                       ))}
                     </div>
                   </div>
 
-                  <p className="text-xs text-amber-300/90 italic bg-black/40 px-3 py-1.5 rounded-xl border border-white/5">
+                  <p className="text-xs text-amber-200/80 font-vintage italic bg-[#0c0c14] px-3 py-1.5 rounded-xl border border-[#d4af37]/30">
                     💡 Significado: {currentMovie.explanation}
                   </p>
                 </div>
@@ -3283,10 +3283,10 @@ export default function HostView() {
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
                   <button
                     onClick={handleToggleReveal}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
+                    className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
                       movieRevealed
-                        ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                        ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(52,211,153,0.35)]'
+                        : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold border border-[#f5eedb]/40'
                     }`}
                   >
                     {movieRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -3296,27 +3296,27 @@ export default function HostView() {
                 </div>
               </div>
 
-              {/* VALIDACIÓN AUTOMÁTICA SEGÚN EMOJIS EN PANTALLA (PETICIÓN USUARIO) */}
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+              {/* VALIDACIÓN AUTOMÁTICA SEGÚN EMOJIS EN PANTALLA */}
+              <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-amber-300 uppercase">
+                  <span className="text-xs font-broadway text-amber-300 uppercase">
                     Puntuación Automática:
                   </span>
-                  <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs">
+                  <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
                     {movieFrameLevel === 1 ? 'Nivel 1 (2 Emojis) = +5 pts' : movieFrameLevel === 2 ? 'Nivel 2 (4 Emojis) = +3 pts' : 'Nivel 3/4 (Pistas) = +1 pt'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={handleValidateMovieHitAuto}
-                    className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
                   >
                     <Check className="w-4 h-4" />
                     <span>Validar Acierto (+{autoMoviePoints} pts)</span>
                   </button>
                   <button
                     onClick={handleValidateMovieMissAuto}
-                    className="px-3 py-2.5 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    className="px-3 py-2.5 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <X className="w-4 h-4" />
                     <span>Fallo (-1)</span>
@@ -3325,16 +3325,16 @@ export default function HostView() {
               </div>
 
               {/* SELECTOR DE NIVEL DE PISTA / EMOJIS */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">Pista:</span>
+                  <span className="text-xs font-vintage font-bold text-amber-200/80">Pista:</span>
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => handleSetFrameLevel(1)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
                         movieFrameLevel === 1
-                          ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
-                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
+                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
                       }`}
                     >
                       <span className="sm:hidden">P1 (+5)</span>
@@ -3342,10 +3342,10 @@ export default function HostView() {
                     </button>
                     <button
                       onClick={() => handleSetFrameLevel(2)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
                         movieFrameLevel === 2
-                          ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
-                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
+                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
                       }`}
                     >
                       <span className="sm:hidden">P2 (+3)</span>
@@ -3353,10 +3353,10 @@ export default function HostView() {
                     </button>
                     <button
                       onClick={() => handleSetFrameLevel(3)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
                         movieFrameLevel === 3
-                          ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
-                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
+                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
                       }`}
                     >
                       <span className="sm:hidden">P3 (+1)</span>
@@ -3364,10 +3364,10 @@ export default function HostView() {
                     </button>
                     <button
                       onClick={() => handleSetFrameLevel(4)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
                         movieFrameLevel === 4
-                          ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
-                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
+                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
                       }`}
                     >
                       <span className="sm:hidden">P4 (+1)</span>
@@ -3379,14 +3379,14 @@ export default function HostView() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrevMovie}
-                    className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 active:scale-95 transition-all"
+                    className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
                     title="Película anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={handleNextMovie}
-                    className="px-3.5 sm:px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    className="px-3.5 sm:px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
                   >
                     <span className="hidden sm:inline">Siguiente Película</span>
                     <span className="sm:hidden">Siguiente</span>
@@ -3399,24 +3399,24 @@ export default function HostView() {
 
           {/* CONTROL ESPECÍFICO: FOTOS PROYECTOR (BEBÉS) */}
           {activeGame.id === 'fotos_proyector' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
                 <div className="flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-amber-400" />
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <Camera className="w-5 h-5 text-[#d4af37]" />
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     Proyector de Diapositivas ({babyPhotoIndex + 1}/{babyPhotosList.length})
                   </span>
                 </div>
 
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/30">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-vintage font-bold border border-red-500/30">
                   <span>🚫 Regla: Si es su foto, −2 pts si pulsa</span>
                 </div>
               </div>
 
               {/* CHIVATO SECRETO PARA EL ANFITRIÓN */}
-              <div className="bg-slate-950/80 border border-amber-400/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                 {/* Miniatura previa de la foto */}
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-slate-700 flex-shrink-0 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-[#d4af37]/50 flex-shrink-0 flex items-center justify-center shadow-md">
                   <img
                     src={currentBabyPhoto.imageUrl}
                     alt={currentBabyPhoto.personName}
@@ -3426,21 +3426,21 @@ export default function HostView() {
 
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                       {currentBabyPhoto.category}
                     </span>
                     {currentBabyPhoto.ownerPlayerName && (
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+                      <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
                         Prohibido pulsar a: {currentBabyPhoto.ownerPlayerName}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-xl font-black text-white">
+                  <h3 className="text-xl font-broadway text-gold-gradient">
                     {currentBabyPhoto.personName}
                   </h3>
                   {currentBabyPhoto.hint && (
-                    <p className="text-xs text-slate-400">
-                      Pista: <span className="text-slate-200 font-semibold">{currentBabyPhoto.hint}</span>
+                    <p className="text-xs font-vintage text-amber-200/70">
+                      Pista: <span className="text-white font-semibold">{currentBabyPhoto.hint}</span>
                     </p>
                   )}
                 </div>
@@ -3448,10 +3448,10 @@ export default function HostView() {
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
                   <button
                     onClick={handleToggleBabyPhotoReveal}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
+                    className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
                       babyPhotoRevealed
-                        ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                        ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(52,211,153,0.35)]'
+                        : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold border border-[#f5eedb]/40'
                     }`}
                   >
                     {babyPhotoRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -3462,16 +3462,16 @@ export default function HostView() {
               </div>
 
               {/* SELECTOR RÁPIDO DE FOTOGRAFÍAS */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-xl">
                   {babyPhotosList.map((photo, idx) => (
                     <button
                       key={photo.id || idx}
                       onClick={() => handleSelectBabyPhotoDirect(idx)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-broadway whitespace-nowrap transition-all ${
                         babyPhotoIndex === idx
-                          ? 'bg-amber-400 text-slate-950 font-black shadow-md scale-105'
-                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          ? 'bg-gold-gradient text-slate-950 font-black shadow-deco-gold scale-105 border border-[#f5eedb]/40'
+                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
                       }`}
                     >
                       Foto {idx + 1}
@@ -3482,14 +3482,14 @@ export default function HostView() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrevBabyPhoto}
-                    className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 active:scale-95 transition-all"
+                    className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
                     title="Foto anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={handleNextBabyPhoto}
-                    className="px-3.5 sm:px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    className="px-3.5 sm:px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
                   >
                     <span className="hidden sm:inline">Siguiente Foto</span>
                     <span className="sm:hidden">Siguiente</span>
@@ -3502,37 +3502,37 @@ export default function HostView() {
 
           {/* CONTROL ESPECÍFICO: PREGUNTAS TRIVIAL */}
           {activeGame.id === 'trivial' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{currentTriviaQuestion.categoryEmoji}</span>
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     Pregunta {triviaIndex + 1}/{triviaBank.length} — {currentTriviaQuestion.category}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {triviaReboundActive && (
-                    <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-black animate-pulse">
+                    <span className="px-3 py-1 rounded-full bg-gold-gradient text-slate-950 border border-[#f5eedb]/40 text-xs font-broadway font-black animate-pulse shadow-sm">
                       🔄 Rebote Activo (+1 pt)
                     </span>
                   )}
                   <button
                     onClick={handleRandomTrivia}
-                    className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5"
+                    className="px-3 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 flex items-center gap-1.5 shadow-sm"
                   >
-                    <Shuffle className="w-3.5 h-3.5" />
+                    <Shuffle className="w-3.5 h-3.5 text-amber-400" />
                     <span>Aleatoria</span>
                   </button>
                 </div>
               </div>
 
               {/* TARJETA CHIVATO SECRETO PARA EL HOST */}
-              <div className="bg-slate-950/80 border border-indigo-500/30 rounded-2xl p-4 shadow-lg space-y-3">
-                <div className="text-xs uppercase font-bold text-indigo-400">
+              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg space-y-3">
+                <div className="text-xs uppercase font-broadway text-amber-400">
                   {currentTriviaQuestion.options ? 'Pregunta Tipo Test (Opciones en TV)' : 'Pregunta Abierta Directa'}
                 </div>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-broadway text-amber-50">
                   {currentTriviaQuestion.question}
                 </h3>
 
@@ -3541,10 +3541,10 @@ export default function HostView() {
                     {currentTriviaQuestion.options.map((opt, oIdx) => (
                       <div
                         key={oIdx}
-                        className={`p-2 rounded-xl border ${
+                        className={`p-2.5 rounded-xl border ${
                           currentTriviaQuestion.correctAnswer.toLowerCase().includes(opt.toLowerCase())
-                            ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300 font-black'
-                            : 'bg-slate-900 border-slate-800 text-slate-300'
+                            ? 'bg-emerald-950/80 border-emerald-400 text-emerald-200 font-broadway font-black shadow-[0_0_15px_rgba(52,211,153,0.3)]'
+                            : 'bg-[#14141e] border-[#d4af37]/30 text-amber-100 font-vintage font-bold'
                         }`}
                       >
                         {String.fromCharCode(65 + oIdx)}) {opt}
@@ -3553,29 +3553,29 @@ export default function HostView() {
                   </div>
                 )}
 
-                <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-[#07070a] border-2 border-emerald-400/60 flex items-center justify-between shadow-md">
                   <div>
-                    <span className="text-[10px] uppercase font-black text-emerald-400 block">Respuesta Correcta:</span>
-                    <span className="text-sm font-black text-white">{currentTriviaQuestion.correctAnswer}</span>
+                    <span className="text-[10px] uppercase font-broadway font-black text-emerald-400 block">Respuesta Correcta:</span>
+                    <span className="text-base font-broadway text-emerald-300">{currentTriviaQuestion.correctAnswer}</span>
                   </div>
                   {currentTriviaQuestion.hint && (
-                    <span className="text-xs text-slate-400 italic">Pista: {currentTriviaQuestion.hint}</span>
+                    <span className="text-xs text-amber-200/70 font-vintage italic">Pista: {currentTriviaQuestion.hint}</span>
                   )}
                 </div>
               </div>
 
               {/* BOTONES DE VALIDACIÓN Y REBOTE */}
-              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="bg-[#14141e] border border-[#d4af37]/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-indigo-300 uppercase">
+                  <span className="text-xs font-broadway text-amber-300 uppercase">
                     Veredicto del Host:
                   </span>
                   {winner ? (
-                    <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs">
+                    <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
                       Equipo: {winner.teamName}
                     </span>
                   ) : (
-                    <span className="text-xs text-slate-400">Pulsador libre</span>
+                    <span className="text-xs font-vintage text-amber-200/60">Pulsador libre</span>
                   )}
                 </div>
 
@@ -3583,7 +3583,7 @@ export default function HostView() {
                   {triviaReboundActive ? (
                     <button
                       onClick={handleValidateTriviaReboundHit}
-                      className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                      className="flex-1 sm:flex-none px-4 py-2.5 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-deco-gold border border-[#f5eedb]/40 active:scale-95"
                     >
                       <Check className="w-4 h-4" />
                       <span>Validar Rebote (+1 pt)</span>
@@ -3592,14 +3592,14 @@ export default function HostView() {
                     <>
                       <button
                         onClick={handleValidateTriviaHit}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                        className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                       >
                         <Check className="w-4 h-4" />
                         <span>Correcto (+2 pts)</span>
                       </button>
                       <button
                         onClick={handleValidateTriviaFail}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                        className="flex-1 sm:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                       >
                         <X className="w-4 h-4" />
                         <span>Fallo y Rebote (-1 pt)</span>
@@ -3608,10 +3608,10 @@ export default function HostView() {
                   )}
                   <button
                     onClick={handleToggleTriviaReveal}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                    className={`px-3 py-2.5 rounded-xl text-xs font-broadway font-bold border transition-all ${
                       triviaRevealed
-                        ? 'bg-amber-400 text-slate-950 border-amber-300'
-                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                        ? 'bg-gold-gradient text-slate-950 border-[#f5eedb]/50 shadow-deco-gold font-black'
+                        : 'bg-[#07070a] text-amber-200 border-[#d4af37]/40 hover:bg-[#1a1a28]'
                     }`}
                   >
                     {triviaRevealed ? 'Ocultar Solución TV' : 'Mostrar Solución TV'}
@@ -3620,19 +3620,19 @@ export default function HostView() {
               </div>
 
               {/* NAVEGADOR DE PREGUNTAS */}
-              <div className="flex items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
+              <div className="flex items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
                 <button
                   onClick={handlePrevTrivia}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 active:scale-95"
+                  className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-bold text-slate-400">
+                <span className="text-xs font-vintage font-bold text-amber-200/80">
                   Pregunta {triviaIndex + 1} de {triviaBank.length}
                 </span>
                 <button
                   onClick={handleNextTrivia}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95"
+                  className="px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 border border-[#f5eedb]/40"
                 >
                   <span>Siguiente Pregunta</span>
                   <ChevronRight className="w-4 h-4" />
@@ -3643,21 +3643,21 @@ export default function HostView() {
 
           {/* CONTROL ESPECÍFICO: 1, 2, 3 ¿YA? */}
           {activeGame.id === 'un_dos_tres' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-400" />
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <Zap className="w-5 h-5 text-[#d4af37]" />
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     1, 2, 3 ¿Ya? — Nivel {currentUdtChallenge.levelNumber} ({currentUdtChallenge.level})
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">
+                  <span className="text-xs font-vintage font-bold text-amber-200/80">
                     Supervivientes: {aliveTeams.length}/{activeTeams.length}
                   </span>
                   <button
                     onClick={handleResetUdtRound}
-                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700"
+                    className="px-2.5 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 shadow-sm"
                   >
                     Reset Ronda
                   </button>
@@ -3665,29 +3665,29 @@ export default function HostView() {
               </div>
 
               {/* RETO ACTIVO Y RESPUESTAS MODELO PARA EL HOST */}
-              <div className="bg-slate-950/80 border border-amber-400/30 rounded-2xl p-4 shadow-lg space-y-2.5">
+              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase font-bold text-amber-400">
+                  <span className="text-xs uppercase font-broadway text-amber-400">
                     {currentUdtChallenge.category}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 font-mono font-black text-xs">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
                     Turno: {currentUdtTeam?.name}
                   </span>
                 </div>
 
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-broadway text-amber-50">
                   {currentUdtChallenge.prompt}
                 </h3>
 
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                  <span className="text-[10px] uppercase font-vintage font-bold text-amber-200/70 block mb-1">
                     Ejemplos válidos para comprobar al vuelo:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {currentUdtChallenge.examples.map((ex, eIdx) => (
                       <span
                         key={eIdx}
-                        className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-medium"
+                        className="px-2.5 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 text-[11px] text-amber-200 font-vintage font-bold"
                       >
                         {ex}
                       </span>
@@ -3700,21 +3700,21 @@ export default function HostView() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
                   onClick={handleStartUdtTimer}
-                  className="p-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
+                  className="p-3.5 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 border border-[#f5eedb]/40"
                 >
                   <Timer className="w-4 h-4" />
                   <span>⏱️ Iniciar 5 Segundos</span>
                 </button>
                 <button
                   onClick={handlePassUdtRound}
-                  className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
+                  className="p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-broadway font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
                 >
                   <Check className="w-4 h-4" />
                   <span>✅ Superado (Siguiente)</span>
                 </button>
                 <button
                   onClick={handleEliminateUdtTeam}
-                  className="p-3 rounded-2xl bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
+                  className="p-3.5 rounded-2xl bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
                 >
                   <Skull className="w-4 h-4" />
                   <span>💀 Fallo (Eliminar)</span>
@@ -3725,24 +3725,24 @@ export default function HostView() {
 
           {/* CONTROL ESPECÍFICO: BINGO */}
           {activeGame.id === 'bingo' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+              <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎱</span>
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     Bombo Virtual de BINGO (Bolas extraídas: {bingoDrawnBalls.length}/90)
                   </span>
                 </div>
                 <button
                   onClick={handleResetBingo}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700"
+                  className="px-2.5 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 shadow-sm"
                 >
                   Reiniciar Bombo
                 </button>
               </div>
 
               {/* BOLA ACTUAL Y ACCIÓN DE SACAR BOLA CON RULETA */}
-              <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner">
                 <div className="flex items-center gap-4">
                   {(() => {
                     const theme = getBingoBallTheme(bingoCurrentBall);
@@ -3750,22 +3750,22 @@ export default function HostView() {
                     return (
                       <>
                         <div
-                          className={`w-16 h-16 rounded-full bg-gradient-to-tr ${theme.bgGradient} border-2 ${theme.border} ${theme.ballTextClass} font-mono text-3xl flex items-center justify-center shadow-lg transition-all ${
+                          className={`w-16 h-16 rounded-full bg-gradient-to-tr ${theme.bgGradient} border-2 ${theme.border} ${theme.ballTextClass} font-broadway text-3xl flex items-center justify-center shadow-deco-gold transition-all ${
                             bingoIsSpinning ? 'animate-spin' : ''
                           } ${theme.isLightColor ? 'ring-2 ring-slate-400' : ''}`}
                         >
                           {bingoIsSpinning ? '?' : bingoCurrentBall || '—'}
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase font-black text-amber-400 block">
+                          <span className="text-[10px] uppercase font-broadway text-amber-400 block">
                             {bingoIsSpinning ? 'Ruleta en marcha...' : 'Última Bola:'}
                           </span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xl font-black text-white">
+                            <span className="text-xl font-broadway text-gold-gradient">
                               {bingoIsSpinning ? '¡Girando bombo!' : bingoCurrentBall ? `Bola ${bingoCurrentBall}` : 'Ninguna bola aún'}
                             </span>
                             {nick && !bingoIsSpinning && (
-                              <span className="px-2 py-0.5 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
+                              <span className="px-2.5 py-0.5 rounded-lg bg-gold-gradient text-slate-950 font-broadway font-black text-[10px] uppercase shadow-sm">
                                 {nick}
                               </span>
                             )}
@@ -3779,15 +3779,15 @@ export default function HostView() {
                 <button
                   onClick={handleDrawBingoBall}
                   disabled={bingoIsSpinning}
-                  className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-sm uppercase font-black flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all ${
+                  className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-sm uppercase font-broadway font-black flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 transition-all ${
                     bingoIsSpinning
-                      ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
-                      : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950'
+                      ? 'bg-[#14141e] text-amber-200/40 cursor-not-allowed border border-[#d4af37]/20'
+                      : 'bg-gold-gradient hover:brightness-110 text-slate-950 border border-[#f5eedb]/50'
                   }`}
                 >
                   {bingoIsSpinning ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
                       <span>Girando Ruleta...</span>
                     </>
                   ) : (
@@ -3812,7 +3812,7 @@ export default function HostView() {
                       alert('Selecciona un equipo primero para cantar Línea');
                     }
                   }}
-                  className="flex-1 px-4 py-3 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-1.5"
+                  className="flex-1 px-4 py-3 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/40 rounded-2xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   <span>📏 Cantar Línea (+5 pts)</span>
                 </button>
@@ -3828,7 +3828,7 @@ export default function HostView() {
                       alert('Selecciona un equipo primero para cantar BINGO');
                     }
                   }}
-                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-lg"
+                  className="flex-1 px-4 py-3 bg-gold-gradient hover:brightness-110 text-slate-950 border border-[#f5eedb]/50 rounded-2xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 shadow-deco-gold"
                 >
                   <span>🎱 ¡Cantar BINGO! (+15 pts)</span>
                 </button>
@@ -3838,40 +3838,40 @@ export default function HostView() {
 
           {/* CONTROL ESPECÍFICO: MÍMICA */}
           {activeGame.id === 'mimica' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+              <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎭</span>
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     Mímica Secreta ({mimicaCardIndex + 1}/{mimicaCards.length})
                   </span>
                 </div>
                 <button
                   onClick={handlePickRandomMimicaCard}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1"
+                  className="px-2.5 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
                 >
-                  <Shuffle className="w-3 h-3" />
+                  <Shuffle className="w-3 h-3 text-amber-400" />
                   <span>Aleatorio</span>
                 </button>
               </div>
 
               {/* TARJETA SECRETA DEL ACTOR (SOLO VISIBLE PARA EL HOST) */}
-              <div className="bg-slate-950/80 border border-purple-500/40 rounded-2xl p-4 shadow-lg space-y-2">
+              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase font-bold text-purple-400">
+                  <span className="text-xs uppercase font-broadway text-amber-400">
                     {currentMimicaCard.categoryEmoji} {currentMimicaCard.category}
                   </span>
-                  <span className="px-2 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-broadway font-bold border border-amber-500/30">
                     Dificultad: {currentMimicaCard.difficulty}
                   </span>
                 </div>
 
-                <h3 className="text-xl font-black text-white">
+                <h3 className="text-xl font-broadway text-gold-gradient">
                   {currentMimicaCard.title}
                 </h3>
 
                 {currentMimicaCard.clueOrDetail && (
-                  <p className="text-xs text-slate-300 italic bg-purple-950/40 p-2.5 rounded-xl border border-purple-800/40">
+                  <p className="text-xs text-amber-200/90 font-vintage italic bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30">
                     💡 Cómo actuarlo: {currentMimicaCard.clueOrDetail}
                   </p>
                 )}
@@ -3881,10 +3881,10 @@ export default function HostView() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
                   onClick={() => (mimicaIsRunning ? handlePauseMimicaTimer() : handleStartMimicaTimer(90))}
-                  className={`p-3 rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md ${
+                  className={`p-3.5 rounded-2xl font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 ${
                     mimicaIsRunning
                       ? 'bg-amber-500 text-slate-950'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      : 'bg-gold-gradient text-slate-950 border border-[#f5eedb]/40 shadow-deco-gold'
                   }`}
                 >
                   <Timer className="w-4 h-4" />
@@ -3893,7 +3893,7 @@ export default function HostView() {
 
                 <button
                   onClick={handleAddMimicaHit}
-                  className="p-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                  className="p-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                 >
                   <Check className="w-4 h-4" />
                   <span>🎯 +1 Acierto ({mimicaHitsCount})</span>
@@ -3901,7 +3901,7 @@ export default function HostView() {
 
                 <button
                   onClick={handleNextMimicaCard}
-                  className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs uppercase flex items-center justify-center gap-1"
+                  className="p-3.5 rounded-2xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1 shadow-sm active:scale-95"
                 >
                   <span>Siguiente Tarjeta</span>
                   <ChevronRight className="w-4 h-4" />
@@ -3912,44 +3912,44 @@ export default function HostView() {
 
           {/* CONTROL ESPECÍFICO: TELÉFONO DIBUJADO */}
           {activeGame.id === 'drawing' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-4 deco-card-frame">
+              <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎨</span>
-                  <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                     Teléfono Dibujado — Dinámica en Papel Real
                   </span>
                 </div>
-                <div className="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+                <div className="text-xs font-vintage font-bold text-amber-300 bg-amber-500/15 border border-[#d4af37]/40 px-3 py-1 rounded-full">
                   Decisión libre del Jugador 1
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-indigo-500/30 text-left space-y-2">
-                <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase">
+              <div className="p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 text-left space-y-2">
+                <div className="flex items-center gap-2 text-amber-300 text-xs font-broadway uppercase">
                   <span>💡</span>
                   <span>Sin palabras previas impuestas</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs font-vintage text-amber-100/90 leading-relaxed">
                   El <strong>Jugador 1</strong> de cada equipo decide libremente qué frase, palabra o concepto va a dibujar en el primer folio para iniciar la cadena (no requiere de frases generadas por el sistema).
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-slate-400">
-                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-indigo-400 font-bold block mb-0.5">1.º Turno (Dibujo)</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-amber-200/80">
+                  <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
+                    <span className="text-amber-400 font-broadway block mb-0.5">1.º Turno (Dibujo)</span>
                     J1 piensa su idea y la dibuja. Dobla el papel y se lo entrega a J2.
                   </div>
-                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-amber-400 font-bold block mb-0.5">2.º Turno (Texto)</span>
+                  <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
+                    <span className="text-amber-300 font-broadway block mb-0.5">2.º Turno (Texto)</span>
                     J2 solo ve el dibujo, escribe lo que cree que es, dobla para ocultar el dibujo y pasa a J3.
                   </div>
-                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-emerald-400 font-bold block mb-0.5">Final y Revelación</span>
+                  <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
+                    <span className="text-emerald-400 font-broadway block mb-0.5">Final y Revelación</span>
                     Se despliegan todos los folios en la sala, se comprueba la evolución y se asignan los puntos.
                   </div>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-400 text-center">
+              <p className="text-xs font-vintage text-amber-200/70 text-center">
                 📝 Se juega presencialmente en papel real. Al terminar la cadena, asigna las puntuaciones con los botones superiores.
               </p>
             </div>

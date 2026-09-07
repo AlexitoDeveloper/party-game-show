@@ -5,12 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Party Game Show Arena</title>
-    <!-- Google Fonts: Righteous, Outfit & Plus Jakarta Sans -->
+    <!-- Google Fonts: 1930s Broadway & Art Deco Collection -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Righteous&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Josefin+Sans:wght@400;600;700&family=Limelight&family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Righteous&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-slate-950 text-white selection:bg-amber-500 selection:text-slate-950 overflow-x-hidden antialiased">
+  <body class="bg-[#0a0a0e] text-amber-50 selection:bg-[#d4af37] selection:text-[#0a0a0e] overflow-x-hidden antialiased">
+    <!-- SVG Filters for authentic 1930s vintage grain and metallic foil -->
+    <svg class="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
+      <defs>
+        <filter id="vintage-grain" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" result="noise" />
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.05 0" in="noise" result="coloredNoise" />
+          <feComposite operator="in" in2="SourceGraphic" />
+        </filter>
+        <filter id="gold-foil-shimmer" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="2" result="turb" />
+          <feDisplacementMap in2="turb" in="SourceGraphic" scale="3" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -65,10 +65,13 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
 
     return (
       <div
-        className={`bg-slate-900/85 border ${theme.twBorder} rounded-xl px-3 py-2 flex items-center justify-between gap-2 shadow-lg transition-all duration-300 relative overflow-hidden ${
-          isLeader ? 'ring-2 ring-amber-400/70 shadow-amber-500/20' : ''
+        className={`bg-[#0d0d14]/90 border border-[#d4af37]/40 rounded-xl px-3 py-2 flex items-center justify-between gap-2 shadow-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-md ${
+          isLeader ? 'ring-2 ring-[#d4af37] shadow-gold-glow' : ''
         } ${className}`}
       >
+        {/* Adorno biselado Art Deco */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#d4af37]/60 to-transparent" />
+
         <div className="flex flex-col truncate min-w-0">
           <div className="flex items-center gap-1.5 truncate">
             <GameIcon
@@ -95,11 +98,11 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               glow={theme.accentHex}
               className="shrink-0"
             />
-            <span className={`text-xs font-black uppercase truncate ${theme.twText}`}>
+            <span className={`text-xs font-black font-broadway uppercase tracking-wide truncate ${theme.twText}`}>
               {team.name}
             </span>
             {powerCardsCount > 0 && (
-              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-1.5 py-0.5 rounded-md font-bold font-mono">
+              <span className="text-[10px] bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1.5 py-0.5 rounded-md font-bold font-mono shadow-sm">
                 🃏{powerCardsCount}
               </span>
             )}
@@ -140,14 +143,14 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
             )}
           </div>
           {teamCaptain && (
-            <span className="text-[10px] text-amber-300/90 font-bold truncate flex items-center gap-1 mt-0.5">
-              <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />
+            <span className="text-[10px] text-[#f3e5ab]/80 font-vintage font-bold truncate flex items-center gap-1 mt-0.5">
+              <Crown className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37] shrink-0" />
               {teamCaptain.nickname}
             </span>
           )}
         </div>
-        <div className="text-right whitespace-nowrap pl-2 font-mono text-sm font-black text-white">
-          <CountUp end={team.score} duration={0.9} preserveValue suffix=" pts" />
+        <div className="text-right whitespace-nowrap pl-2 font-broadway text-base text-gold-gradient">
+          <CountUp end={team.score} duration={0.9} preserveValue suffix=" PTS" />
         </div>
       </div>
     );
@@ -201,10 +204,10 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                 />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider block">
+                <span className="text-[10px] uppercase font-vintage font-bold text-[#c5a059] tracking-widest block">
                   Equipo {team.team_index}
                 </span>
-                <h3 className={`text-lg font-black uppercase ${theme.twText} truncate leading-tight`}>
+                <h3 className={`text-xl font-black font-broadway uppercase tracking-wider ${theme.twText} truncate leading-tight`}>
                   {team.name}
                 </h3>
               </div>
@@ -212,33 +215,31 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
 
             {/* Indicador discreto del color oficial */}
             <span
-              className={`w-3.5 h-3.5 rounded-full ${theme.twBg} shrink-0 ${
-                theme.index === 4 ? 'border border-slate-300' : theme.index === 5 ? 'border border-zinc-400' : ''
-              }`}
+              className={`w-4 h-4 rounded-full ${theme.twBg} shrink-0 border-2 border-[#d4af37]/60 shadow-md`}
             />
           </div>
 
-          {/* MARCADOR DE PUNTUACIÓN */}
-          <div className="my-3 py-2.5 px-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between shadow-inner">
+          {/* MARCADOR DE PUNTUACIÓN - PLACA DE LATÓN GRABADA */}
+          <div className="my-3 py-3 px-4 rounded-2xl bg-brass-plate flex items-center justify-between shadow-xl">
             <div>
-              <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">
+              <span className="text-[9px] uppercase font-vintage font-bold tracking-widest text-[#c5a059] block">
                 PUNTUACIÓN
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-4xl font-black font-mono text-white leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                <span className="text-4xl font-black font-broadway text-gold-gradient leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
                   <CountUp end={team.score} duration={1.2} preserveValue />
                 </span>
-                <span className="text-[11px] font-black text-amber-400 font-arcade">PTS</span>
+                <span className="text-[11px] font-black text-[#d4af37] font-broadway">PTS</span>
               </div>
             </div>
           </div>
 
           {/* CARTAS DE PODER ASIGNADAS (MÁXIMO 3) */}
-          <div className="mb-2 py-1.5 px-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+          <div className="mb-2 py-2 px-3 rounded-xl bg-[#0a0a0f] border border-[#d4af37]/40 flex items-center justify-between">
+            <span className="text-[10px] uppercase font-vintage font-bold text-[#f3e5ab] flex items-center gap-1.5">
               <span>🃏 Cartas de Poder:</span>
             </span>
-            <span className="text-xs font-black font-mono text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-lg">
+            <span className="text-xs font-black font-mono text-[#f3e5ab] bg-[#d4af37]/20 border border-[#d4af37]/50 px-2 py-0.5 rounded-lg shadow-sm">
               {powerCardsCount} / 3
             </span>
           </div>

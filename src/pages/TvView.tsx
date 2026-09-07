@@ -603,34 +603,34 @@ export default function TvView() {
   const renderPresentationView = () => {
     return (
       <section className="flex-1 flex flex-col justify-center items-center my-3 z-10 w-full max-w-7xl mx-auto px-2">
-        {/* CABECERA PRESENTACIÓN */}
-        <div className="w-full flex items-center justify-between bg-slate-900/90 border border-slate-800/80 px-6 py-3 rounded-2xl mb-4 backdrop-blur-xl shadow-xl">
+        {/* CABECERA PRESENTACIÓN TEATRAL 1930s */}
+        <div className="w-full flex items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/40 px-6 py-3.5 rounded-2xl mb-4 backdrop-blur-xl shadow-deco-gold">
           <div className="flex items-center gap-3">
             <span className="text-2xl animate-pulse">✨</span>
             <div>
-              <span className="text-[11px] font-black uppercase tracking-widest text-amber-400 block">
-                PRESENTACIÓN OFICIAL DEL SHOW
+              <span className="text-[11px] font-vintage uppercase tracking-widest text-amber-300/80 block">
+                PROGRAMA TEATRAL OFICIAL DE LA VELADA
               </span>
-              <h2 className="text-lg font-black text-white">
-                {currentSlide === 0 ? 'Los 10 Minijuegos de la Velada' : 'Cartas de Poder y Rarezas'}
+              <h2 className="text-xl font-broadway tracking-wider text-gold-gradient uppercase">
+                {currentSlide === 0 ? 'Los 10 Grandes Desafíos' : 'Cartas de Poder y Rarezas de Casino'}
               </h2>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span
-              className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-broadway uppercase tracking-wider border transition-all ${
                 currentSlide === 0
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
+                  ? 'bg-gold-gradient text-slate-950 border-[#f5eedb] shadow-deco-gold font-black'
+                  : 'bg-[#12121c] text-slate-400 border-[#d4af37]/20 font-medium'
               }`}
             >
-              1. Minijuegos
+              1. Desafíos
             </span>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-broadway uppercase tracking-wider border transition-all ${
                 currentSlide === 1
-                  ? 'bg-purple-500/20 text-purple-300 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
+                  ? 'bg-gold-gradient text-slate-950 border-[#f5eedb] shadow-deco-gold font-black'
+                  : 'bg-[#12121c] text-slate-400 border-[#d4af37]/20 font-medium'
               }`}
             >
               2. Cartas de Poder
@@ -648,8 +648,8 @@ export default function TvView() {
             className="w-full grid grid-cols-12 gap-5 items-stretch flex-1 min-h-0"
           >
             {/* CARTEL DEL EVENTO */}
-            <div className="col-span-5 bg-slate-900/80 border-2 border-amber-500/40 rounded-3xl p-3 flex flex-col items-center justify-center backdrop-blur-xl shadow-[0_0_50px_rgba(245,158,11,0.15)] relative overflow-hidden group">
-              <div className="relative w-full h-[600px] rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-800">
+            <div className="col-span-5 bg-[#0c0c14]/90 border-2 border-[#d4af37]/50 rounded-3xl p-3.5 flex flex-col items-center justify-center backdrop-blur-xl shadow-deco-gold relative overflow-hidden group">
+              <div className="relative w-full h-[590px] rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-[#d4af37]/30 shadow-inner">
                 <img
                   src="/presentation_games.jpg"
                   alt="Cartel 10 Minijuegos"
@@ -657,20 +657,20 @@ export default function TvView() {
                 />
               </div>
               <div className="w-full mt-2 text-center">
-                <span className="text-[11px] font-black uppercase tracking-widest text-amber-400/90 flex items-center justify-center gap-1.5">
-                  <span>🏆</span> 10 Retos • Puntuación Progresiva • Minijuegos Épicos
+                <span className="text-[11px] font-vintage uppercase tracking-widest text-amber-300 flex items-center justify-center gap-1.5">
+                  <span>🏆</span> 10 Retos • Puntuación Progresiva • Elenco en Vivo
                 </span>
               </div>
             </div>
 
-            {/* LISTA COMPLETA DE LOS 10 JUEGOS EN ORDEN */}
-            <div className="col-span-7 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 flex flex-col backdrop-blur-xl shadow-2xl justify-between">
+            {/* LISTA COMPLETA DE LOS 10 JUEGOS EN ORDEN CON ESTILO BROADWAY */}
+            <div className="col-span-7 bg-[#0c0c14]/90 border-2 border-[#d4af37]/40 rounded-3xl p-5 flex flex-col backdrop-blur-xl shadow-2xl justify-between">
               <div className="mb-3">
-                <h3 className="text-xl font-black font-arcade uppercase text-white flex items-center gap-2">
-                  <span className="text-amber-400">🔥</span> PROGRAMA DE LA NOCHE
+                <h3 className="text-2xl font-broadway uppercase text-gold-gradient tracking-wider flex items-center gap-2">
+                  <span>🔥</span> CARTELERA DE LA NOCHE
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Cada equipo sumará puntos en cada juego. ¡El podio final coronará al ganador absoluto!
+                <p className="text-xs font-vintage text-amber-100/70 mt-0.5">
+                  Cada cuadrilla sumará puntos en cada contienda. ¡El podio final coronará al campeón de la noche!
                 </p>
               </div>
 
@@ -678,22 +678,22 @@ export default function TvView() {
                 {GAMES_CATALOG.slice(0, 10).map((g, idx) => (
                   <div
                     key={g.id}
-                    className="p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-amber-400/40 transition-all flex items-start gap-2.5 shadow-md"
+                    className="p-2.5 rounded-2xl bg-[#14141e]/80 border border-[#d4af37]/25 hover:border-[#d4af37]/60 transition-all flex items-start gap-2.5 shadow-md"
                   >
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-sm font-black text-amber-400 shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d4af37] to-[#8a6a1a] text-slate-950 font-broadway flex items-center justify-center text-sm font-black shrink-0 shadow-sm border border-[#f5eedb]/30">
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-base">{g.emoji}</span>
-                        <h4 className="text-xs font-black text-white truncate">{g.title}</h4>
+                        <h4 className="text-xs font-broadway tracking-wide text-white truncate">{g.title}</h4>
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] uppercase font-bold text-amber-400/80">
+                        <span className="text-[10px] uppercase font-vintage tracking-wider text-amber-300">
                           {g.category}
                         </span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono font-bold">
-                          {g.engine === 'buzzer' ? '⚡ Pulsador TV' : '🎲 Presencial'}
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-black/60 border border-[#d4af37]/30 text-amber-200/90 font-vintage font-bold">
+                          {g.engine === 'buzzer' ? '⚡ Pulsador de Latón' : '🎲 En Vivo'}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
@@ -704,12 +704,12 @@ export default function TvView() {
                 ))}
               </div>
 
-              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                <span className="font-bold flex items-center gap-1.5 text-amber-300">
-                  <span>👑</span> El Anfitrión iniciará la 1ª prueba en breve
+              <div className="mt-3 pt-3 border-t border-[#d4af37]/30 flex items-center justify-between text-xs text-amber-200/80">
+                <span className="font-vintage tracking-wide flex items-center gap-1.5 text-amber-300 font-bold">
+                  <span>👑</span> El Maestro de Ceremonias iniciará la velada en breve
                 </span>
-                <span className="text-[11px] bg-slate-800 px-3 py-1 rounded-full text-slate-300 font-mono">
-                  Puntúa cada acierto en directo
+                <span className="text-[11px] bg-black/60 border border-[#d4af37]/30 px-3 py-1 rounded-full text-amber-200 font-vintage uppercase tracking-wider font-bold">
+                  Puntuación en tiempo real
                 </span>
               </div>
             </div>
@@ -727,24 +727,24 @@ export default function TvView() {
           >
             {/* TRES REGLAS CLAVE */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-1 shadow-lg">
+              <div className="p-4 rounded-2xl bg-[#0c0c14]/90 border-2 border-[#d4af37]/35 backdrop-blur-xl text-center space-y-1 shadow-lg">
                 <span className="text-2xl">🃏</span>
-                <h4 className="text-sm font-black text-white uppercase">1. Obtención de Cartas</h4>
-                <p className="text-xs text-slate-400">
-                  Se reparten al inicio y como recompensas de bonus por ganar o destacar en minijuegos.
+                <h4 className="text-sm font-broadway tracking-wider text-gold-gradient uppercase">1. Obtención de Naipes</h4>
+                <p className="text-xs font-vintage text-amber-100/70">
+                  Se reparten al inicio y como recompensas de bonus por ganar o deslumbrar en cada prueba.
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-1 shadow-lg">
+              <div className="p-4 rounded-2xl bg-[#0c0c14]/90 border-2 border-[#d4af37]/35 backdrop-blur-xl text-center space-y-1 shadow-lg">
                 <span className="text-2xl">📲</span>
-                <h4 className="text-sm font-black text-white uppercase">2. Uso en Directo</h4>
-                <p className="text-xs text-slate-400">
-                  Los equipos las juegan desde la pantalla de su móvil. Aparecen al instante en la TV.
+                <h4 className="text-sm font-broadway tracking-wider text-gold-gradient uppercase">2. Uso en la Partida</h4>
+                <p className="text-xs font-vintage text-amber-100/70">
+                  Los equipos las juegan desde la pantalla de su móvil. Sus efectos se proyectan al instante en la TV.
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-1 shadow-lg">
+              <div className="p-4 rounded-2xl bg-[#0c0c14]/90 border-2 border-[#d4af37]/35 backdrop-blur-xl text-center space-y-1 shadow-lg">
                 <span className="text-2xl">⏱️</span>
-                <h4 className="text-sm font-black text-white uppercase">3. Expiración de Efectos</h4>
-                <p className="text-xs text-slate-400">
+                <h4 className="text-sm font-broadway tracking-wider text-gold-gradient uppercase">3. Expiración de Efectos</h4>
+                <p className="text-xs font-vintage text-amber-100/70">
                   Duran durante la ronda o prueba activa. Al finalizar el minijuego, se descartan solas.
                 </p>
               </div>
@@ -788,10 +788,10 @@ export default function TvView() {
                 },
                 {
                   rarity: 'Legendaria',
-                  colorText: 'text-amber-400',
-                  colorBorder: 'border-amber-500/60',
+                  colorText: 'text-amber-300',
+                  colorBorder: 'border-[#d4af37]',
                   colorBg: 'from-amber-950/40 to-slate-950',
-                  glow: '#f59e0b',
+                  glow: '#d4af37',
                   icon: '🟡',
                   sampleCardId: 'el_cuarto_mono',
                   badge: 'Giro Legendario',
@@ -813,22 +813,22 @@ export default function TvView() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xl">{r.icon}</span>
                         <span
-                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 ${r.colorText}`}
+                          className={`text-[10px] font-vintage uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-current ${r.colorText}`}
                         >
                           {r.badge}
                         </span>
                       </div>
-                      <h4 className={`text-xl font-black font-arcade uppercase ${r.colorText}`}>
+                      <h4 className={`text-xl font-broadway uppercase tracking-wider ${r.colorText}`}>
                         {r.rarity}
                       </h4>
-                      <p className="text-[11px] text-slate-400 mt-1 mb-3">{r.desc}</p>
+                      <p className="text-[11px] font-vintage text-slate-300 mt-1 mb-3">{r.desc}</p>
                     </div>
 
                     <div className="scale-90 my-1 origin-center">
                       <PowerCardView card={sampleCard} size="sm" />
                     </div>
 
-                    <span className="text-[10px] text-slate-400 uppercase font-bold mt-2">
+                    <span className="text-[10px] text-amber-200/80 uppercase font-vintage tracking-wider mt-2">
                       Ejemplo: {sampleCard.name}
                     </span>
                   </div>
@@ -885,30 +885,30 @@ export default function TvView() {
         )}
       </AnimatePresence>
 
-      {/* HEADER TV / PROYECTOR */}
-      <header className="flex items-center justify-between border-b border-slate-800/80 pb-4 z-20">
+      {/* HEADER TV / PROYECTOR ART DÉCO 1930s */}
+      <header className="flex items-center justify-between border-b border-[#d4af37]/30 pb-4 z-20">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-purple-500/30">
+          <div className="p-3 bg-gradient-to-br from-[#d4af37] via-[#b38f2a] to-[#8a6a1a] rounded-2xl shadow-lg shadow-amber-900/40 border border-[#f5eedb]/30">
             <GameIcon name="Tv" size={32} color="#FFFFFF" glow={true} weight="fill" />
           </div>
           <div>
-            <h1 className="text-3xl font-black font-arcade uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-pink-500 to-purple-400">
+            <h1 className="text-3xl sm:text-4xl font-broadway uppercase tracking-wider text-gold-gradient drop-shadow-[0_2px_12px_rgba(212,175,55,0.4)]">
               {room.title || 'GAME SHOW ARENA'}
             </h1>
-            <p className="text-slate-400 text-sm flex items-center gap-2">
-              <GameIcon name="Sparkle" size={16} color="#FBBF24" glow="#FBBF24" weight="fill" />
+            <p className="text-amber-100/70 text-sm font-vintage tracking-wider flex items-center gap-2 mt-0.5">
+              <GameIcon name="Sparkle" size={16} color="#d4af37" glow="#d4af37" weight="fill" />
               {room.status === 'lobby' ? (
-                <span>Lobby de Convocatoria • Esperando Jugadores</span>
+                <span>LOBBY DE CONVOCATORIA • ESPERANDO JUGADORES</span>
               ) : room.status === 'presentation' ? (
-                <span className="text-amber-400 font-bold flex items-center gap-1.5">
+                <span className="text-gold-gradient font-bold flex items-center gap-1.5">
                   <span>✨</span>
                   <span>PRESENTACIÓN OFICIAL DE LA VELADA</span>
                 </span>
               ) : (
-                <span className="text-white font-bold flex items-center gap-1.5">
+                <span className="text-white font-bold flex items-center gap-1.5 font-broadway">
                   <TwemojiText className="text-base">{activeGame.emoji}</TwemojiText>
-                  <span className="uppercase">{activeGame.title}</span>
-                  <span className="text-xs text-amber-400 font-normal">({activeGame.category})</span>
+                  <span className="uppercase tracking-wider">{activeGame.title}</span>
+                  <span className="text-xs text-amber-300/80 font-vintage font-normal">({activeGame.category})</span>
                 </span>
               )}
             </p>
@@ -919,29 +919,30 @@ export default function TvView() {
         <div className="flex items-center gap-3">
           {/* MINI QR EN LA ESQUINA DURANTE LAS PRUEBAS/SHOW */}
           {room.status !== 'lobby' && joinUrl && (
-            <div className="flex items-center gap-2.5 bg-slate-900/95 border border-slate-700/80 rounded-2xl px-3 py-1.5 shadow-xl backdrop-blur-md">
+            <div className="flex items-center gap-2.5 bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl px-3 py-1.5 shadow-xl backdrop-blur-md">
               <div className="p-1 bg-white rounded-lg shadow-sm">
                 <QRCodeSVG value={joinUrl} size={42} level="L" />
               </div>
               <div className="text-left leading-tight">
-                <span className="text-[9px] uppercase font-black text-amber-400 tracking-wider block">
+                <span className="text-[9px] uppercase font-broadway text-amber-300 tracking-wider block">
                   ¿Reconectar?
                 </span>
-                <span className="text-[11px] font-bold text-slate-200 block">
+                <span className="text-[11px] font-vintage text-slate-200 block">
                   Escanea el QR
                 </span>
               </div>
             </div>
           )}
 
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl px-5 py-2 shadow-2xl backdrop-blur-md">
+          {/* PLACA DE LATÓN DE CÓDIGO DE SALA */}
+          <div className="flex items-center gap-4 bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-2xl px-5 py-2 shadow-deco-gold backdrop-blur-md relative overflow-hidden">
             <div className="text-right">
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">SALA</span>
+              <span className="text-[10px] uppercase tracking-widest text-amber-200/70 block font-vintage font-bold">SALA</span>
               <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 justify-end font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> EN VIVO
               </span>
             </div>
-            <div className="text-4xl font-black font-mono tracking-widest text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]">
+            <div className="text-4xl font-broadway tracking-widest text-gold-gradient drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]">
               {roomCode}
             </div>
           </div>
@@ -952,14 +953,14 @@ export default function TvView() {
       {room.status === 'lobby' ? (
         /* ================= VISTA LOBBY ================= */
         <section className="flex-1 grid grid-cols-12 gap-6 my-6 z-10">
-          {/* PANEL QR LATERAL */}
-          <div className="col-span-3 bg-slate-900/60 border border-slate-800 rounded-3xl p-6 flex flex-col items-center justify-between backdrop-blur-xl shadow-2xl">
+          {/* PANEL QR LATERAL CON MARCO ART DÉCO */}
+          <div className="col-span-3 bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 rounded-3xl p-6 flex flex-col items-center justify-between backdrop-blur-xl shadow-deco-gold deco-card-frame">
             <div className="text-center w-full">
-              <h2 className="text-base font-bold uppercase tracking-wider text-slate-200">Únete con tu Móvil</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Sin apps ni descargas. Solo escanea.</p>
+              <h2 className="text-lg font-broadway uppercase tracking-wider text-gold-gradient">Pase de Espectador</h2>
+              <p className="text-xs font-vintage text-amber-100/70 mt-0.5">Escanea con tu cámara móvil para ingresar</p>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.12)] my-2">
+            <div className="p-4 bg-white rounded-2xl shadow-[0_0_40px_rgba(212,175,55,0.25)] border-4 border-[#d4af37]/30 my-2">
               {joinUrl ? (
                 <QRCodeSVG value={joinUrl} size={170} level="H" />
               ) : (
@@ -968,32 +969,32 @@ export default function TvView() {
             </div>
 
             {/* CONTADOR DE JUGADORES */}
-            <div className="w-full bg-slate-800/90 rounded-2xl p-3.5 border border-slate-700/60 flex items-center justify-between">
+            <div className="w-full bg-[#14141e]/90 rounded-2xl p-3.5 border border-[#d4af37]/30 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <GameIcon name="Users" size={22} color="#818CF8" glow="#818CF8" weight="fill" />
+                <GameIcon name="Users" size={22} color="#d4af37" glow="#d4af37" weight="fill" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Jugadores</span>
-                  <span className="text-base font-black text-white">{players.length} conectados</span>
+                  <span className="text-[10px] text-amber-200/70 block uppercase font-vintage font-bold">Jugadores</span>
+                  <span className="text-base font-broadway text-white">{players.length} conectados</span>
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block uppercase font-bold">Equipos</span>
-                <span className="text-base font-black text-amber-400">{activeTeams.length} / {TEAMS_CATALOG.length}</span>
+                <span className="text-[10px] text-amber-200/70 block uppercase font-vintage font-bold">Equipos</span>
+                <span className="text-base font-broadway text-gold-gradient">{activeTeams.length} / {TEAMS_CATALOG.length}</span>
               </div>
             </div>
 
             {/* JUGADORES ENTRADOS QUE ESTÁN ELIGIENDO BANDO */}
             {unassignedPlayers.length > 0 && (
-              <div className="w-full bg-amber-500/10 border-2 border-amber-400/30 rounded-2xl p-3 my-2 text-left animate-pulse">
-                <span className="text-[10px] uppercase font-bold text-amber-400 block mb-1.5 flex items-center gap-1">
-                  <GameIcon name="Lightning" size={14} color="#FBBF24" weight="fill" glow="#FBBF24" />
-                  <span>Recién entrados ({unassignedPlayers.length}):</span>
+              <div className="w-full bg-amber-500/10 border-2 border-amber-400/40 rounded-2xl p-3 my-2 text-left animate-pulse">
+                <span className="text-[10px] uppercase font-vintage font-bold text-amber-300 block mb-1.5 flex items-center gap-1">
+                  <GameIcon name="Lightning" size={14} color="#d4af37" weight="fill" glow="#d4af37" />
+                  <span>Recién llegados ({unassignedPlayers.length}):</span>
                 </span>
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                   {unassignedPlayers.map((p) => (
                     <div
                       key={p.id}
-                      className="bg-slate-900/90 border border-amber-400/40 px-2 py-1 rounded-xl text-xs font-bold text-amber-200 flex items-center gap-1.5 shadow-sm"
+                      className="bg-[#0c0c14]/95 border border-[#d4af37]/40 px-2 py-1 rounded-xl text-xs font-bold text-amber-200 flex items-center gap-1.5 shadow-sm"
                     >
                       <div className="w-4 h-4 rounded-md bg-slate-950 overflow-hidden shrink-0">
                         <img
@@ -1003,7 +1004,7 @@ export default function TvView() {
                         />
                       </div>
                       {p.badge_emoji && <TwemojiText className="text-[10px]">{p.badge_emoji}</TwemojiText>}
-                      <span>{p.nickname}</span>
+                      <span className="font-vintage">{p.nickname}</span>
                     </div>
                   ))}
                 </div>
@@ -1045,15 +1046,15 @@ export default function TvView() {
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ================= */
         <section className="flex-1 flex flex-col justify-center items-center my-4 z-10 w-full max-w-6xl mx-auto">
-          {/* BANNER SUPERIOR CON REGLAS Y PUNTUACIONES DEL JUEGO SELECCIONADO */}
-          <div className="mb-5 flex flex-col md:flex-row items-center justify-between bg-slate-900/90 border border-slate-800 px-6 py-3 rounded-2xl w-full max-w-4xl gap-3 shadow-xl backdrop-blur-md">
+          {/* MARQUESINA DE TEATRO SUPERIOR CON REGLAS Y PUNTUACIONES */}
+          <div className="mb-5 flex flex-col md:flex-row items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 px-6 py-3.5 rounded-2xl w-full max-w-4xl gap-3 shadow-deco-gold backdrop-blur-md">
             <div className="flex items-center gap-3">
               <span className="text-3xl">{activeGame.emoji}</span>
               <div>
-                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">
+                <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-300 block">
                   {activeGame.category}
                 </span>
-                <h3 className="text-lg font-black text-white">{activeGame.title}</h3>
+                <h3 className="text-xl font-broadway uppercase tracking-wide text-gold-gradient">{activeGame.title}</h3>
               </div>
             </div>
 
@@ -1062,10 +1063,10 @@ export default function TvView() {
               {activeGame.scoringOptions.map((opt) => (
                 <span
                   key={opt.id}
-                  className="bg-slate-800/90 text-slate-200 text-[11px] font-bold px-2.5 py-1 rounded-xl border border-slate-700 flex items-center gap-1.5"
+                  className="bg-[#14141e]/90 text-amber-100 text-[11px] font-vintage font-bold px-3 py-1 rounded-xl border border-[#d4af37]/30 flex items-center gap-1.5 shadow-sm"
                 >
                   <span>{opt.label}</span>
-                  <span className="text-amber-400 font-mono font-black">{opt.badge}</span>
+                  <span className="text-amber-300 font-broadway font-black">{opt.badge}</span>
                 </span>
               ))}
             </div>
@@ -1076,22 +1077,22 @@ export default function TvView() {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="mb-4 w-full max-w-4xl bg-gradient-to-r from-red-600 via-amber-600 to-red-600 border-2 border-amber-300 rounded-2xl px-6 py-3.5 text-center shadow-[0_0_35px_rgba(239,68,68,0.5)] flex items-center justify-between gap-4"
+              className="mb-4 w-full max-w-4xl bg-gradient-to-r from-[#4a0e17] via-[#8a1c2a] to-[#4a0e17] border-2 border-[#d4af37] rounded-2xl px-6 py-3.5 text-center shadow-deco-gold flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3">
                 <Crown className="w-8 h-8 text-amber-300 animate-bounce shrink-0 drop-shadow-md" />
                 <div className="text-left">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-amber-200 block">
+                  <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-200 block">
                     ⚔️ DESAFÍO DIRECTO ENTRE LÍDERES
                   </span>
-                  <h4 className="text-xl font-black text-white uppercase tracking-wider font-arcade drop-shadow-sm">
+                  <h4 className="text-xl font-broadway text-gold-gradient uppercase tracking-wider drop-shadow-sm">
                     {captainDuel.title || 'MINIDUELO DE CAPITANES'}
                   </h4>
                 </div>
               </div>
-              <div className="bg-slate-950/70 border border-amber-300/40 rounded-xl px-4 py-2 text-right">
-                <span className="text-[10px] text-amber-300 uppercase font-black block">REGLA EXCLUSIVA</span>
-                <span className="text-xs text-white font-bold">Solo pueden pulsar los Capitanes 👑</span>
+              <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-xl px-4 py-2 text-right">
+                <span className="text-[10px] text-amber-300 uppercase font-vintage tracking-wider font-black block">REGLA EXCLUSIVA</span>
+                <span className="text-xs text-white font-vintage font-bold">Solo pueden pulsar los Capitanes 👑</span>
               </div>
             </motion.div>
           )}
@@ -1102,11 +1103,11 @@ export default function TvView() {
               {Object.values(captainGambles).map((gamble) => (
                 <div
                   key={gamble.teamId}
-                  className="bg-amber-500/20 border-2 border-amber-400/80 text-amber-200 px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg backdrop-blur-md animate-pulse"
+                  className="bg-[#14141e]/90 border-2 border-[#d4af37] text-amber-200 px-4 py-1.5 rounded-2xl text-xs font-vintage font-black flex items-center gap-2 shadow-deco-gold backdrop-blur-md animate-pulse"
                 >
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                   <span>
-                    ¡Capitán de <strong className="text-white uppercase">{gamble.teamName}</strong> arriesga: DOBLE O NADA (x2 PUNTOS)!
+                    ¡Capitán de <strong className="text-white uppercase font-broadway">{gamble.teamName}</strong> arriesga: DOBLE O NADA (x2 PUNTOS)!
                   </span>
                 </div>
               ))}
@@ -1116,7 +1117,7 @@ export default function TvView() {
           {/* TIRA DE EFECTOS DE CARTAS DE PODER ACTIVOS */}
           {powerCards && powerCards.activeEffects.length > 0 && (
             <div className="mb-4 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
-              <span className="text-[10px] uppercase font-black tracking-wider text-amber-400 bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-500/30 flex items-center gap-1 shadow-sm">
+              <span className="text-[10px] uppercase font-vintage tracking-wider text-slate-950 bg-gold-gradient px-3 py-1 rounded-full border border-[#f5eedb]/40 flex items-center gap-1 shadow-sm font-black">
                 <Zap className="w-3 h-3" /> Poderes en Juego:
               </span>
               {powerCards.activeEffects.map((eff) => {
@@ -1125,15 +1126,15 @@ export default function TvView() {
                 return (
                   <span
                     key={eff.id}
-                    className="bg-slate-900/90 border border-amber-400/40 text-xs px-3 py-1 rounded-xl text-slate-200 font-bold flex items-center gap-1.5 shadow-md backdrop-blur-md"
+                    className="bg-[#0c0c14]/95 border border-[#d4af37]/45 text-xs px-3 py-1 rounded-xl text-amber-100 font-vintage font-bold flex items-center gap-1.5 shadow-md backdrop-blur-md"
                   >
                     <span>{eff.cardEmoji}</span>
-                    <strong className="text-white">{eff.cardName}</strong>
-                    <span className="text-slate-400">({team?.name || eff.sourceTeamName})</span>
+                    <strong className="text-white font-broadway">{eff.cardName}</strong>
+                    <span className="text-amber-300/70">({team?.name || eff.sourceTeamName})</span>
                     {targetTeam && <span className="text-red-400 font-extrabold">➔ {targetTeam.name}</span>}
                     {eff.targetPlayerName && <span className="text-red-400 font-extrabold">➔ {eff.targetPlayerName}</span>}
                     {eff.sensoryLimitation && (
-                      <span className="text-amber-300 font-extrabold bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded-lg text-[11px] shadow-sm">
+                      <span className="text-amber-300 font-extrabold bg-[#1a1405] border border-[#d4af37]/60 px-2 py-0.5 rounded-lg text-[11px] shadow-sm">
                         {eff.sensoryLimitation}
                       </span>
                     )}
@@ -1149,23 +1150,23 @@ export default function TvView() {
               {/* VISTA ESPECIAL CINEMATOGRÁFICA PARA ADIVINA LA PELÍCULA CON EMOJIS */}
               {activeGame.id === 'movies' ? (
                 <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-                  {/* ESCENARIO DE ADIVINANZA CON EMOJIS */}
-                  <div className="relative w-full rounded-3xl overflow-hidden border-4 border-slate-800 shadow-[0_0_60px_rgba(0,0,0,0.9)] bg-gradient-to-b from-slate-900 via-slate-950 to-black p-6 md:p-10 text-center">
+                  {/* ESCENARIO DE ADIVINANZA CON EMOJIS (MARCO TEATRAL SILENT FILM) */}
+                  <div className="relative w-full rounded-3xl overflow-hidden border-4 border-[#d4af37]/60 shadow-deco-gold bg-gradient-to-b from-[#0c0c14] via-[#090910] to-black p-6 md:p-10 text-center deco-card-frame">
                     {/* Viñeta e iluminación decorativa */}
-                    <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-indigo-500/20 blur-[90px] pointer-events-none" />
+                    <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-amber-500/15 blur-[90px] pointer-events-none" />
 
                     {/* Cabecera del misterio: Género, Año y Nivel de Pista */}
                     <div className="flex items-center justify-between mb-8 z-20 relative">
-                      <div className="bg-slate-950/80 backdrop-blur-md border border-amber-400/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-amber-300 shadow-lg">
+                      <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-300 shadow-lg">
                         <Clapperboard className="w-4 h-4 text-amber-400" />
                         <span>{currentMovie.genreEmoji} {currentMovie.category}</span>
-                        <span className="text-slate-500">•</span>
-                        <span className="text-white font-mono">Año {currentMovie.year}</span>
+                        <span className="text-[#d4af37]/40">•</span>
+                        <span className="text-white font-broadway">Año {currentMovie.year}</span>
                       </div>
 
-                      <div className="bg-slate-950/80 backdrop-blur-md border border-indigo-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-slate-200 shadow-lg">
+                      <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-200 shadow-lg">
                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                        <span className="font-mono">
+                        <span className="font-vintage">
                           {movieFrameLevel === 1 && '🎯 Pista 1: 2 Emojis (+5 pts)'}
                           {movieFrameLevel === 2 && '🔍 Pista 2: 4 Emojis (+3 pts)'}
                           {movieFrameLevel === 3 && '⭐ Pista 3: Todos los Emojis (+1 pt)'}
@@ -1175,7 +1176,7 @@ export default function TvView() {
                     </div>
 
                     {/* CONTENEDOR CENTRAL DE EMOJIS GIGANTES */}
-                    <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8 py-8 px-4 my-2 bg-slate-950/70 border-2 border-slate-800/80 rounded-3xl shadow-inner backdrop-blur-md min-h-[160px]">
+                    <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8 py-8 px-4 my-2 bg-black/60 border-2 border-[#d4af37]/30 rounded-3xl shadow-inner backdrop-blur-md min-h-[160px]">
                       {(movieFrameLevel === 1
                         ? currentMovie.emojisStage1
                         : movieFrameLevel === 2
@@ -1199,9 +1200,9 @@ export default function TvView() {
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mt-5 bg-amber-500/10 border border-amber-400/30 rounded-2xl px-5 py-3 text-amber-200 text-xs md:text-sm font-semibold max-w-2xl mx-auto shadow-md"
+                        className="mt-5 bg-amber-500/10 border border-[#d4af37]/40 rounded-2xl px-5 py-3 text-amber-200 text-xs md:text-sm font-vintage max-w-2xl mx-auto shadow-md"
                       >
-                        <span className="font-black uppercase tracking-wider text-amber-400 mr-2">Pista Secreta:</span>
+                        <span className="font-broadway uppercase tracking-wider text-gold-gradient mr-2">Pista Secreta:</span>
                         "{currentMovie.textHint}"
                       </motion.div>
                     )}
@@ -1213,37 +1214,37 @@ export default function TvView() {
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center"
+                          className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center deco-card-frame"
                         >
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-3 border border-amber-500/40">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-[#f5eedb]/50 shadow-deco-gold">
                             🎉 ¡PELÍCULA RESUELTA!
                           </div>
-                          <h2 className="text-4xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-[0_0_35px_rgba(251,191,36,0.6)]">
+                          <h2 className="text-4xl md:text-6xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
                             {currentMovie.title}
                           </h2>
                           {currentMovie.originalTitle && currentMovie.originalTitle !== currentMovie.title && (
-                            <p className="text-base text-slate-400 mt-1 italic font-medium">
+                            <p className="text-base text-amber-200/70 mt-1 italic font-editorial">
                               "{currentMovie.originalTitle}"
                             </p>
                           )}
 
-                          <div className="flex items-center gap-3 mt-4 text-xs md:text-sm text-slate-300">
-                            <span className="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 font-bold">
+                          <div className="flex items-center gap-3 mt-4 text-xs md:text-sm text-amber-100 font-vintage">
+                            <span className="bg-[#14141e] px-3 py-1 rounded-xl border border-[#d4af37]/30 font-bold">
                               Año {currentMovie.year}
                             </span>
                             {currentMovie.director && (
-                              <span className="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 font-medium">
-                                Dir: <strong className="text-white">{currentMovie.director}</strong>
+                              <span className="bg-[#14141e] px-3 py-1 rounded-xl border border-[#d4af37]/30 font-medium">
+                                Dir: <strong className="text-white font-broadway">{currentMovie.director}</strong>
                               </span>
                             )}
-                            <span className="bg-amber-500/20 text-amber-300 px-3 py-1 rounded-xl border border-amber-500/40 font-bold">
+                            <span className="bg-gold-gradient text-slate-950 px-3 py-1 rounded-xl border border-[#f5eedb]/30 font-broadway font-black">
                               {currentMovie.category}
                             </span>
                           </div>
 
                           {/* Explicación de los emojis */}
-                          <div className="mt-6 bg-slate-900/90 border border-slate-800 px-5 py-3 rounded-2xl max-w-xl text-xs md:text-sm text-slate-300 text-left">
-                            <span className="text-[10px] uppercase font-bold text-amber-400 block mb-1">
+                          <div className="mt-6 bg-[#0c0c14]/90 border border-[#d4af37]/40 px-5 py-3 rounded-2xl max-w-xl text-xs md:text-sm text-amber-100/90 text-left font-vintage">
+                            <span className="text-[10px] uppercase font-broadway text-gold-gradient block mb-1">
                               Descifrado del Acertijo:
                             </span>
                             {currentMovie.explanation}
@@ -1252,91 +1253,28 @@ export default function TvView() {
                       )}
                     </AnimatePresence>
                   </div>
-
-                  {/* OVERLAY DEL BUZZER CUANDO ALGUIEN PULSA EN MODO PELÍCULA */}
-                  <AnimatePresence>
-                    {buzzerLocked && buzzerWinner && (() => {
-                      const winnerPlayer = players.find((p) => p.id === buzzerWinner.playerId || p.nickname === buzzerWinner.playerName);
-                      const winnerSeed = buzzerWinner.avatarSeed || winnerPlayer?.avatar_seed || buzzerWinner.playerName;
-                      const winnerStyle = (buzzerWinner.avatarStyle || winnerPlayer?.avatar_style || 'avataaars') as DiceBearStyle;
-                      const winnerEmoji = buzzerWinner.badgeEmoji || winnerPlayer?.badge_emoji;
-
-                      return (
-                        <motion.div
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: 20, opacity: 0 }}
-                          className="mt-4 w-full bg-slate-900/95 border-2 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3"
-                          style={{ borderColor: buzzerWinner.teamColorHex }}
-                        >
-                          <div className="flex items-center gap-3 text-left">
-                            <div className="relative shrink-0">
-                              <div
-                                className="w-14 h-14 rounded-2xl bg-slate-950 border-2 flex items-center justify-center overflow-hidden shadow-lg p-0.5"
-                                style={{ borderColor: buzzerWinner.teamColorHex }}
-                              >
-                                <img
-                                  src={generateAvatarDataUri(winnerSeed, winnerStyle)}
-                                  alt={buzzerWinner.playerName}
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              {winnerEmoji && (
-                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow">
-                                  <TwemojiText className="text-xs">{winnerEmoji}</TwemojiText>
-                                </div>
-                              )}
-                            </div>
-
-                            <div>
-                              <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
-                                ¡HA PULSADO PRIMERO!
-                              </span>
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-lg font-black text-white">
-                                  {buzzerWinner.playerName}{' '}
-                                  <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
-                                </span>
-                                {isWinnerCaptain && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black">
-                                    <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Indicador pasivo en la TV sin botones */}
-                          <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs font-bold text-amber-300 w-full">
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                            <span>Esperando veredicto del Anfitrión en su mando...</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })()}
-                  </AnimatePresence>
                 </div>
               ) : activeGame.id === 'fotos_proyector' ? (
                 /* VISTA CINEMATOGRÁFICA DE FOTOS PROYECTOR (BEBÉS) */
                 <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-                  <div className="w-full bg-slate-900/90 border-2 border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                  <div className="w-full bg-[#0c0c14]/90 border-2 border-[#d4af37]/50 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
                     {/* Cabecera: Número de foto, categoría y regla anti-infracción */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 z-20 relative">
-                      <div className="bg-slate-950/80 backdrop-blur-md border border-amber-400/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-amber-300 shadow-lg">
+                      <div className="bg-[#07070a]/90 backdrop-blur-md border border-[#d4af37]/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-300 shadow-lg">
                         <Camera className="w-4 h-4 text-amber-400" />
-                        <span>FOTO {babyPhotoIndex + 1} DE {DEV_MOCK_BABY_PHOTOS.length}</span>
-                        <span className="text-slate-500">•</span>
-                        <span className="text-white/80 font-medium">¿Famoso o Concursante? 🕵️</span>
+                        <span className="font-broadway uppercase">FOTO {babyPhotoIndex + 1} DE {DEV_MOCK_BABY_PHOTOS.length}</span>
+                        <span className="text-[#d4af37]/40">•</span>
+                        <span className="text-amber-100/80 font-medium">¿Famoso o Concursante? 🕵️</span>
                       </div>
 
-                      <div className="bg-red-500/20 border border-red-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-red-200 shadow-lg">
+                      <div className="bg-[#380b12]/90 border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-red-200 shadow-lg">
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
                         <span>🚫 ¡Si es tu propia foto NO pulses! (−2 pts)</span>
                       </div>
                     </div>
 
-                    {/* MARCO DE LA FOTO PROYECTADA */}
-                    <div className="relative flex items-center justify-center min-h-[300px] max-h-[420px] rounded-2xl overflow-hidden bg-black/60 border-4 border-slate-800 shadow-inner p-3">
+                    {/* MARCO DE LA FOTO PROYECTADA (ESTILO DAGUERROTIPO / RETRATO DE ÉPOCA) */}
+                    <div className="relative flex items-center justify-center min-h-[300px] max-h-[420px] rounded-2xl overflow-hidden bg-black border-4 border-[#d4af37]/40 shadow-inner p-3">
                       <motion.img
                         key={`${currentBabyPhoto.id}_${babyPhotoIndex}`}
                         initial={{ opacity: 0, scale: 0.96 }}
@@ -1344,35 +1282,35 @@ export default function TvView() {
                         transition={{ duration: 0.35 }}
                         src={currentBabyPhoto.imageUrl}
                         alt="Foto de Bebé"
-                        className="max-h-[350px] md:max-h-[390px] w-auto max-w-full object-contain rounded-xl shadow-2xl"
+                        className="max-h-[350px] md:max-h-[390px] w-auto max-w-full object-contain rounded-xl shadow-2xl sepia-[0.15]"
                       />
 
-                      {/* Luz sutil de proyector en la parte superior */}
-                      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-400/10 blur-3xl pointer-events-none" />
+                      {/* Luz sutil de linterna mágica / proyector de época */}
+                      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-400/15 blur-3xl pointer-events-none" />
                     </div>
 
-                    {/* OVERLAY: REVELADO DE IDENTIDAD CUANDO EL ANFITRIÓN LO ACTIVA */}
+                    {/* OVERLAY: REVELADO DE IDENTIDAD */}
                     <AnimatePresence>
                       {babyPhotoRevealed && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center"
+                          className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center deco-card-frame"
                         >
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-3 border border-amber-500/40">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-[#f5eedb]/50 shadow-deco-gold">
                             🎉 ¡IDENTIDAD REVELADA!
                           </div>
-                          <h2 className="text-4xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-[0_0_35px_rgba(251,191,36,0.6)]">
+                          <h2 className="text-4xl md:text-6xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
                             {currentBabyPhoto.personName}
                           </h2>
                           {currentBabyPhoto.ownerPlayerName ? (
-                            <div className="mt-3 inline-block bg-red-500/20 border border-red-500/40 px-4 py-1.5 rounded-xl text-xs font-bold text-red-200">
-                              👤 ¡Foto de <strong className="text-white">{currentBabyPhoto.ownerPlayerName}</strong>! (¡No podía pulsar!)
+                            <div className="mt-3 inline-block bg-[#380b12]/90 border border-red-500/50 px-4 py-1.5 rounded-xl text-xs font-vintage font-bold text-red-200">
+                              👤 ¡Foto de <strong className="text-white font-broadway">{currentBabyPhoto.ownerPlayerName}</strong>! (¡No podía pulsar!)
                             </div>
                           ) : null}
                           {currentBabyPhoto.hint && (
-                            <p className="mt-4 text-xs md:text-sm text-slate-300 italic max-w-md bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800">
+                            <p className="mt-4 text-xs md:text-sm text-amber-100/80 italic max-w-md bg-[#0c0c14] px-4 py-2 rounded-xl border border-[#d4af37]/30 font-vintage">
                               💡 Pista: "{currentBabyPhoto.hint}"
                             </p>
                           )}
@@ -1472,19 +1410,19 @@ export default function TvView() {
                             duration: 2.5,
                             ease: 'linear',
                           }}
-                          className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-slate-950 via-slate-900 to-zinc-900 border-4 border-slate-700/80 shadow-[0_0_35px_rgba(0,0,0,0.8)] relative flex items-center justify-center"
+                          className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-[#0a0a0c] via-[#1a1a20] to-[#0d0d10] border-4 border-[#d4af37]/60 shadow-[0_0_35px_rgba(212,175,55,0.25)] relative flex items-center justify-center"
                         >
-                          {/* Ranuras concéntricas del vinilo */}
-                          <div className="absolute inset-2 rounded-full border border-slate-800/80" />
-                          <div className="absolute inset-5 rounded-full border border-slate-700/50" />
-                          <div className="absolute inset-9 rounded-full border border-slate-800/80" />
-                          <div className="absolute inset-14 rounded-full border border-slate-700/40" />
+                          {/* Ranuras concéntricas de disco de pizarra 78 RPM */}
+                          <div className="absolute inset-2 rounded-full border border-[#d4af37]/20" />
+                          <div className="absolute inset-5 rounded-full border border-[#d4af37]/35" />
+                          <div className="absolute inset-9 rounded-full border border-[#d4af37]/20" />
+                          <div className="absolute inset-14 rounded-full border border-[#d4af37]/30" />
 
-                          {/* Reflejo de luz en el vinilo */}
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none" />
+                          {/* Reflejo de luz en el disco */}
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-amber-200/5 to-transparent pointer-events-none" />
 
-                          {/* Galleta central del vinilo con logo/arte */}
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 border-2 border-white/20 flex items-center justify-center shadow-lg relative overflow-hidden">
+                          {/* Galleta central dorada estilo gramófono 1930s */}
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#d4af37] via-[#b38f2a] to-[#8a6a1a] border-2 border-[#f5eedb] flex items-center justify-center shadow-lg relative overflow-hidden">
                             {musicRevealed && (currentSong.coverUrl || currentSong.albumArt) ? (
                               <img
                                 src={currentSong.coverUrl || currentSong.albumArt}
@@ -1492,10 +1430,10 @@ export default function TvView() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Music className="w-7 h-7 text-white drop-shadow" />
+                              <Music className="w-7 h-7 text-slate-950 drop-shadow" />
                             )}
-                            {/* Agujero central */}
-                            <div className="absolute w-4 h-4 rounded-full bg-black border border-white/20" />
+                            {/* Agujero central de bronce */}
+                            <div className="absolute w-4 h-4 rounded-full bg-[#0a0a0e] border border-[#f5eedb]/40" />
                           </div>
                         </motion.div>
                       </div>
@@ -1511,17 +1449,17 @@ export default function TvView() {
                               exit={{ opacity: 0, scale: 0.9 }}
                               className="w-full"
                             >
-                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 text-pink-300 text-xs font-bold uppercase tracking-wider mb-2 border border-pink-500/30">
-                                🎧 PISTA DE AUDIO
+                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-vintage font-bold uppercase tracking-wider mb-2 border border-[#f5eedb]/40 shadow-sm">
+                                🎧 GRAMÓFONO EN VIVO
                               </div>
-                              <h3 className="text-2xl sm:text-3xl font-black font-arcade text-white tracking-wide">
+                              <h3 className="text-2xl sm:text-3xl font-broadway uppercase text-gold-gradient tracking-wide">
                                 ¿QUÉ CANCIÓN ES?
                               </h3>
-                              <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                              <p className="text-amber-100/70 text-xs sm:text-sm font-vintage mt-1">
                                 ¡El primer concursante en presionar el pulsador responderá con el Título, Artista o Ambos!
                               </p>
 
-                              {/* BARRAS DE ECUALIZADOR DINÁMICAS */}
+                              {/* BARRAS DE ECUALIZADOR DINÁMICAS EN TONOS DE LATÓN */}
                               <div className="flex items-end justify-center md:justify-start gap-1.5 h-12 mt-5">
                                 {[35, 60, 20, 85, 45, 95, 30, 75, 50, 90, 40, 65].map((height, i) => (
                                   <motion.div
@@ -1537,7 +1475,7 @@ export default function TvView() {
                                       duration: 0.4 + (i % 4) * 0.1,
                                       ease: 'easeInOut',
                                     }}
-                                    className="w-2 sm:w-2.5 rounded-full bg-gradient-to-t from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_8px_rgba(236,72,153,0.5)]"
+                                    className="w-2 sm:w-2.5 rounded-full bg-gradient-to-t from-[#8a6a1a] via-[#d4af37] to-[#f5eedb] shadow-[0_0_8px_rgba(212,175,55,0.4)]"
                                   />
                                 ))}
                               </div>
@@ -1650,18 +1588,18 @@ export default function TvView() {
                 </div>
               ) : (
                   <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
-                    <div className="w-full bg-slate-900/90 border-2 border-emerald-500/30 rounded-3xl p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl text-center">
-                      <div className="w-24 h-24 mx-auto rounded-3xl bg-emerald-500/10 border-2 border-emerald-400/40 flex items-center justify-center animate-pulse mb-5 shadow-[0_0_35px_rgba(16,185,129,0.3)]">
-                        <Music className="w-12 h-12 text-emerald-400" />
+                    <div className="w-full bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-10 shadow-deco-gold relative overflow-hidden backdrop-blur-xl text-center deco-card-frame">
+                      <div className="w-24 h-24 mx-auto rounded-3xl bg-amber-500/10 border-2 border-[#d4af37]/60 flex items-center justify-center animate-pulse mb-5 shadow-[0_0_35px_rgba(212,175,55,0.25)]">
+                        <Music className="w-12 h-12 text-[#d4af37]" />
                       </div>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider mb-3 border border-emerald-500/30">
-                        🟢 Catálogo Oficial de Spotify
+                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
+                        🎶 Fonógrafo & Gramófono Spotify
                       </div>
-                      <h2 className="text-3xl sm:text-4xl font-black font-arcade text-white tracking-wide">
-                        ESPERANDO TEMAZO DE SPOTIFY...
+                      <h2 className="text-3xl sm:text-4xl font-broadway text-gold-gradient tracking-wide">
+                        ESPERANDO TEMAZO EN EL GRAMÓFONO...
                       </h2>
-                      <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
-                        El anfitrión está seleccionando temazos o importando una playlist desde Spotify en su mando.
+                      <p className="text-amber-200/80 font-vintage text-sm sm:text-base mt-2 max-w-md mx-auto">
+                        El anfitrión está sintonizando pistas musicales en su consola de retransmisión.
                       </p>
                     </div>
                   </div>
@@ -1681,10 +1619,10 @@ export default function TvView() {
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
-                        className="p-8 md:p-10 rounded-3xl bg-slate-900/90 border-4 shadow-2xl max-w-2xl mx-auto backdrop-blur-2xl text-center"
+                        className="p-8 md:p-10 rounded-3xl bg-[#0c0c14]/95 border-4 shadow-deco-gold max-w-2xl mx-auto backdrop-blur-2xl text-center deco-card-frame"
                         style={{ borderColor: buzzerWinner.teamColorHex }}
                       >
-                        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-widest text-amber-300 mb-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-4 border border-[#f5eedb]/50 shadow-md">
                           ⚡ ¡TURNO DE RESPUESTA!
                         </div>
 
@@ -1692,7 +1630,7 @@ export default function TvView() {
                         <div className="flex justify-center mb-4">
                           <div className="relative">
                             <div
-                              className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-slate-950 border-4 p-1 shadow-2xl overflow-hidden flex items-center justify-center"
+                              className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-[#07070a] border-4 p-1 shadow-2xl overflow-hidden flex items-center justify-center"
                               style={{
                                 borderColor: buzzerWinner.teamColorHex,
                                 boxShadow: `0 0 35px ${buzzerWinner.teamColorHex}`,
@@ -1705,14 +1643,14 @@ export default function TvView() {
                               />
                             </div>
                             {winnerEmoji && (
-                              <div className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center shadow-lg">
+                              <div className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-[#0c0c14] border-2 border-amber-400 flex items-center justify-center shadow-lg">
                                 <TwemojiText className="text-lg">{winnerEmoji}</TwemojiText>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <h2 className="text-5xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-md flex items-center justify-center gap-3">
+                        <h2 className="text-4xl md:text-6xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3">
                           <span>{buzzerWinner.playerName}</span>
                           {isWinnerCaptain && (
                             <span title="¡Capitán del equipo!" className="inline-flex items-center text-amber-400">
@@ -1721,38 +1659,38 @@ export default function TvView() {
                           )}
                         </h2>
                         <p
-                          className="text-2xl md:text-3xl font-black uppercase mt-1"
+                          className="text-2xl md:text-3xl font-broadway uppercase mt-1"
                           style={{ color: buzzerWinner.teamColorHex }}
                         >
                           {buzzerWinner.teamName}
                         </p>
 
                         {/* Indicador pasivo en TV */}
-                        <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
+                        <div className="mt-6 pt-5 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-sm font-vintage font-bold text-amber-300">
                           <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                          <span>Esperando veredicto del Anfitrión en su mando...</span>
+                          <span>Esperando veredicto del Anfitrión en su consola de sala...</span>
                         </div>
                       </motion.div>
                     );
                   })() : activeGame.id === 'trivial' ? (
                     /* ESCENARIO ESPECIAL TRIVIAL CON PREGUNTAS Y REBOTE */
                     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-                      <div className="w-full bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                      <div className="w-full bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
                         {/* Glows */}
-                        <div className="absolute -top-24 left-1/4 w-96 h-48 bg-indigo-500/20 blur-[100px] pointer-events-none" />
-                        <div className="absolute -bottom-24 right-1/4 w-96 h-48 bg-purple-500/20 blur-[100px] pointer-events-none" />
+                        <div className="absolute -top-24 left-1/4 w-96 h-48 bg-amber-500/15 blur-[100px] pointer-events-none" />
+                        <div className="absolute -bottom-24 right-1/4 w-96 h-48 bg-yellow-500/10 blur-[100px] pointer-events-none" />
 
                         {/* Header: Categoría + Indicador de Rebote */}
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 z-20 relative">
-                          <div className="bg-slate-950/80 backdrop-blur-md border border-indigo-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-indigo-300 shadow-lg">
+                          <div className="bg-[#07070a]/90 backdrop-blur-md border border-[#d4af37]/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-300 shadow-lg">
                             <span className="text-base">{currentTriviaQuestion.categoryEmoji}</span>
-                            <span className="uppercase">{currentTriviaQuestion.category}</span>
-                            <span className="text-slate-500">•</span>
-                            <span className="text-white/90 font-mono">Pregunta {triviaIndex + 1}</span>
+                            <span className="font-broadway uppercase tracking-wide">{currentTriviaQuestion.category}</span>
+                            <span className="text-[#d4af37]/40">•</span>
+                            <span className="text-amber-100/90 font-mono">Pregunta {triviaIndex + 1}</span>
                           </div>
 
                           {triviaReboundActive && !triviaRevealed && (
-                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-wider animate-bounce shadow-lg shadow-purple-500/40">
+                            <div className="bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-slate-950 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-broadway font-black uppercase tracking-wider animate-bounce shadow-deco-gold border border-[#f5eedb]/50">
                               <RefreshCw className="w-4 h-4 animate-spin" />
                               <span>¡REBOTE ABIERTO! CUALQUIERA PUEDE PULSAR (+1 pt)</span>
                             </div>
@@ -1760,8 +1698,8 @@ export default function TvView() {
                         </div>
 
                         {/* Tarjeta de Pregunta */}
-                        <div className="p-6 md:p-8 rounded-2xl bg-slate-950/80 border border-indigo-500/30 text-center shadow-inner my-2">
-                          <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
+                        <div className="p-6 md:p-8 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 text-center shadow-inner my-2">
+                          <h2 className="text-2xl md:text-4xl font-broadway text-amber-50 leading-tight drop-shadow-md">
                             {currentTriviaQuestion.question}
                           </h2>
                         </div>
@@ -1778,25 +1716,25 @@ export default function TvView() {
                               return (
                                 <div
                                   key={oIdx}
-                                  className={`p-4 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${
+                                  className={`p-4 rounded-2xl border-2 flex items-center gap-3.5 text-left transition-all ${
                                     isCorrectOpt
-                                      ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow-[0_0_20px_rgba(52,211,153,0.4)] scale-105'
-                                      : 'bg-slate-950/60 border-slate-800 text-slate-300'
+                                      ? 'bg-emerald-950/80 border-emerald-400 text-emerald-100 shadow-[0_0_25px_rgba(52,211,153,0.35)] scale-105'
+                                      : 'bg-[#14141e]/90 border-[#d4af37]/30 text-amber-100/90 hover:border-[#d4af37]/60'
                                   }`}
                                 >
-                                  <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                                    isCorrectOpt ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-indigo-300'
+                                  <span className={`w-9 h-9 rounded-xl flex items-center justify-center font-broadway font-black text-sm shrink-0 shadow-md ${
+                                    isCorrectOpt ? 'bg-emerald-400 text-slate-950' : 'bg-gold-gradient text-slate-950'
                                   }`}>
                                     {letters[oIdx]}
                                   </span>
-                                  <span className="font-bold text-sm sm:text-base">{opt}</span>
+                                  <span className="font-vintage font-bold text-sm sm:text-base">{opt}</span>
                                 </div>
                               );
                             })}
                           </div>
                         ) : (
-                          <div className="my-4 py-2 px-4 rounded-xl bg-slate-950/50 border border-slate-800 inline-block text-xs font-bold text-slate-400">
-                            💬 Pregunta Abierta — Quien sepa la respuesta, ¡pulsa el botón para responder!
+                          <div className="my-4 py-2.5 px-5 rounded-xl bg-[#07070a]/90 border border-[#d4af37]/40 inline-block text-xs font-vintage font-bold text-amber-300">
+                            💬 Pregunta de Conocimiento Clandestino — ¡Pulsa el timbre de mesa para responder!
                           </div>
                         )}
 
@@ -1805,16 +1743,16 @@ export default function TvView() {
                           <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-emerald-950/80 border-2 border-emerald-400/60 text-center shadow-xl"
+                            className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
                           >
-                            <span className="text-[10px] uppercase font-black tracking-widest text-emerald-300 block mb-1">
+                            <span className="text-[10px] uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-1">
                               🎉 RESPUESTA CORRECTA
                             </span>
-                            <div className="text-2xl sm:text-3xl font-black text-emerald-200">
+                            <div className="text-2xl sm:text-4xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
                               {currentTriviaQuestion.correctAnswer}
                             </div>
                             {currentTriviaQuestion.hint && (
-                              <p className="text-xs text-emerald-400/80 mt-1 italic">
+                              <p className="text-xs text-amber-200/80 font-vintage mt-1 italic">
                                 💡 {currentTriviaQuestion.hint}
                               </p>
                             )}
@@ -1829,26 +1767,26 @@ export default function TvView() {
                               initial={{ opacity: 0, y: 15 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0 }}
-                              className="mt-5 p-4 rounded-2xl border-2 border-amber-400 bg-amber-500/10 backdrop-blur-md flex items-center justify-between shadow-xl"
+                              className="mt-5 p-4 rounded-2xl border-2 border-amber-400 bg-[#1a1408]/90 backdrop-blur-md flex items-center justify-between shadow-xl"
                             >
                               <div className="flex items-center gap-3">
                                 <span className="text-3xl animate-bounce">⚡</span>
                                 <div className="text-left">
-                                  <span className="text-[10px] uppercase font-black text-amber-300">
+                                  <span className="text-[10px] uppercase font-broadway tracking-wider text-amber-300">
                                     {triviaReboundActive ? '¡Rebote cazado por:' : '¡Pulsó primero:'}
                                   </span>
-                                  <div className="text-xl font-black text-white">{buzzerWinner.teamName}</div>
+                                  <div className="text-xl font-broadway text-gold-gradient">{buzzerWinner.teamName}</div>
                                 </div>
                               </div>
-                              <div className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                              <div className="text-xs font-vintage font-bold text-amber-300 flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
                                 <span>Respondiendo en directo...</span>
                               </div>
                             </motion.div>
                           ) : !triviaRevealed && (
-                            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-center gap-2 text-xs font-bold text-indigo-300">
-                              <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping" />
-                              <span>Pulsa el botón de tu móvil para responder</span>
+                            <div className="mt-4 pt-3 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-300">
+                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                              <span>Pulsa el timbre de tu móvil para responder</span>
                             </div>
                           )}
                         </AnimatePresence>
@@ -1861,14 +1799,14 @@ export default function TvView() {
                       animate={{ opacity: 1 }}
                       className="text-center py-12"
                     >
-                      <div className="w-28 h-28 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-400/40 flex items-center justify-center animate-pulse mb-5">
-                        <Flame className="w-14 h-14 text-amber-400" />
+                      <div className="w-28 h-28 mx-auto rounded-full bg-amber-500/10 border-2 border-[#d4af37] flex items-center justify-center animate-pulse mb-5 shadow-deco-gold">
+                        <Flame className="w-14 h-14 text-[#d4af37]" />
                       </div>
-                      <h2 className="text-4xl md:text-5xl font-black font-arcade tracking-wider uppercase text-white">
-                        ¡ATENTOS AL PULSADOR!
+                      <h2 className="text-4xl md:text-5xl font-broadway tracking-wider uppercase text-gold-gradient drop-shadow-md">
+                        ¡ATENTOS AL TIMBRE!
                       </h2>
-                      <p className="text-slate-400 text-base mt-2">
-                        El primer equipo en presionar el botón de su móvil responderá.
+                      <p className="text-amber-200/80 font-vintage text-base sm:text-lg mt-2">
+                        El primer equipo en presionar el timbre de bronce en su móvil responderá.
                       </p>
                     </motion.div>
                   )}
@@ -1882,44 +1820,44 @@ export default function TvView() {
             <div className="w-full text-center max-w-4xl mx-auto">
               {activeGame.id === 'un_dos_tres' ? (
                 /* ESCENARIO 1, 2, 3 ¿YA? */
-                <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/50 shadow-md">
                       <span>⚡</span> 1, 2, 3 ¿YA? — {currentUdtChallenge.level} (Nivel {currentUdtChallenge.levelNumber})
                     </div>
-                    <div className="text-xs text-slate-400 uppercase font-bold">
+                    <div className="text-xs font-vintage font-bold text-amber-300 uppercase tracking-wider">
                       Turnos por equipo • 5 Segundos • Eliminación directa
                     </div>
                   </div>
 
-                  {/* TEMPORIZADOR GIGANTE DE 5 SEGUNDOS */}
+                  {/* TEMPORIZADOR GIGANTE DE 5 SEGUNDOS (CRONÓMETRO DE BRONCE) */}
                   <div className="my-6">
-                    <div className={`text-8xl sm:text-9xl font-black font-mono transition-all ${
+                    <div className={`text-8xl sm:text-9xl font-broadway transition-all drop-shadow-[0_0_35px_rgba(212,175,55,0.4)] ${
                       udtCountdown !== null && udtCountdown <= 2
-                        ? 'text-red-500 animate-pulse scale-110'
+                        ? 'text-red-500 animate-pulse scale-110 drop-shadow-[0_0_35px_rgba(239,68,68,0.7)]'
                         : udtCountdown !== null && udtCountdown > 0
-                        ? 'text-amber-400'
-                        : 'text-slate-600'
+                        ? 'text-gold-gradient'
+                        : 'text-amber-200/40'
                     }`}>
                       {udtCountdown !== null ? `${udtCountdown}s` : '5s'}
                     </div>
-                    <p className="text-sm font-bold uppercase tracking-wider text-slate-400 mt-2">
-                      {udtIsTimerRunning ? '¡Cuenta atrás en marcha! ¡Di 3 respuestas!' : 'Esperando que el Host lance el tiempo'}
+                    <p className="text-sm font-vintage font-bold uppercase tracking-wider text-amber-200/80 mt-2">
+                      {udtIsTimerRunning ? '¡Cuenta atrás en marcha! ¡Di 3 respuestas en voz alta!' : 'Esperando que el Anfitrión lance el tiempo'}
                     </p>
                   </div>
 
                   {/* RETO ACTIVO */}
-                  <div className="p-6 rounded-2xl bg-slate-950/80 border border-amber-400/30 my-4 shadow-inner">
-                    <span className="text-xs uppercase font-bold text-amber-400/80 block mb-1">
+                  <div className="p-6 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 my-4 shadow-inner">
+                    <span className="text-xs uppercase font-broadway font-black text-gold-gradient block mb-1">
                       {currentUdtChallenge.category}
                     </span>
-                    <h2 className="text-2xl sm:text-4xl font-black text-white">
+                    <h2 className="text-2xl sm:text-4xl font-broadway text-amber-50 drop-shadow-sm">
                       {currentUdtChallenge.prompt}
                     </h2>
                   </div>
 
                   {/* ESTADO DE LOS EQUIPOS: TURNO ACTIVO Y ELIMINADOS */}
-                  <div className="mt-6 pt-4 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                  <div className="mt-6 pt-4 border-t border-[#d4af37]/30 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
                     {activeTeams.map((team) => {
                       const isEliminated = udtEliminatedTeamIds.includes(team.id);
                       const isCurrentTurn = udtActiveTeamId === team.id;
@@ -1929,16 +1867,16 @@ export default function TvView() {
                           key={team.id}
                           className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center ${
                             isEliminated
-                              ? 'bg-slate-950/40 border-red-900/50 opacity-40'
+                              ? 'bg-[#07070a]/60 border-red-950/60 opacity-40'
                               : isCurrentTurn
-                              ? 'bg-amber-500/20 border-amber-400 shadow-lg scale-105'
-                              : 'bg-slate-950/60 border-slate-800'
+                              ? 'bg-amber-500/20 border-amber-400 shadow-deco-gold scale-105 ring-2 ring-amber-300'
+                              : 'bg-[#14141e]/90 border-[#d4af37]/30'
                           }`}
                         >
-                          <span className={`w-3 h-3 rounded-full ${catalog.twBg} mb-1`} />
-                          <span className="text-xs font-black text-white truncate max-w-full">{team.name}</span>
-                          <span className={`text-[10px] font-black uppercase mt-1 ${
-                            isEliminated ? 'text-red-400' : isCurrentTurn ? 'text-amber-300 font-bold' : 'text-slate-400'
+                          <span className={`w-3 h-3 rounded-full ${catalog.twBg} mb-1 shadow`} />
+                          <span className="text-xs font-broadway text-white truncate max-w-full">{team.name}</span>
+                          <span className={`text-[10px] font-vintage font-black uppercase mt-1 ${
+                            isEliminated ? 'text-red-400' : isCurrentTurn ? 'text-amber-300 font-bold' : 'text-amber-200/50'
                           }`}>
                             {isEliminated ? '💀 ELIMINADO' : isCurrentTurn ? '🎙️ EN JUEGO' : 'EN ESPERA'}
                           </span>
@@ -1949,17 +1887,17 @@ export default function TvView() {
                 </div>
               ) : activeGame.id === 'bingo' ? (
                 /* ESCENARIO BINGO INTERACTIVO EN TV CON RULETA Y PANEL SIN SCROLL */
-                <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-4 sm:p-6 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
                   {/* CABECERA COMPACTA */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-500/30">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm">
                       <span>🎰</span> RULETA Y BOMBO VIRTUAL (1 - 90)
                     </div>
-                    <div className="flex items-center gap-2.5 text-xs font-bold">
-                      <span className="px-3 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    <div className="flex items-center gap-2.5 text-xs font-broadway">
+                      <span className="px-3.5 py-1 rounded-full bg-[#14141e] text-amber-200 border border-[#d4af37]/40 shadow-sm">
                         📏 Línea: +5 pts
                       </span>
-                      <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <span className="px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 border border-[#f5eedb]/50 shadow-deco-gold font-black">
                         🎱 BINGO: +15 pts
                       </span>
                     </div>
@@ -1977,17 +1915,17 @@ export default function TvView() {
                     </div>
 
                     {/* COLUMNA DERECHA: PANEL COMPLETO DE LOS 90 NÚMEROS (10x9, SIN SCROLL) */}
-                    <div className="lg:col-span-8 p-3 sm:p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner flex flex-col justify-center">
+                    <div className="lg:col-span-8 p-3 sm:p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 shadow-inner flex flex-col justify-center">
                       <div className="flex items-center justify-between mb-2.5 px-1">
-                        <span className="text-[11px] uppercase font-bold text-slate-400">
+                        <span className="text-[11px] uppercase font-broadway tracking-wider text-amber-300">
                           Panel de Números Extraídos:
                         </span>
-                        <span className="text-[11px] font-mono text-amber-400 font-black">
+                        <span className="text-[11px] font-broadway text-gold-gradient font-black">
                           {bingoDrawnBalls.length} de 90 bolas
                         </span>
                       </div>
 
-                      {/* 10 columnas x 9 filas: los 90 números con legibilidad óptima para blanco */}
+                      {/* 10 columnas x 9 filas: los 90 números con legibilidad óptima */}
                       <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
                         {Array.from({ length: 90 }, (_, i) => i + 1).map((num) => {
                           const isDrawn = bingoDrawnBalls.includes(num);
@@ -1998,18 +1936,16 @@ export default function TvView() {
                               key={num}
                               className={`h-6 sm:h-7 rounded-md flex items-center justify-center text-[11px] sm:text-xs font-mono font-black transition-all ${
                                 isCurrent
-                                  ? `bg-gradient-to-tr ${theme.bgGradient} ${theme.gridTextClass} scale-110 shadow-lg ring-2 ${
-                                      theme.isLightColor ? 'ring-amber-400 text-slate-950 border border-slate-400' : 'ring-white text-white'
-                                    } z-10 animate-pulse`
+                                  ? `bg-gradient-to-tr ${theme.bgGradient} ${theme.gridTextClass} scale-110 shadow-deco-gold ring-2 ring-amber-300 z-10 animate-pulse`
                                   : isDrawn
                                   ? `bg-gradient-to-tr ${theme.bgGradient} ${theme.gridTextClass} shadow-sm opacity-95 ${
                                       theme.isLightColor ? 'border border-slate-400 font-extrabold' : ''
                                     }`
-                                  : 'bg-slate-900/90 text-slate-500 border border-slate-800/80 hover:border-slate-700'
+                                  : 'bg-[#101018] text-[#d4af37]/40 border border-[#d4af37]/15 hover:border-[#d4af37]/40'
                               }`}
                               style={
                                 !isDrawn && !isCurrent
-                                  ? { borderColor: theme.isLightColor ? '#94a3b840' : `${theme.colorHex}30` }
+                                  ? { borderColor: '#d4af3720' }
                                   : undefined
                               }
                             >
@@ -2023,56 +1959,56 @@ export default function TvView() {
                 </div>
               ) : activeGame.id === 'mimica' ? (
                 /* ESCENARIO MÍMICA */
-                <div className="bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-4">
-                    <span>🎭</span> PRUEBA DE MÍMICA
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-4 border border-[#f5eedb]/40 shadow-sm">
+                    <span>🎭</span> TEATRO DE CINE MUDO Y MÍMICA
                   </div>
-                  <h2 className="text-3xl sm:text-5xl font-black text-white mb-2 uppercase">
+                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-2 uppercase drop-shadow-md">
                     ¡PROHIBIDO HABLAR O EMITIR SONIDOS!
                   </h2>
-                  <p className="text-sm text-slate-400 max-w-lg mx-auto mb-6">
+                  <p className="text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-6">
                     El actor interpreta el reto que le dio el anfitrión en su móvil. ¡Su equipo debe adivinar antes de que acabe el tiempo!
                   </p>
 
                   <div className="flex items-center justify-center gap-8 my-6">
-                    <div className="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 text-center min-w-[160px]">
-                      <span className="text-xs uppercase font-bold text-slate-400 block mb-1">Tiempo Restante</span>
-                      <div className="text-6xl font-black font-mono text-amber-400">
+                    <div className="p-6 rounded-3xl bg-[#07070a]/90 border-2 border-[#d4af37]/40 text-center min-w-[170px] shadow-deco-gold">
+                      <span className="text-xs uppercase font-broadway tracking-wider text-amber-300 block mb-1">Tiempo Restante</span>
+                      <div className="text-6xl font-broadway text-gold-gradient drop-shadow-md">
                         {mimicaTimerSeconds !== null ? `${mimicaTimerSeconds}s` : '90s'}
                       </div>
                     </div>
-                    <div className="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 text-center min-w-[160px]">
-                      <span className="text-xs uppercase font-bold text-slate-400 block mb-1">Aciertos Ronda</span>
-                      <div className="text-6xl font-black font-mono text-emerald-400">
+                    <div className="p-6 rounded-3xl bg-[#07070a]/90 border-2 border-emerald-400/40 text-center min-w-[170px] shadow-[0_0_30px_rgba(52,211,153,0.25)]">
+                      <span className="text-xs uppercase font-broadway tracking-wider text-emerald-300 block mb-1">Aciertos Ronda</span>
+                      <div className="text-6xl font-broadway text-emerald-300 drop-shadow-md">
                         {mimicaHitsCount}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <div className="text-xs font-vintage font-bold uppercase tracking-wider text-amber-300/80">
                     🤫 El presentador tiene las tarjetas secretas y controla el tiempo en su móvil
                   </div>
                 </div>
               ) : activeGame.id === 'beer_pong' ? (
                 /* ESCENARIO BEER PONG */
-                <div className="bg-slate-900/90 border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-4">
-                    <span>🍺</span> ARENA BEER PONG
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-4 border border-[#f5eedb]/40 shadow-sm">
+                    <span>🍺</span> TABERNA CLANDESTINA & TORNEO DE VASOS
                   </div>
-                  <h2 className="text-3xl sm:text-5xl font-black text-white mb-2 uppercase">
+                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-2 uppercase drop-shadow-md">
                     TORNEO DE TIROS Y VASOS
                   </h2>
-                  <p className="text-sm text-slate-400 max-w-lg mx-auto mb-6">
+                  <p className="text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-6">
                     Prueba presencial con vasos de colores y pelotas de ping pong. ¡Cada vaso encestado suma +1 pt y el último vaso +5 pts!
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 my-4">
                     {activeTeams.map((team) => {
                       const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
                       return (
-                        <div key={team.id} className="p-4 rounded-2xl bg-slate-950/80 border-2 border-slate-800 flex flex-col items-center">
-                          <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2`} />
-                          <span className="text-sm font-black text-white">{team.name}</span>
-                          <span className="text-2xl font-black text-amber-400 font-mono mt-1">{team.score} pts</span>
+                        <div key={team.id} className="p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 flex flex-col items-center shadow-md">
+                          <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2 shadow`} />
+                          <span className="text-sm font-broadway text-white">{team.name}</span>
+                          <span className="text-2xl font-broadway text-gold-gradient mt-1">{team.score} pts</span>
                         </div>
                       );
                     })}
@@ -2080,21 +2016,21 @@ export default function TvView() {
                 </div>
               ) : (
                 /* TELÉFONO DIBUJADO */
-                <div className="bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-3">
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
                     <Palette className="w-4 h-4" /> Teléfono Dibujado en Papel Real
                   </div>
-                  <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">
-                    Cadena Cósmica de Arte
+                  <h2 className="text-3xl sm:text-4xl font-broadway text-gold-gradient mb-2 drop-shadow-md">
+                    CADENA CÓSMICA DE ARTE & CARICATURAS
                   </h2>
-                  <div className="inline-block px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-xs font-bold text-purple-300 mb-3">
+                  <div className="inline-block px-4 py-1.5 bg-[#14141e] border border-[#d4af37]/40 rounded-full text-xs font-vintage font-bold text-amber-300 mb-3 shadow-sm">
                     💡 El Jugador 1 decide qué dibujar para iniciar la cadena
                   </div>
-                  <p className="text-xs text-slate-400 max-w-lg mx-auto mb-6">
+                  <p className="text-xs sm:text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-6">
                     J1 piensa y dibuja en su folio ➔ J2 adivina y escribe ➔ J3 dibuja lo escrito ➔ J4 adivina ➔ J5 dibuja la obra final. ¡Al terminar, se revelan los folios!
                   </p>
                   <div className="my-4">
-                    <div className={`text-7xl font-black font-mono ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-amber-400'}`}>
+                    <div className={`text-7xl font-broadway drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-gold-gradient'}`}>
                       {timerSeconds !== null ? `${timerSeconds}s` : '--'}
                     </div>
                   </div>
@@ -2105,14 +2041,14 @@ export default function TvView() {
 
           {/* MOTOR C: DUELOS & JUEGOS DE MESA (Blackjack, Dominó, Parchís, UNO) */}
           {activeGame.engine === 'duel' && (
-            <div className="w-full max-w-4xl bg-slate-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider mb-3">
-                <Swords className="w-4 h-4" /> Torneo de Mesa: {activeGame.title} (UNO, Dominó, Parchís)
+            <div className="w-full max-w-4xl bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-8 backdrop-blur-xl shadow-deco-gold text-center deco-card-frame">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
+                <Swords className="w-4 h-4" /> Gran Salón de Juegos Clandestinos: {activeGame.title}
               </div>
-              <h2 className="text-3xl md:text-5xl font-black font-arcade uppercase text-white mb-2">
-                CLASIFICACIÓN FINAL
+              <h2 className="text-3xl md:text-5xl font-broadway uppercase text-gold-gradient mb-2 drop-shadow-md">
+                CLASIFICACIÓN DEL TORNEO
               </h2>
-              <p className="text-slate-400 text-xs md:text-sm mb-6 max-w-xl mx-auto">
+              <p className="text-amber-200/80 font-vintage text-xs md:text-sm mb-6 max-w-xl mx-auto">
                 {activeGame.description}
               </p>
 
@@ -2126,19 +2062,19 @@ export default function TvView() {
                   return (
                     <div
                       key={team.id}
-                      className={`p-4 rounded-2xl border-2 ${catalog.twBorder} bg-slate-950/80 flex flex-col justify-between shadow-lg`}
+                      className={`p-4 rounded-2xl border-2 ${catalog.twBorder} bg-[#07070a]/90 flex flex-col justify-between shadow-deco-gold`}
                     >
-                      <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} mx-auto mb-2`} />
-                      <span className={`text-base font-black uppercase ${catalog.twText}`}>{team.name}</span>
-                      <span className="text-3xl font-black font-mono text-white mt-2">{team.score}</span>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold">puntos</span>
+                      <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} mx-auto mb-2 shadow`} />
+                      <span className={`text-base font-broadway uppercase ${catalog.twText}`}>{team.name}</span>
+                      <span className="text-3xl font-broadway text-gold-gradient mt-2">{team.score}</span>
+                      <span className="text-[10px] text-amber-300/70 uppercase font-vintage font-bold">puntos</span>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-400/90 flex items-center justify-center gap-1.5">
-                <Trophy className="w-4 h-4" /> Clasificación y puntos gestionados en directo por el Anfitrión
+              <div className="text-xs font-vintage font-bold uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5">
+                <Trophy className="w-4 h-4 text-[#d4af37]" /> Clasificación y puntos gestionados en directo por el Anfitrión
               </div>
             </div>
           )}
@@ -2313,40 +2249,40 @@ export default function TvView() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl flex flex-col items-center justify-center p-6 select-none"
+            className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-2xl flex flex-col items-center justify-center p-6 select-none"
           >
             <div className="relative max-w-xl w-full text-center space-y-6">
-              <div className="absolute -inset-10 rounded-3xl opacity-50 blur-3xl pointer-events-none bg-amber-500" />
-              <div className="relative bg-slate-900/95 border-4 border-amber-400 rounded-3xl p-8 shadow-[0_0_100px_rgba(245,158,11,0.5)] space-y-5">
-                <div className="w-24 h-24 mx-auto rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center animate-bounce shadow-xl">
-                  <Trophy className="w-14 h-14 text-amber-400" />
+              <div className="absolute -inset-10 rounded-3xl opacity-50 blur-3xl pointer-events-none bg-amber-500/20" />
+              <div className="relative bg-[#0c0c14]/95 border-4 border-[#d4af37] rounded-3xl p-8 shadow-deco-gold space-y-5 deco-card-frame">
+                <div className="w-24 h-24 mx-auto rounded-full bg-gold-gradient border-2 border-[#f5eedb]/60 flex items-center justify-center animate-bounce shadow-deco-gold">
+                  <Trophy className="w-14 h-14 text-slate-950" />
                 </div>
                 <div>
-                  <span className="text-xs uppercase font-black tracking-widest text-amber-300 block">
-                    ¡VEREDICTO DE SALA!
+                  <span className="text-xs uppercase font-broadway font-black tracking-widest text-amber-300 block">
+                    ¡VEREDICTO DEL SALÓN DE JUEGO!
                   </span>
-                  <h2 className="text-4xl sm:text-5xl font-black font-arcade uppercase text-white drop-shadow-lg mt-1">
+                  <h2 className="text-4xl sm:text-5xl font-broadway uppercase text-gold-gradient drop-shadow-md mt-1">
                     PRUEBA FINALIZADA
                   </h2>
-                  <p className="text-lg font-bold text-amber-200 mt-2">
+                  <p className="text-lg font-vintage font-bold text-amber-200 mt-2">
                     {testFinishedNotification.gameTitle}
                   </p>
                 </div>
 
                 {testFinishedNotification.winnerTeamName && (
-                  <div className="bg-amber-500/20 border-2 border-amber-400 rounded-2xl p-4">
-                    <span className="text-[11px] uppercase font-bold text-amber-300 block">
-                      Equipo destacado:
+                  <div className="bg-gold-gradient/15 border-2 border-[#d4af37]/60 rounded-2xl p-4 shadow-inner">
+                    <span className="text-[11px] uppercase font-broadway tracking-wider text-amber-300 block">
+                      Equipo más destacado:
                     </span>
-                    <span className="text-2xl font-black text-white uppercase">
+                    <span className="text-2xl font-broadway text-gold-gradient uppercase mt-1 block">
                       🎉 {testFinishedNotification.winnerTeamName}
                     </span>
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
+                <div className="pt-2 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-200/70">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                  <span>El Anfitrión está asignando puntuaciones y cartas bonus...</span>
+                  <span>El Anfitrión está asignando puntuaciones y cartas bonus en su consola...</span>
                 </div>
               </div>
             </div>

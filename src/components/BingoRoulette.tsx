@@ -52,12 +52,12 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
           }}
         />
 
-        {/* CÚPULA / RULETA GIRATORIA DORADA COMPACTA */}
-        <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full border-4 border-amber-400/60 bg-gradient-to-b from-slate-900 via-slate-950 to-black p-2 shadow-[0_0_35px_rgba(245,158,11,0.35)] flex items-center justify-center">
-          {/* ARO EXTERIOR CON BOMBILLAS DE CASINO */}
-          <div className="absolute inset-1 rounded-full border-2 border-dashed border-amber-300/40 pointer-events-none" />
+        {/* CÚPULA / JAULA GIRATORIA DE ALAMBRE DORADO ESTILO 1930 */}
+        <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full border-4 border-[#d4af37] bg-gradient-to-b from-[#18130a] via-[#0d0d12] to-black p-2 shadow-gold-glow flex items-center justify-center">
+          {/* ARO EXTERIOR CON BOMBILLAS DE TEATRO Y FILIGRANA */}
+          <div className="absolute inset-1 rounded-full border-2 border-dashed border-[#f3e5ab]/50 pointer-events-none" />
 
-          {/* RAYOS DE LA RULETA EN MOVIMIENTO */}
+          {/* RAYOS DE LA JAULA DE ORO EN MOVIMIENTO */}
           <motion.div
             animate={{ rotate: isSpinning ? 1800 : 0 }}
             transition={{
@@ -65,21 +65,21 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
               ease: isSpinning ? 'linear' : 'easeOut',
               repeat: isSpinning ? Infinity : 0,
             }}
-            className="absolute inset-3 rounded-full border border-amber-500/30 flex items-center justify-center opacity-80"
+            className="absolute inset-3 rounded-full border-2 border-[#d4af37]/40 flex items-center justify-center opacity-90"
           >
-            {[0, 45, 90, 135].map((deg) => (
+            {[0, 30, 60, 90, 120, 150].map((deg) => (
               <div
                 key={deg}
-                className="absolute w-full h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
+                className="absolute w-full h-[1.5px] bg-gradient-to-r from-transparent via-[#f3e5ab]/60 to-transparent"
                 style={{ transform: `rotate(${deg}deg)` }}
               />
             ))}
           </motion.div>
 
           {/* CÁPSULA DE VIDRIO CON BOLITAS DE COLORES DENTRO */}
-          <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-slate-950/80 border-2 border-amber-400/50 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-inner">
+          <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-[#08080d]/90 border-2 border-[#d4af37]/60 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-inner">
             {/* Reflejo de cristal */}
-            <div className="absolute -top-6 -left-6 w-24 h-24 bg-white/10 rounded-full blur-lg pointer-events-none" />
+            <div className="absolute -top-6 -left-6 w-24 h-24 bg-white/15 rounded-full blur-lg pointer-events-none" />
 
             {/* BOLITAS DE LOS 5 COLORES REBOTANDO DENTRO */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -125,17 +125,17 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
                   transition={{ duration: 0.3, repeat: Infinity }}
                   className="flex flex-col items-center"
                 >
-                  <span className="text-3xl sm:text-4xl font-black font-mono text-amber-300 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]">
+                  <span className="text-3xl sm:text-4xl font-black font-broadway text-gold-gradient drop-shadow-[0_0_15px_rgba(212,175,55,0.9)]">
                     {displayedTempNum}
                   </span>
-                  <span className="text-[9px] uppercase font-black tracking-widest text-amber-400 mt-0.5 animate-pulse">
+                  <span className="text-[9px] uppercase font-broadway tracking-widest text-[#f3e5ab] mt-0.5 animate-pulse">
                     ¡GIRANDO!
                   </span>
                 </motion.div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl text-amber-400/80">🎱</span>
-                  <span className="text-[10px] uppercase font-black tracking-wider text-amber-400/70 mt-0.5">
+                  <span className="text-2xl text-[#d4af37]">🎱</span>
+                  <span className="text-[10px] uppercase font-broadway tracking-widest text-[#f3e5ab] mt-0.5">
                     BOMBO
                   </span>
                 </div>
@@ -143,13 +143,13 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
             </div>
           </div>
 
-          {/* SOPORTE MECÁNICO */}
-          <div className="absolute -bottom-3 w-20 h-4 bg-gradient-to-t from-slate-900 to-amber-600/80 rounded-t-lg border-t-2 border-amber-300" />
+          {/* SOPORTE MECÁNICO DE LATÓN */}
+          <div className="absolute -bottom-3 w-20 h-4 bg-gradient-to-t from-[#1b1408] to-[#d4af37] rounded-t-lg border-t-2 border-[#f3e5ab]" />
         </div>
 
         {/* CANALETA / RAMPA DE SALIDA */}
-        <div className="w-12 h-6 bg-gradient-to-b from-amber-600 to-slate-900 border-x-2 border-b-2 border-amber-400/60 rounded-b-xl shadow-md -mt-1 flex items-center justify-center">
-          <div className="w-6 h-1.5 rounded-full bg-black/60" />
+        <div className="w-12 h-6 bg-gradient-to-b from-[#b87333] to-[#140e06] border-x-2 border-b-2 border-[#d4af37] rounded-b-xl shadow-md -mt-1 flex items-center justify-center">
+          <div className="w-6 h-1.5 rounded-full bg-black/80" />
         </div>
       </div>
 
@@ -162,10 +162,10 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-bold text-[11px] uppercase tracking-wider"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3e5ab] font-vintage font-bold text-[11px] uppercase tracking-wider"
             >
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span>Extrayendo bola...</span>
+              <span className="w-2 h-2 rounded-full bg-[#d4af37] animate-ping" />
+              <span>Extrayendo bola de la suerte...</span>
             </motion.div>
           ) : currentBall !== null ? (
             <motion.div
@@ -175,7 +175,7 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
               transition={{ type: 'spring', damping: 15, stiffness: 200 }}
               className="flex flex-col items-center"
             >
-              {/* BOLA 3D RADIANTE CON COLOR Y ALTO CONTRASTE */}
+              {/* BOLA 3D RADIANTE CON ESMALTE Y NÚMERO BROADWAY */}
               <div
                 className={`relative w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-gradient-to-tr ${ballTheme.bgGradient} border-3 ${ballTheme.border} flex flex-col items-center justify-center shadow-2xl ${
                   ballTheme.isLightColor ? 'ring-2 ring-slate-400/80 shadow-white/30' : ''
@@ -183,10 +183,10 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
                 style={{ boxShadow: `0 0 25px ${ballTheme.shadow}` }}
               >
                 {/* Reflejo esférico superior */}
-                <div className="absolute top-1.5 left-2.5 w-8 h-4 rounded-full bg-white/40 blur-[1px] -rotate-45 pointer-events-none" />
+                <div className="absolute top-1.5 left-2.5 w-8 h-4 rounded-full bg-white/45 blur-[1px] -rotate-45 pointer-events-none" />
 
-                {/* Número Grande con contraste perfecto */}
-                <span className={`text-3xl sm:text-4xl font-mono font-black ${ballTheme.ballTextClass}`}>
+                {/* Número Grande con tipografía Broadway */}
+                <span className={`text-3xl sm:text-4xl font-broadway font-black ${ballTheme.ballTextClass}`}>
                   {currentBall}
                 </span>
               </div>
@@ -198,18 +198,18 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
                 className="mt-2 flex flex-col items-center text-center"
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black text-white uppercase tracking-wider">
+                  <span className="text-sm font-black font-broadway text-[#f3e5ab] uppercase tracking-wider">
                     ¡Bola {currentBall}!
                   </span>
                   {nickname && (
-                    <span className="px-2 py-0.5 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] uppercase shadow-sm flex items-center gap-1">
+                    <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-[#d4af37] to-[#c5a059] text-[#0a0a0e] font-broadway text-[10px] uppercase shadow-md flex items-center gap-1 border border-white/40">
                       <Sparkles className="w-3 h-3" />
                       <span>{nickname}</span>
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                  Extraídas: <strong className="text-amber-300">{drawnBalls.length}</strong> / 90
+                <span className="text-[10px] text-slate-400 mt-0.5 font-vintage font-bold tracking-wider">
+                  Extraídas: <strong className="text-[#d4af37]">{drawnBalls.length}</strong> / 90
                 </span>
               </motion.div>
             </motion.div>
