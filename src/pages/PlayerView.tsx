@@ -170,6 +170,14 @@ export default function PlayerView() {
           return next;
         });
         setCaptainGambles({});
+      } else if (event.type === 'PRESENTATION_SLIDE') {
+        setRoom((prev) => {
+          const next = { ...prev, status: 'presentation' as const, presentation_slide: event.payload.slide };
+          localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
+          return next;
+        });
+      } else if (event.type === 'TEST_FINISHED') {
+        setCaptainGambles({});
       } else if (event.type === 'SWITCH_GAME') {
         setRoom((prev) => {
           const next = {
@@ -680,8 +688,41 @@ export default function PlayerView() {
             Cambiar de bando
           </button>
         </div>
+      ) : room.status === 'presentation' ? (
+        /* PASO 3B: EN PRESENTACIÓN */
+        <div className="flex-1 flex flex-col justify-center items-center my-auto z-10 max-w-sm mx-auto text-center space-y-4">
+          <div className="w-20 h-20 rounded-3xl bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center shadow-2xl animate-pulse">
+            <Sparkles className="w-10 h-10 text-purple-300" />
+          </div>
+          <div>
+            <span className="text-xs uppercase font-black tracking-widest text-amber-400 block">
+              ¡ATENTOS A LA PANTALLA!
+            </span>
+            <h2 className="text-2xl font-black uppercase text-white mt-1">
+              Presentación Oficial
+            </h2>
+            <p className="text-slate-300 text-xs mt-1">
+              El anfitrión está proyectando los 10 minijuegos y el funcionamiento de las Cartas de Poder en la TV.
+            </p>
+          </div>
+
+          <div className={`p-3 rounded-2xl bg-slate-900/90 border border-slate-800 w-full text-center`}>
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Tu Equipo</span>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <span className={`w-3 h-3 rounded-full ${selectedTeam.twBg}`} />
+              <span className={`text-base font-black uppercase ${selectedTeam.twText}`}>
+                {selectedTeam.name}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/30 px-4 py-2 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
+            <span>Presentación en directo en la TV</span>
+          </div>
+        </div>
       ) : (
-        /* PASO 3B: MANDO EN JUEGO */
+        /* PASO 3C: MANDO EN JUEGO */
         <div className="flex-1 flex flex-col justify-between my-2 pb-20 z-10 max-w-sm mx-auto w-full items-center">
           {/* BANNER DE EQUIPO Y JUEGO ACTIVO */}
           <div className="w-full space-y-2">

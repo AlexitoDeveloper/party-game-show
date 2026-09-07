@@ -45,7 +45,7 @@ import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
 import { SongTrack } from '../lib/musicData';
-import { PowerCardsState, PowerCard } from '../lib/powerCards';
+import { PowerCardsState, PowerCard, POWER_CARDS_CATALOG } from '../lib/powerCards';
 import PowerCardView from '../components/PowerCardView';
 import { RetroGridBackground } from '../components/RetroGridBackground';
 import { TeamScoreCard } from '../components/TeamScoreCard';
@@ -158,6 +158,7 @@ export default function TvView() {
     sensoryLimitation?: string;
     recoveredCard?: PowerCard;
   } | null>(null);
+  const [testFinishedNotification, setTestFinishedNotification] = useState<{ gameTitle: string; winnerTeamName?: string } | null>(null);
 
   // Estados del minijuego de adivinar películas
   const [movieIndex, setMovieIndex] = useState(0);
@@ -306,6 +307,17 @@ export default function TvView() {
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
+      } else if (event.type === 'PRESENTATION_SLIDE') {
+        setRoom((prev) => ({ ...prev, status: 'presentation', presentation_slide: event.payload.slide }));
+      } else if (event.type === 'TEST_FINISHED') {
+        setTestFinishedNotification(event.payload);
+        triggerVictoryConfetti();
+        resetBuzzer();
+        setTimerSeconds(null);
+        setMusicPlaying(false);
+        setTimeout(() => {
+          setTestFinishedNotification(null);
+        }, 7000);
       } else if (event.type === 'SWITCH_GAME') {
         setRoom((prev) => ({
           ...prev,
@@ -489,7 +501,243 @@ export default function TvView() {
           p.is_captain
       )
     : false;
-  const currentChallenge = SAMPLE_CHALLENGES[currentChallengeIndex];
+  const currentSlide = room.presentation_slide || 0;
+
+  const renderPresentationView = () => {
+    return (
+      <section className="flex-1 flex flex-col justify-center items-center my-3 z-10 w-full max-w-7xl mx-auto px-2">
+        {/* CABECERA PRESENTACIÓN */}
+        <div className="w-full flex items-center justify-between bg-slate-900/90 border border-slate-800/80 px-6 py-3 rounded-2xl mb-4 backdrop-blur-xl shadow-xl">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl animate-pulse">✨</span>
+            <div>
+              <span className="text-[11px] font-black uppercase tracking-widest text-amber-400 block">
+                PRESENTACIÓN OFICIAL DEL SHOW
+              </span>
+              <h2 className="text-lg font-black text-white">
+                {currentSlide === 0 ? 'Los 10 Minijuegos de la Velada' : 'Cartas de Poder y Rarezas'}
+              </h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border transition-all ${
+                currentSlide === 0
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                  : 'bg-slate-800 text-slate-400 border-slate-700'
+              }`}
+            >
+              1. Minijuegos
+            </span>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border transition-all ${
+                currentSlide === 1
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                  : 'bg-slate-800 text-slate-400 border-slate-700'
+              }`}
+            >
+              2. Cartas de Poder
+            </span>
+          </div>
+        </div>
+
+        {/* DIAPOSITIVA 0: LOS 10 MINIJUEGOS Y CARTEL */}
+        {currentSlide === 0 && (
+          <motion.div
+            key="slide-games"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="w-full grid grid-cols-12 gap-5 items-stretch flex-1 min-h-0"
+          >
+            {/* CARTEL DEL EVENTO */}
+            <div className="col-span-5 bg-slate-900/80 border-2 border-amber-500/40 rounded-3xl p-3 flex flex-col items-center justify-center backdrop-blur-xl shadow-[0_0_50px_rgba(245,158,11,0.15)] relative overflow-hidden group">
+              <div className="relative w-full h-[600px] rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-800">
+                <img
+                  src="/presentation_games.jpg"
+                  alt="Cartel 10 Minijuegos"
+                  className="w-full h-full object-contain drop-shadow-2xl"
+                />
+              </div>
+              <div className="w-full mt-2 text-center">
+                <span className="text-[11px] font-black uppercase tracking-widest text-amber-400/90 flex items-center justify-center gap-1.5">
+                  <span>🏆</span> 10 Retos • Puntuación Progresiva • Minijuegos Épicos
+                </span>
+              </div>
+            </div>
+
+            {/* LISTA COMPLETA DE LOS 10 JUEGOS EN ORDEN */}
+            <div className="col-span-7 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 flex flex-col backdrop-blur-xl shadow-2xl justify-between">
+              <div className="mb-3">
+                <h3 className="text-xl font-black font-arcade uppercase text-white flex items-center gap-2">
+                  <span className="text-amber-400">🔥</span> PROGRAMA DE LA NOCHE
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Cada equipo sumará puntos en cada juego. ¡El podio final coronará al ganador absoluto!
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 flex-1">
+                {GAMES_CATALOG.slice(0, 10).map((g, idx) => (
+                  <div
+                    key={g.id}
+                    className="p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-amber-400/40 transition-all flex items-start gap-2.5 shadow-md"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-sm font-black text-amber-400 shrink-0">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">{g.emoji}</span>
+                        <h4 className="text-xs font-black text-white truncate">{g.title}</h4>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold text-amber-400/80 block">
+                        {g.category}
+                      </span>
+                      <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                        {g.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span className="font-bold flex items-center gap-1.5 text-amber-300">
+                  <span>👑</span> El Anfitrión iniciará la 1ª prueba en breve
+                </span>
+                <span className="text-[11px] bg-slate-800 px-3 py-1 rounded-full text-slate-300 font-mono">
+                  Puntúa cada acierto en directo
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* DIAPOSITIVA 1: SISTEMA DE CARTAS Y RAREZAS */}
+        {currentSlide === 1 && (
+          <motion.div
+            key="slide-cards"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="w-full flex flex-col gap-4 flex-1"
+          >
+            {/* TRES REGLAS CLAVE */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-1 shadow-lg">
+                <span className="text-2xl">🃏</span>
+                <h4 className="text-sm font-black text-white uppercase">1. Obtención de Cartas</h4>
+                <p className="text-xs text-slate-400">
+                  Se reparten al inicio y como recompensas de bonus por ganar o destacar en minijuegos.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-1 shadow-lg">
+                <span className="text-2xl">📲</span>
+                <h4 className="text-sm font-black text-white uppercase">2. Uso en Directo</h4>
+                <p className="text-xs text-slate-400">
+                  Los equipos las juegan desde la pantalla de su móvil. Aparecen al instante en la TV.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-1 shadow-lg">
+                <span className="text-2xl">⏱️</span>
+                <h4 className="text-sm font-black text-white uppercase">3. Expiración de Efectos</h4>
+                <p className="text-xs text-slate-400">
+                  Duran durante la ronda o prueba activa. Al finalizar el minijuego, se descartan solas.
+                </p>
+              </div>
+            </div>
+
+            {/* LAS 4 RAREZAS CON EJEMPLOS REALES */}
+            <div className="grid grid-cols-4 gap-4 flex-1">
+              {[
+                {
+                  rarity: 'Común',
+                  colorText: 'text-emerald-400',
+                  colorBorder: 'border-emerald-500/50',
+                  colorBg: 'from-emerald-950/40 to-slate-950',
+                  glow: '#10b981',
+                  icon: '🟢',
+                  sampleCardId: 'bomba',
+                  badge: 'Efectos Básicos',
+                  desc: 'Baneos de turno, bombas trampa, pérdidas rápidas y marcas de objetivo.',
+                },
+                {
+                  rarity: 'Rara',
+                  colorText: 'text-blue-400',
+                  colorBorder: 'border-blue-500/50',
+                  colorBg: 'from-blue-950/40 to-slate-950',
+                  glow: '#3b82f6',
+                  icon: '🔵',
+                  sampleCardId: 'banco_cartas',
+                  badge: 'Impacto Táctico',
+                  desc: 'Banco de cartas del mazo, intercambio de manos, escudo e inmunidad.',
+                },
+                {
+                  rarity: 'Épica',
+                  colorText: 'text-purple-400',
+                  colorBorder: 'border-purple-500/50',
+                  colorBg: 'from-purple-950/40 to-slate-950',
+                  glow: '#a855f7',
+                  icon: '🟣',
+                  sampleCardId: 'caza_lider',
+                  badge: 'Poder Avanzado',
+                  desc: 'Multiplicador doble de puntos, caza implacable al líder y ruleta rusa.',
+                },
+                {
+                  rarity: 'Legendaria',
+                  colorText: 'text-amber-400',
+                  colorBorder: 'border-amber-500/60',
+                  colorBg: 'from-amber-950/40 to-slate-950',
+                  glow: '#f59e0b',
+                  icon: '🟡',
+                  sampleCardId: 'el_cuarto_mono',
+                  badge: 'Giro Legendario',
+                  desc: 'Limitaciones sensoriales (ojo tapado, sin hablar), rescate temporal y todo o nada.',
+                },
+              ].map((r) => {
+                const sampleCard =
+                  POWER_CARDS_CATALOG.find((c: PowerCard) => c.id === r.sampleCardId) || POWER_CARDS_CATALOG[0];
+                return (
+                  <div
+                    key={r.rarity}
+                    className={`p-4 rounded-3xl bg-gradient-to-b ${r.colorBg} border-2 ${r.colorBorder} flex flex-col justify-between items-center text-center shadow-2xl relative overflow-hidden`}
+                  >
+                    <div
+                      className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
+                      style={{ backgroundColor: r.glow }}
+                    />
+                    <div className="w-full">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xl">{r.icon}</span>
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 ${r.colorText}`}
+                        >
+                          {r.badge}
+                        </span>
+                      </div>
+                      <h4 className={`text-xl font-black font-arcade uppercase ${r.colorText}`}>
+                        {r.rarity}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-1 mb-3">{r.desc}</p>
+                    </div>
+
+                    <div className="scale-90 my-1 origin-center">
+                      <PowerCardView card={sampleCard} size="sm" />
+                    </div>
+
+                    <span className="text-[10px] text-slate-400 uppercase font-bold mt-2">
+                      Ejemplo: {sampleCard.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </section>
+    );
+  };
 
   return (
     <main className="min-h-screen w-full bg-slate-950 text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
@@ -549,6 +797,11 @@ export default function TvView() {
               <GameIcon name="Sparkle" size={16} color="#FBBF24" glow="#FBBF24" weight="fill" />
               {room.status === 'lobby' ? (
                 <span>Lobby de Convocatoria • Esperando Jugadores</span>
+              ) : room.status === 'presentation' ? (
+                <span className="text-amber-400 font-bold flex items-center gap-1.5">
+                  <span>✨</span>
+                  <span>PRESENTACIÓN OFICIAL DE LA VELADA</span>
+                </span>
               ) : (
                 <span className="text-white font-bold flex items-center gap-1.5">
                   <TwemojiText className="text-base">{activeGame.emoji}</TwemojiText>
@@ -684,6 +937,9 @@ export default function TvView() {
             })}
           </div>
         </section>
+      ) : room.status === 'presentation' ? (
+        /* ================= VISTA PRESENTACIÓN DEL SHOW ================= */
+        renderPresentationView()
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ================= */
         <section className="flex-1 flex flex-col justify-center items-center my-4 z-10 w-full max-w-6xl mx-auto">
@@ -1463,7 +1719,7 @@ export default function TvView() {
       )}
 
       {/* MARCADOR INFERIOR PERMANENTE EN TV (DURANTE LAS PRUEBAS / JUEGOS) */}
-      {room.status !== 'lobby' && (
+      {room.status !== 'lobby' && room.status !== 'presentation' && (
         <footer className="border-t border-slate-800/80 pt-4 z-10">
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs uppercase font-bold tracking-wider text-slate-400">
@@ -1602,6 +1858,54 @@ export default function TvView() {
                   <span className="text-[11px] text-amber-300/80 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1.5">
                     <span>👑</span> Control de sala: El anfitrión quitará la carta
                   </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* OVERLAY CELEBRATORIO DE PRUEBA FINALIZADA EN TV */}
+      <AnimatePresence>
+        {testFinishedNotification && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl flex flex-col items-center justify-center p-6 select-none"
+          >
+            <div className="relative max-w-xl w-full text-center space-y-6">
+              <div className="absolute -inset-10 rounded-3xl opacity-50 blur-3xl pointer-events-none bg-amber-500" />
+              <div className="relative bg-slate-900/95 border-4 border-amber-400 rounded-3xl p-8 shadow-[0_0_100px_rgba(245,158,11,0.5)] space-y-5">
+                <div className="w-24 h-24 mx-auto rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center animate-bounce shadow-xl">
+                  <Trophy className="w-14 h-14 text-amber-400" />
+                </div>
+                <div>
+                  <span className="text-xs uppercase font-black tracking-widest text-amber-300 block">
+                    ¡VEREDICTO DE SALA!
+                  </span>
+                  <h2 className="text-4xl sm:text-5xl font-black font-arcade uppercase text-white drop-shadow-lg mt-1">
+                    PRUEBA FINALIZADA
+                  </h2>
+                  <p className="text-lg font-bold text-amber-200 mt-2">
+                    {testFinishedNotification.gameTitle}
+                  </p>
+                </div>
+
+                {testFinishedNotification.winnerTeamName && (
+                  <div className="bg-amber-500/20 border-2 border-amber-400 rounded-2xl p-4">
+                    <span className="text-[11px] uppercase font-bold text-amber-300 block">
+                      Equipo destacado:
+                    </span>
+                    <span className="text-2xl font-black text-white uppercase">
+                      🎉 {testFinishedNotification.winnerTeamName}
+                    </span>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>El Anfitrión está asignando puntuaciones y cartas bonus...</span>
                 </div>
               </div>
             </div>

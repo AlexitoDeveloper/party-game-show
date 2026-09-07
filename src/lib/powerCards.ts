@@ -352,6 +352,8 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
 ];
 
 // Helper para buscar carta por ID
+export const POWER_CARDS_CATALOG: PowerCard[] = MASTER_POWER_CARDS;
+
 export function getPowerCardById(id: string): PowerCard | undefined {
   return MASTER_POWER_CARDS.find((c) => c.id === id);
 }

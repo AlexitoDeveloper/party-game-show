@@ -45,6 +45,8 @@ export type RoomSyncEvent =
   | { type: 'PLAY_SOUND'; payload: { sound: string } }
   | { type: 'LAUNCH_TIMER'; payload: { seconds: number } }
   | { type: 'CLEAR_CAPTAIN_GAMBLES'; payload?: { teamId?: string } }
+  | { type: 'TEST_FINISHED'; payload: { gameTitle: string; winnerTeamName?: string } }
+  | { type: 'PRESENTATION_SLIDE'; payload: { slide: number } }
   | { type: 'TRIGGER_CONFETTI'; payload?: { teamId?: string | number } }
   | { type: 'PING' };
 

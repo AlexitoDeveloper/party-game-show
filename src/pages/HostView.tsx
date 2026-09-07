@@ -414,6 +414,11 @@ export default function HostView() {
   const [returnCardModal, setReturnCardModal] = useState<{
     card: PowerCard;
   } | null>(null);
+  const [testFinishedModal, setTestFinishedModal] = useState<{
+    gameTitle: string;
+    gameId: string;
+    suggestedNextGame?: GameDefinition;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<'live' | 'cards' | 'teams' | 'catalog' | 'soundboard'>('live');
 
   const syncMusicState = (
@@ -1075,10 +1080,110 @@ export default function HostView() {
     loadData();
   }, [roomCode]);
 
+  // Acción: Iniciar Presentación oficial del Show
+  const handleStartPresentation = () => {
+    const updatedRoom: Room = { ...room, status: 'presentation', presentation_slide: 0 };
+    setRoom(updatedRoom);
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
+    roomSync.broadcast({ type: 'PRESENTATION_SLIDE', payload: { slide: 0 } });
+    roomSync.broadcast({ type: 'ROOM_UPDATE', payload: { status: 'presentation', presentation_slide: 0 } });
+  };
+
+  // Acción: Cambiar diapositiva de presentación (0 = 10 Minijuegos, 1 = Cartas y Rarezas)
+  const handleSetPresentationSlide = (slide: number) => {
+    const updatedRoom: Room = { ...room, status: 'presentation', presentation_slide: slide };
+    setRoom(updatedRoom);
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
+    roomSync.broadcast({ type: 'PRESENTATION_SLIDE', payload: { slide } });
+    roomSync.broadcast({ type: 'ROOM_UPDATE', payload: { status: 'presentation', presentation_slide: slide } });
+  };
+
+  // Acción: Limpiar manualmente todos los efectos activos de cartas de poder
+  const handleClearAllActiveEffects = () => {
+    if (!powerCards || powerCards.activeEffects.length === 0) return;
+    const newDiscard = [...powerCards.discardPile];
+    powerCards.activeEffects.forEach((eff) => {
+      if (!newDiscard.includes(eff.cardId)) newDiscard.push(eff.cardId);
+    });
+    const updatedCards: PowerCardsState = {
+      ...powerCards,
+      activeEffects: [],
+      discardPile: newDiscard,
+    };
+    setPowerCards(updatedCards);
+    localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(updatedCards));
+    roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: updatedCards });
+  };
+
+  // Acción: Finalizar Prueba Activa (caduca cartas activas, resetea música y abre veredicto)
+  const handleFinishTest = (gameTitle?: string, winnerTeamName?: string) => {
+    const activeTitle = gameTitle || activeGame.title;
+
+    // 1. Detener música si estaba reproduciéndose
+    if (musicPlaying) {
+      setMusicPlaying(false);
+      syncMusicState(false, musicRevealed, currentSongTrack);
+    }
+
+    // 2. Resetear pulsador
+    resetBuzzer();
+
+    // 3. Caducar y archivar automáticamente todos los efectos activos de cartas
+    if (powerCards && powerCards.activeEffects.length > 0) {
+      const newDiscard = [...powerCards.discardPile];
+      powerCards.activeEffects.forEach((eff) => {
+        if (!newDiscard.includes(eff.cardId)) {
+          newDiscard.push(eff.cardId);
+        }
+      });
+      const updatedCards: PowerCardsState = {
+        ...powerCards,
+        activeEffects: [],
+        discardPile: newDiscard,
+      };
+      setPowerCards(updatedCards);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(updatedCards));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: updatedCards });
+    }
+
+    // 4. Limpiar apuestas de capitanes
+    setCaptainGambles({});
+    localStorage.removeItem(`party_captain_gambles_${roomCode}`);
+    roomSync.broadcast({ type: 'CLEAR_CAPTAIN_GAMBLES', payload: {} });
+
+    // 5. Emitir evento sincronizado TEST_FINISHED para la TV y jugadores
+    roomSync.broadcast({
+      type: 'TEST_FINISHED',
+      payload: {
+        gameTitle: activeTitle,
+        winnerTeamName,
+      },
+    });
+
+    // 6. Encontrar siguiente minijuego en el catálogo de 10
+    const currentIndex = GAMES_CATALOG.findIndex((g) => g.id === (room.active_game_id || activeGame.id));
+    const nextGame =
+      currentIndex >= 0 && currentIndex < GAMES_CATALOG.length - 1
+        ? GAMES_CATALOG[currentIndex + 1]
+        : undefined;
+
+    // 7. Abrir modal resumen de prueba finalizada para el anfitrión
+    setTestFinishedModal({
+      gameTitle: activeTitle,
+      gameId: room.active_game_id || activeGame.id,
+      suggestedNextGame: nextGame,
+    });
+  };
+
   // Acción: Volver al Lobby
   const handleReturnToLobby = async () => {
     const updatedRoom: Room = { ...room, status: 'lobby' };
     setRoom(updatedRoom);
+
+    if (musicPlaying) {
+      setMusicPlaying(false);
+      syncMusicState(false, musicRevealed, currentSongTrack);
+    }
 
     roomSync.broadcast({ type: 'RETURN_TO_LOBBY' });
 
@@ -1098,6 +1203,22 @@ export default function HostView() {
     setRoom(updatedRoom);
     resetBuzzer();
     setActiveTab('live');
+
+    // Al cambiar o iniciar juego, caducar cualquier efecto activo de cartas anterior
+    if (powerCards && powerCards.activeEffects.length > 0) {
+      const newDiscard = [...powerCards.discardPile];
+      powerCards.activeEffects.forEach((eff) => {
+        if (!newDiscard.includes(eff.cardId)) newDiscard.push(eff.cardId);
+      });
+      const updatedCards: PowerCardsState = {
+        ...powerCards,
+        activeEffects: [],
+        discardPile: newDiscard,
+      };
+      setPowerCards(updatedCards);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(updatedCards));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: updatedCards });
+    }
 
     roomSync.broadcast({
       type: 'SWITCH_GAME',
@@ -1124,7 +1245,7 @@ export default function HostView() {
   };
 
   // Modificar puntuación manual con celebración y sincronización a TV
-  const handleScoreChange = async (teamId: string, delta: number) => {
+  const handleScoreChange = async (teamId: string, delta: number, silent?: boolean) => {
     let effectiveDelta = delta;
 
     // EFECTO DOBLE (Carta de Poder): Si el equipo tiene el efecto Doble activo y gana puntos
@@ -1152,11 +1273,17 @@ export default function HostView() {
 
     roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
 
-    if (effectiveDelta > 0) {
-      roomSync.broadcast({ type: 'TRIGGER_CONFETTI', payload: { teamId } });
-      soundFX.playSuccess();
-    } else if (effectiveDelta < 0) {
-      soundFX.playFail();
+    // Los sonidos y confeti solo deben sonar MIENTRAS se está jugando activamente el juego
+    const isActivelyPlaying = room.status === 'playing' && !testFinishedModal;
+    const shouldPlaySound = !silent && isActivelyPlaying;
+
+    if (shouldPlaySound) {
+      if (effectiveDelta > 0) {
+        roomSync.broadcast({ type: 'TRIGGER_CONFETTI', payload: { teamId } });
+        soundFX.playSuccess();
+      } else if (effectiveDelta < 0) {
+        soundFX.playFail();
+      }
     }
 
     if (isSupabaseConfigured) {
@@ -1435,11 +1562,22 @@ export default function HostView() {
     if (powerCards.activeEffects.length === 0) return null;
     return (
       <div className="bg-amber-500/10 border border-amber-500/30 p-3 sm:p-4 rounded-2xl space-y-2">
-        <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-          <Zap className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">Efectos de Poder Activos en Esta Prueba:</span>
-          <span className="sm:hidden">Efectos Activos:</span>
-        </span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Efectos de Poder Activos en Esta Prueba:</span>
+            <span className="sm:hidden">Efectos Activos ({powerCards.activeEffects.length}):</span>
+          </span>
+          <button
+            onClick={handleClearAllActiveEffects}
+            className="px-2.5 py-1 bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-300 text-[10px] font-black uppercase rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow shrink-0"
+            title="Caducar y descartar todos los efectos activos inmediatamente"
+          >
+            <Trash2 className="w-3 h-3 text-red-400" />
+            <span className="hidden sm:inline">Limpiar Efectos</span>
+            <span className="sm:hidden">Limpiar</span>
+          </button>
+        </div>
         <div className="flex flex-wrap gap-2">
           {powerCards.activeEffects.map((eff) => {
             const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
@@ -1785,9 +1923,13 @@ export default function HostView() {
               Sala {roomCode}
             </h1>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
-              room.status === 'lobby' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              room.status === 'lobby'
+                ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                : room.status === 'presentation'
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
             }`}>
-              {room.status === 'lobby' ? 'Lobby' : 'En Juego'}
+              {room.status === 'lobby' ? 'Lobby' : room.status === 'presentation' ? 'Presentación' : 'En Juego'}
             </span>
           </div>
         </div>
@@ -1815,34 +1957,76 @@ export default function HostView() {
       <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all flex items-center justify-between gap-2.5 shadow-xl ${
         room.status === 'playing'
           ? 'bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-slate-900 border-amber-400/40'
+          : room.status === 'presentation'
+          ? 'bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-slate-900 border-purple-400/40'
           : 'bg-slate-900/90 border-slate-800'
       }`}>
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="text-2xl sm:text-3xl p-1.5 sm:p-2 bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-700 flex-shrink-0">
-            {activeGame.emoji}
+            {room.status === 'presentation' ? '✨' : activeGame.emoji}
           </div>
           <div className="min-w-0">
             <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 block truncate">
-              {room.status === 'lobby' ? 'SALA EN ESPERA' : activeGame.category}
+              {room.status === 'lobby'
+                ? 'SALA EN ESPERA'
+                : room.status === 'presentation'
+                ? 'PRESENTACIÓN EN TV'
+                : activeGame.category}
             </span>
             <span className="text-sm sm:text-base font-black text-white block truncate">
-              {room.status === 'lobby' ? 'Lobby de Convocatoria' : activeGame.title}
+              {room.status === 'lobby'
+                ? 'Lobby de Convocatoria'
+                : room.status === 'presentation'
+                ? ((room.presentation_slide || 0) === 1 ? 'Cartas y Rarezas' : '10 Minijuegos Show')
+                : activeGame.title}
             </span>
           </div>
         </div>
 
-        {/* BOTÓN VOLVER AL LOBBY / COMENZAR */}
-        <div className="flex-shrink-0">
+        {/* BOTONES DE ACCIÓN SEGÚN ESTADO */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {room.status === 'playing' ? (
-            <button
-              onClick={handleReturnToLobby}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-slate-500 text-white font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg active:scale-95 transition-all"
-              title="Volver al Lobby (QR y Equipos)"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Volver al Lobby</span>
-              <span className="sm:hidden">Lobby</span>
-            </button>
+            <>
+              <button
+                onClick={() => handleFinishTest()}
+                className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-red-600/30 active:scale-95 transition-all border border-red-400/40"
+                title="Finalizar prueba actual, limpiar efectos y abrir veredicto"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Finalizar Prueba</span>
+                <span className="sm:hidden">Finalizar</span>
+              </button>
+
+              <button
+                onClick={handleReturnToLobby}
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-black text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
+                title="Volver al Lobby"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden md:inline">Lobby</span>
+              </button>
+            </>
+          ) : room.status === 'presentation' ? (
+            <>
+              <button
+                onClick={() => handleSelectGame(GAMES_CATALOG[0])}
+                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+                title="Iniciar Prueba 1: Adivina la Canción"
+              >
+                <Play className="w-3.5 h-3.5 fill-slate-950" />
+                <span className="hidden sm:inline">Empezar Juego 1</span>
+                <span className="sm:hidden">Juego 1</span>
+              </button>
+
+              <button
+                onClick={handleReturnToLobby}
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-black text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
+                title="Volver al Lobby"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden md:inline">Lobby</span>
+              </button>
+            </>
           ) : (
             <button
               onClick={() => handleSelectGame(GAMES_CATALOG[0])}
@@ -1856,6 +2040,45 @@ export default function HostView() {
           )}
         </div>
       </div>
+
+      {/* MANDO REMOTO DE LA PRESENTACIÓN EN MÓVIL (CUANDO STATUS ES PRESENTATION) */}
+      {room.status === 'presentation' && (
+        <div className="p-3 sm:p-4 bg-purple-950/40 border-2 border-purple-500/50 rounded-2xl sm:rounded-3xl space-y-3 shadow-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+              <span>📽️</span> Mando de Diapositivas en TV:
+            </span>
+            <span className="text-[11px] font-bold text-slate-400">
+              Diapositiva {(room.presentation_slide || 0) + 1} de 2
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => handleSetPresentationSlide(0)}
+              className={`p-2.5 sm:p-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+                (room.presentation_slide || 0) === 0
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/30'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+              }`}
+            >
+              <span>🏆</span>
+              <span className="truncate">1. Los 10 Minijuegos</span>
+            </button>
+            <button
+              onClick={() => handleSetPresentationSlide(1)}
+              className={`p-2.5 sm:p-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+                (room.presentation_slide || 0) === 1
+                  ? 'bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-500/30'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+              }`}
+            >
+              <span>🃏</span>
+              <span className="truncate">2. Cartas y Rarezas</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* BARRA DE NAVEGACIÓN POR PESTAÑAS (TABS DEL ANFITRIÓN: 5 COLUMNAS EN MÓVIL) */}
       <nav className="sticky top-2 z-30 grid grid-cols-5 gap-1 p-1 bg-slate-900/95 border border-slate-800 rounded-2xl shadow-xl backdrop-blur-xl">
@@ -2826,32 +3049,86 @@ export default function HostView() {
           )}
         </section>
       ) : (
-        <div className="bg-slate-900/80 border-2 border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl">
-          <div className="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl">
-            📺
-          </div>
-          <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-xl font-black text-white">Sala en Pantalla de Espera (Lobby)</h3>
-            <p className="text-xs text-slate-400">
-              La TV está proyectando el código QR y la formación de equipos. Selecciona un minijuego del catálogo para empezar a jugar.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <div className="space-y-4">
+          {/* MÓDULO INDIVIDUAL DE PRESENTACIÓN INICIAL DEL EVENTO */}
+          <div className="bg-gradient-to-r from-purple-950/60 via-slate-900 to-indigo-950/60 border-2 border-purple-500/40 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 text-center sm:text-left">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-400/50 flex items-center justify-center text-3xl shrink-0 shadow-lg">
+                📽️
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-black tracking-widest text-purple-300 block">
+                  Paso Previo al Show
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-white">Presentación Oficial del Evento</h3>
+                <p className="text-xs text-slate-400 mt-0.5 max-w-md">
+                  Proyecta en la TV los 10 minijuegos y la explicación del funcionamiento de las cartas y sus 4 rarezas antes de comenzar a jugar.
+                </p>
+              </div>
+            </div>
             <button
-              onClick={() => handleSelectGame(GAMES_CATALOG[0])}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase flex items-center gap-2 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+              onClick={handleStartPresentation}
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 active:scale-95 transition-all shrink-0 border border-purple-400/40"
+              title="Proyectar presentación oficial en la TV"
             >
-              <Play className="w-4 h-4 fill-slate-950" />
-              <span>Empezar con {GAMES_CATALOG[0].title}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('catalog')}
-              className="px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs uppercase flex items-center gap-2 active:scale-95 transition-all"
-            >
-              <Gamepad2 className="w-4 h-4 text-purple-400" />
-              <span>Ver Catálogo Completo</span>
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>Proyectar Presentación</span>
             </button>
           </div>
+
+          <div className="bg-slate-900/80 border-2 border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl">
+            <div className="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl">
+              📺
+            </div>
+            <div className="max-w-md mx-auto space-y-1">
+              <h3 className="text-xl font-black text-white">Sala en Pantalla de Espera (Lobby)</h3>
+              <p className="text-xs text-slate-400">
+                La TV está proyectando el código QR y la formación de equipos. Selecciona un minijuego del catálogo para empezar a jugar.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => handleSelectGame(GAMES_CATALOG[0])}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase flex items-center gap-2 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+              >
+                <Play className="w-4 h-4 fill-slate-950" />
+                <span>Empezar con {GAMES_CATALOG[0].title}</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('catalog')}
+                className="px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs uppercase flex items-center gap-2 active:scale-95 transition-all"
+              >
+                <Gamepad2 className="w-4 h-4 text-purple-400" />
+                <span>Ver Catálogo Completo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BARRA DE FINALIZACIÓN DE PRUEBA ACTIVA */}
+      {room.status === 'playing' && (
+        <div className="flex items-center justify-between bg-slate-900/95 border border-red-500/40 p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-lg gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-2xl p-1.5 bg-red-950/60 rounded-xl border border-red-500/30 shrink-0">🏁</span>
+            <div className="min-w-0">
+              <span className="text-xs font-black uppercase text-white block truncate">
+                {activeGame.title} en curso
+              </span>
+              <span className="text-[10px] text-slate-400 block truncate">
+                Concluye la prueba, caduca las cartas y asigna puntuaciones finales
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => handleFinishTest()}
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs uppercase flex items-center gap-1.5 shadow-md shadow-red-600/30 active:scale-95 transition-all border border-red-400/40 shrink-0"
+            title="Finalizar esta prueba"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Finalizar Prueba</span>
+            <span className="sm:hidden">Finalizar</span>
+          </button>
         </div>
       )}
 
@@ -3674,6 +3951,136 @@ export default function HostView() {
                 })()}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VEREDICTO DE PRUEBA FINALIZADA */}
+      {testFinishedModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-3xl animate-bounce">🏁</span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white uppercase">
+                    Prueba Finalizada
+                  </h3>
+                  <p className="text-xs text-amber-300 font-bold">
+                    {testFinishedModal.gameTitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTestFinishedModal(null)}
+                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs text-amber-200 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                Todos los efectos activos de cartas han sido caducados y enviados al descarte automáticamente.
+              </span>
+            </div>
+
+            {/* AJUSTES FINALES DE PUNTOS POR EQUIPO */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-black uppercase text-slate-400 tracking-wider block">
+                Marcador y Puntos Finales de la Prueba:
+              </span>
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                {activeTeams.map((t) => {
+                  const cat = TEAMS_CATALOG.find((c) => c.index === t.team_index) || TEAMS_CATALOG[0];
+                  return (
+                    <div
+                      key={t.id}
+                      className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-3 h-3 rounded-full ${cat.twBg} shrink-0`} />
+                        <span className={`text-xs font-black uppercase truncate ${cat.twText}`}>
+                          {t.name}
+                        </span>
+                        <span className="text-sm font-black text-white font-mono shrink-0">
+                          {t.score} pts
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleScoreChange(t.id, 5, true)}
+                          className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-black rounded-lg border border-amber-500/30"
+                          title="+5 puntos"
+                        >
+                          +5
+                        </button>
+                        <button
+                          onClick={() => handleScoreChange(t.id, 2, true)}
+                          className="px-2 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-500/30"
+                          title="+2 puntos"
+                        >
+                          +2
+                        </button>
+                        <button
+                          onClick={() => handleScoreChange(t.id, 1, true)}
+                          className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-[10px] font-black rounded-lg border border-blue-500/30"
+                          title="+1 punto"
+                        >
+                          +1
+                        </button>
+                        <button
+                          onClick={() => handleDealBonusCard(t.id)}
+                          className="px-2 py-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 text-[10px] font-black rounded-lg border border-purple-500/40 flex items-center gap-1"
+                          title="Dar carta bonus a este equipo"
+                        >
+                          <span>🎁</span>
+                          <span className="hidden sm:inline">Carta</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ACCIONES DE CIERRE O SALTO AL SIGUIENTE JUEGO */}
+            <div className="pt-3 border-t border-slate-800 space-y-2">
+              {testFinishedModal.suggestedNextGame && (
+                <button
+                  onClick={() => {
+                    const next = testFinishedModal.suggestedNextGame!;
+                    setTestFinishedModal(null);
+                    handleSelectGame(next);
+                  }}
+                  className="w-full p-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+                >
+                  <Play className="w-4 h-4 fill-slate-950" />
+                  <span>Siguiente: {testFinishedModal.suggestedNextGame.title}</span>
+                </button>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setTestFinishedModal(null);
+                    handleReturnToLobby();
+                  }}
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-black uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Ir al Lobby</span>
+                </button>
+                <button
+                  onClick={() => setTestFinishedModal(null)}
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-black uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <span>Cerrar Modal</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

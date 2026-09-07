@@ -70,10 +70,10 @@ export const GAMES_CATALOG: GameDefinition[] = [
     ],
   },
 
-  // 3. DIBUJAR EN CADENA
+  // 3. TELÉFONO DIBUJADO
   {
     id: 'drawing',
-    title: 'Dibujar en Cadena',
+    title: 'Teléfono Dibujado',
     emoji: '🎨',
     category: 'Creativo',
     engine: 'challenges',
@@ -95,7 +95,29 @@ export const GAMES_CATALOG: GameDefinition[] = [
     ],
   },
 
-  // 4. MÍMICA
+  // 4. TORNEO DE JUEGOS
+  {
+    id: 'torneo_juegos',
+    title: 'Torneo de Juegos',
+    emoji: '🎮',
+    category: 'Habilidad',
+    engine: 'duel',
+    description: 'Competición directa por eliminatorias o minijuegos arcade entre representantes de cada equipo.',
+    rules: [
+      '🥇 1.º Campeón del Torneo: +5 puntos',
+      '🥈 2.º Subcampeón: +3 puntos',
+      '🥉 3.º Tercer puesto: +2 puntos',
+      '4.º y 5.º puesto: +1 punto',
+    ],
+    scoringOptions: [
+      { id: 'tj_1', label: '🥇 Campeón (+5)', delta: 5, badge: '+5', color: 'amber', description: 'Primer clasificado' },
+      { id: 'tj_2', label: '🥈 Subcampeón (+3)', delta: 3, badge: '+3', color: 'blue', description: 'Segundo clasificado' },
+      { id: 'tj_3', label: '🥉 3.º Puesto (+2)', delta: 2, badge: '+2', color: 'emerald', description: 'Tercer clasificado' },
+      { id: 'tj_45', label: '4.º / 5.º Puesto (+1)', delta: 1, badge: '+1', color: 'slate', description: 'Resto de puestos' },
+    ],
+  },
+
+  // 5. MÍMICA
   {
     id: 'mimica',
     title: 'Mímica',
