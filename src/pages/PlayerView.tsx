@@ -418,17 +418,39 @@ export default function PlayerView() {
     );
   }, [powerCards?.activeEffects, player?.nickname]);
 
-  const mySensoryLimitation = useMemo(() => {
+  const myLimitation = useMemo(() => {
     if (!powerCards?.activeEffects) return null;
     const cleanNick = player?.nickname?.toLowerCase().trim();
     const effect = powerCards.activeEffects.find(
       (e) =>
-        e.cardId === 'el_cuarto_mono' &&
+        (e.cardId === 'el_cuarto_mono' || e.cardId === 'titiritero') &&
         ((cleanNick && e.targetPlayerName && e.targetPlayerName.toLowerCase().trim() === cleanNick) ||
           (e.targetTeamId && e.targetTeamId === myTeamId))
     );
-    return effect?.sensoryLimitation || null;
+    if (!effect) return null;
+    return {
+      cardId: effect.cardId,
+      title: effect.cardId === 'titiritero' ? '🎭 El Titiritero Activo' : '🙈 El Cuarto Mono Activo',
+      rule: effect.sensoryLimitation || 'Limitación especial activa para esta prueba',
+    };
   }, [powerCards?.activeEffects, player?.nickname, myTeamId]);
+
+  const myForcedChange = useMemo(() => {
+    if (!powerCards?.activeEffects) return null;
+    const cleanNick = player?.nickname?.toLowerCase().trim();
+    const effect = powerCards.activeEffects.find(
+      (e) =>
+        e.cardId === 'cambio_forzoso' &&
+        ((cleanNick && e.targetPlayerName && e.targetPlayerName.toLowerCase().trim() === cleanNick) ||
+          (e.targetTeamId && e.targetTeamId === myTeamId))
+    );
+    return effect ? effect.targetPlayerName || 'Representante' : null;
+  }, [powerCards?.activeEffects, player?.nickname, myTeamId]);
+
+  const hasTeamShield = useMemo(() => {
+    if (!powerCards?.activeEffects || !myTeamId) return false;
+    return powerCards.activeEffects.some((e) => e.cardId === 'escudo' && e.sourceTeamId === myTeamId);
+  }, [powerCards?.activeEffects, myTeamId]);
 
   const handleBuzzerClick = async () => {
     if (isLocked || !selectedTeam || isBanned) return;
@@ -809,22 +831,53 @@ export default function PlayerView() {
                 {activeGame.engine === 'buzzer' ? '⚡ Pulsador' : activeGame.engine === 'challenges' ? '🎨 Reto' : '🎲 Mesa'}
               </span>
             </div>
+
+            {/* ALERTAS Y LIMITACIONES ACTIVAS DE CARTAS DE PODER EN TODAS LAS PRUEBAS */}
+            {hasTeamShield && (
+              <div className="w-full bg-blue-950/80 border-2 border-blue-400 rounded-2xl px-3 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
+                <span className="text-base">🛡️</span>
+                <span className="text-xs font-black uppercase text-blue-200">
+                  ¡Escudo Protector Activo! Tu equipo está blindado contra ataques rivales.
+                </span>
+              </div>
+            )}
+
+            {isBanned && (
+              <div className="w-full bg-red-950/90 border-2 border-red-500 rounded-2xl px-3 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
+                <span className="text-base">🚫</span>
+                <span className="text-xs font-black uppercase text-red-200">
+                  ¡Baneado para esta prueba! No puedes participar en este minijuego.
+                </span>
+              </div>
+            )}
+
+            {myForcedChange && (
+              <div className="w-full bg-amber-950/90 border-2 border-amber-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
+                <span className="text-[10px] font-black uppercase text-amber-300 block">
+                  🔄 Cambio Forzoso Activo
+                </span>
+                <span className="text-xs font-bold text-white block">
+                  El rival ha obligado a sustituir a <strong className="text-amber-300">{myForcedChange}</strong>.
+                </span>
+              </div>
+            )}
+
+            {myLimitation && (
+              <div className="w-full bg-purple-950/90 border-2 border-purple-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
+                <span className="text-[10px] font-black uppercase text-purple-300 block">
+                  {myLimitation.title}
+                </span>
+                <span className="text-xs font-bold text-white block">
+                  {myLimitation.rule}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ESCENARIO DEL MÓVIL SEGÚN TIPO DE MINIJUEGO */}
           {activeGame.engine === 'buzzer' ? (
             /* PULSADOR 3D GIGANTE EXCLUSIVO PARA JUEGOS DE PULSADOR */
             <div className="my-auto flex flex-col items-center w-full">
-              {mySensoryLimitation && (
-                <div className="w-full max-w-xs bg-purple-950/90 border-2 border-purple-400 rounded-2xl p-3 mb-4 text-center shadow-lg animate-pulse">
-                  <span className="text-[10px] font-black uppercase text-purple-300 block mb-0.5">
-                    🙈 El Cuarto Mono Activo
-                  </span>
-                  <span className="text-xs font-bold text-white block">
-                    {mySensoryLimitation}
-                  </span>
-                </div>
-              )}
 
               {isBanned ? (
                 <div className="w-64 h-64 rounded-full bg-red-950/80 border-8 border-red-600 flex flex-col items-center justify-center p-6 text-center shadow-inner animate-pulse">

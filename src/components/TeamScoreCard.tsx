@@ -21,6 +21,10 @@ export interface TeamActiveEffects {
   hasDouble?: boolean;
   hasBomb?: boolean;
   hasGamble?: boolean;
+  hasShield?: boolean;
+  hasSentence?: boolean;
+  hasCurse?: boolean;
+  hasRussianRoulette?: boolean;
 }
 
 interface TeamScoreCardProps {
@@ -110,8 +114,28 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               </span>
             )}
             {activeEffects.hasBomb && (
-              <span className="text-[10px] bg-orange-500/30 text-orange-300 border border-orange-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-orange-500/30">
+              <span className="text-[10px] bg-orange-500/30 text-orange-300 border border-orange-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-orange-500/30" title="Bomba activa">
                 💣
+              </span>
+            )}
+            {activeEffects.hasShield && (
+              <span className="text-[10px] bg-blue-500/30 text-blue-300 border border-blue-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-blue-500/30" title="Escudo protector">
+                🛡️
+              </span>
+            )}
+            {activeEffects.hasSentence && (
+              <span className="text-[10px] bg-red-700/40 text-red-300 border border-red-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="La Sentencia activa">
+                💀
+              </span>
+            )}
+            {activeEffects.hasRussianRoulette && (
+              <span className="text-[10px] bg-purple-500/30 text-purple-300 border border-purple-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Ruleta Rusa">
+                🎰
+              </span>
+            )}
+            {activeEffects.hasCurse && (
+              <span className="text-[10px] bg-red-950/80 text-red-400 border border-red-600/70 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Mano con Maldición (-1 pt por ronda)">
+                ☠️
               </span>
             )}
           </div>

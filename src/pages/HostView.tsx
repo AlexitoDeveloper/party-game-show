@@ -999,6 +999,68 @@ export default function HostView() {
 
     const targetTeam = targetTeamId ? activeTeams.find((t) => t.id === targetTeamId) : undefined;
 
+    // Determinar equipo objetivo efectivo (si se especificó un jugador, resolver su equipo)
+    let effectiveTargetTeamId = targetTeamId;
+    if (!effectiveTargetTeamId && targetPlayerName) {
+      const pMatch = players.find(
+        (p) => p.nickname.toLowerCase().trim() === targetPlayerName.toLowerCase().trim()
+      );
+      if (pMatch) {
+        effectiveTargetTeamId = pMatch.team_id || activeTeams.find((t) => t.team_index === pMatch.team_index)?.id;
+      }
+    }
+
+    // Comprobar si el equipo objetivo tiene un ESCUDO activo que bloquee cartas dañinas
+    const isHarmfulCard = [
+      'maldicion_comun',
+      'baneo',
+      'bomba',
+      'cambio_forzoso',
+      'caza_lider',
+      'robo',
+      'la_sentencia',
+      'el_cuarto_mono',
+      'titiritero',
+      'robo_siglo',
+    ].includes(cardId);
+
+    const activeShield = effectiveTargetTeamId
+      ? powerCards.activeEffects.find((e) => e.cardId === 'escudo' && e.sourceTeamId === effectiveTargetTeamId)
+      : undefined;
+
+    if (isHarmfulCard && activeShield) {
+      const victimTeam = activeTeams.find((t) => t.id === effectiveTargetTeamId);
+      soundFX.playSound('heroic');
+      alert(
+        `🛡️ ¡ESCUDO ACTIVADO! ${victimTeam?.name || 'El equipo rival'} tenía un Escudo activo que ha bloqueado y anulado la carta "${card.name}". Ambas cartas van al descarte.`
+      );
+
+      // Descartar la carta jugada y consumir el escudo
+      const stateWithPlayed = executePlayCard(powerCards, sourceTeamId, cardId, effectiveTargetTeamId, targetPlayerName);
+      const stateShieldConsumed: PowerCardsState = {
+        ...stateWithPlayed,
+        activeEffects: stateWithPlayed.activeEffects.filter(
+          (e) => e.id !== activeShield.id && e.cardId !== cardId
+        ),
+        discardPile: [...stateWithPlayed.discardPile, 'escudo'],
+      };
+      setPowerCards(stateShieldConsumed);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(stateShieldConsumed));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: stateShieldConsumed });
+
+      const animPayload = {
+        type: 'play' as const,
+        teamName: team.name,
+        teamId: team.id,
+        teamColorHex: team.color_hex,
+        card,
+        targetName: `🛡️ ¡Bloqueado por Escudo de ${victimTeam?.name || 'Rival'}!`,
+      };
+      roomSync.broadcast({ type: 'POWER_CARD_ANIMATION', payload: animPayload });
+      setActiveCardOnScreen(animPayload);
+      return;
+    }
+
     let sensoryLimitationText: string | undefined = undefined;
     let recoveredCardObj: PowerCard | undefined = undefined;
 
@@ -1119,14 +1181,33 @@ export default function HostView() {
       sensoryLimitationText = `${limitation.emoji} ${limitation.label}: ${limitation.rule}`;
     }
 
-    // Caso Especial 6: MALDICIÓN COMÚN (-2 puntos inmediatos)
+    // Caso Especial 5.1: EL TITIRITERO (Sabotaje cómico)
+    if (cardId === 'titiritero') {
+      const puppetRules = [
+        '🙃 Jugar de espaldas a la pantalla',
+        '🎶 Responder cantando como en un musical',
+        '🗣️ Hablar con acento extranjero exagerado',
+        '💃 Bailar sin parar durante toda la prueba',
+        '🤖 Hablar como robot sin doblar articulaciones',
+      ];
+      const randomRule = puppetRules[Math.floor(Math.random() * puppetRules.length)];
+      sensoryLimitationText = `🎭 ${randomRule}`;
+    }
+
+    // Caso Especial 6: MALDICIÓN COMÚN (-2 puntos inmediatos al rival objetivo)
     if (cardId === 'maldicion_comun') {
-      handleScoreChange(sourceTeamId, -2);
+      const victimId = targetTeamId || sourceTeamId;
+      handleScoreChange(victimId, -2);
     }
 
     // Caso Especial 7: LA MALDICIÓN ÉPICA (-3 puntos al jugarla para descartarla)
     if (cardId === 'la_maldicion') {
       handleScoreChange(sourceTeamId, -3);
+    }
+
+    // Caso Especial 8: ESCUDO (Protección activa durante la prueba)
+    if (cardId === 'escudo') {
+      sensoryLimitationText = '🛡️ Escudo protector activo';
     }
 
     const nextState = executePlayCard(
@@ -1484,23 +1565,7 @@ export default function HostView() {
     // 2. Resetear pulsador
     resetBuzzer();
 
-    // 3. Caducar y archivar automáticamente todos los efectos activos de cartas
-    if (powerCards && powerCards.activeEffects.length > 0) {
-      const newDiscard = [...powerCards.discardPile];
-      powerCards.activeEffects.forEach((eff) => {
-        if (!newDiscard.includes(eff.cardId)) {
-          newDiscard.push(eff.cardId);
-        }
-      });
-      const updatedCards: PowerCardsState = {
-        ...powerCards,
-        activeEffects: [],
-        discardPile: newDiscard,
-      };
-      setPowerCards(updatedCards);
-      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(updatedCards));
-      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: updatedCards });
-    }
+    // 3. Los efectos activos de cartas se mantienen vigentes para que el anfitrión pueda revisarlos y resolverlos en el modal de veredicto
 
     // 4. Limpiar apuestas de capitanes
     setCaptainGambles({});
@@ -1533,6 +1598,7 @@ export default function HostView() {
 
   // Acción: Volver al Lobby
   const handleReturnToLobby = async () => {
+    handleClearAllActiveEffects();
     const updatedRoom: Room = { ...room, status: 'lobby' };
     setRoom(updatedRoom);
 
@@ -1968,12 +2034,12 @@ export default function HostView() {
                 {eff.cardId === 'bomba' && eff.targetTeamId && (
                   <button
                     onClick={() => {
-                      handleScoreChange(eff.targetTeamId!, -1);
+                      handleScoreChange(eff.targetTeamId!, -3);
                       handleRemoveActiveEffect(eff.id);
                     }}
                     className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
                   >
-                    💣 Detonar (-1 pt)
+                    💣 Detonar (-3 pts)
                   </button>
                 )}
 
@@ -1992,12 +2058,15 @@ export default function HostView() {
                 {eff.cardId === 'caza_lider' && (
                   <button
                     onClick={() => {
+                      if (eff.targetTeamId) {
+                        handleScoreChange(eff.targetTeamId, -3);
+                      }
                       handleScoreChange(eff.sourceTeamId, 3);
                       handleRemoveActiveEffect(eff.id);
                     }}
                     className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[10px] shadow"
                   >
-                    👑 Cobrar (+3 pts)
+                    👑 Destronar (-3 rival / +3 tú)
                   </button>
                 )}
 
@@ -2005,21 +2074,21 @@ export default function HostView() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => {
-                        handleScoreChange(eff.sourceTeamId, 8);
+                        handleScoreChange(eff.sourceTeamId, 6);
                         handleRemoveActiveEffect(eff.id);
                       }}
                       className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
                     >
-                      +8 pts (1º-2º)
+                      +6 pts (1º-2º)
                     </button>
                     <button
                       onClick={() => {
-                        handleScoreChange(eff.sourceTeamId, -5);
+                        handleScoreChange(eff.sourceTeamId, -4);
                         handleRemoveActiveEffect(eff.id);
                       }}
                       className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
                     >
-                      -5 pts (3º-5º)
+                      -4 pts (3º-5º)
                     </button>
                   </div>
                 )}
@@ -2027,60 +2096,59 @@ export default function HostView() {
                 {eff.cardId === 'la_sentencia' && eff.targetTeamId && (
                   <button
                     onClick={() => {
-                      handleScoreChange(eff.targetTeamId!, -5);
+                      handleScoreChange(eff.targetTeamId!, -4);
                       handleRemoveActiveEffect(eff.id);
                     }}
                     className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold text-[10px] shadow"
                   >
-                    💀 Ejecutar (-5 pts)
+                    💀 Ejecutar (-4 pts)
                   </button>
                 )}
 
-                {eff.cardId === 'todo_o_nada' && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => {
-                        handleScoreChange(eff.sourceTeamId, 10);
-                        handleRemoveActiveEffect(eff.id);
-                      }}
-                      className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
-                    >
-                      +10 pts (1.º)
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleScoreChange(eff.sourceTeamId, -5);
-                        handleRemoveActiveEffect(eff.id);
-                      }}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
-                    >
-                      -5 pts (Otro)
-                    </button>
-                  </div>
-                )}
-
-                {eff.cardId === 'el_intercambio' && eff.targetTeamId && (
+                {eff.cardId === 'golpe_maestro' && (
                   <button
                     onClick={() => {
-                      const sTeam = teams.find((t) => t.id === eff.sourceTeamId);
+                      const otherTeams = activeTeams.filter((t) => t.id !== eff.sourceTeamId);
+                      let stolenTotal = 0;
+                      const updated = teams.map((t) => {
+                        if (t.id === eff.sourceTeamId) return t;
+                        if (t.is_active && t.score > 0) {
+                          stolenTotal += 1;
+                          return { ...t, score: Math.max(0, t.score - 1) };
+                        }
+                        return t;
+                      });
+                      const finalTeams = updated.map((t) =>
+                        t.id === eff.sourceTeamId ? { ...t, score: t.score + stolenTotal } : t
+                      );
+                      setTeams(finalTeams);
+                      roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: finalTeams });
+                      handleRemoveActiveEffect(eff.id);
+                      alert(`💥 ¡Golpe Maestro! ${stolenTotal} pts recolectados de los rivales.`);
+                    }}
+                    className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
+                  >
+                    💥 Golpe Maestro (+1 de c/u)
+                  </button>
+                )}
+
+                {eff.cardId === 'robo_siglo' && eff.targetTeamId && (
+                  <button
+                    onClick={() => {
                       const tTeam = teams.find((t) => t.id === eff.targetTeamId);
-                      if (sTeam && tTeam) {
-                        const sScore = sTeam.score;
-                        const tScore = tTeam.score;
-                        const updated = teams.map((t) => {
-                          if (t.id === sTeam.id) return { ...t, score: tScore };
-                          if (t.id === tTeam.id) return { ...t, score: sScore };
-                          return t;
-                        });
-                        setTeams(updated);
-                        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
+                      const pts = prompt(`¿Cuántos puntos ganó ${tTeam?.name || 'el rival'} en esta prueba? (Se robará el 50%)`, '4');
+                      const num = parseInt(pts || '0', 10);
+                      if (num > 0) {
+                        const steal = Math.round(num * 0.5);
+                        handleScoreChange(eff.targetTeamId!, -steal);
+                        handleScoreChange(eff.sourceTeamId, steal);
                         handleRemoveActiveEffect(eff.id);
-                        alert(`🔄 Puntuaciones intercambiadas entre ${sTeam.name} y ${tTeam.name}`);
+                        alert(`👑 ¡Robo del Siglo! Has transferido ${steal} pts a tu equipo.`);
                       }
                     }}
                     className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
                   >
-                    🔄 Intercambiar Puntos
+                    👑 Robo 50%
                   </button>
                 )}
 
@@ -4818,11 +4886,231 @@ export default function HostView() {
               </button>
             </div>
 
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs text-amber-200 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>
-                Todos los efectos activos de cartas han sido caducados y enviados al descarte automáticamente.
-              </span>
+            {/* SECCIÓN INTERACTIVA DE RESOLUCIÓN DE CARTAS DE PODER DE ESTA PRUEBA */}
+            <div className="space-y-2 border-t border-b border-slate-800 py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  Cartas y Efectos de Esta Prueba ({powerCards.activeEffects.length}):
+                </span>
+                {powerCards.activeEffects.length > 0 && (
+                  <button
+                    onClick={handleClearAllActiveEffects}
+                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold rounded-lg border border-slate-700"
+                    title="Archivar todos los efectos y enviarlos al descarte"
+                  >
+                    ✓ Archivar Todos
+                  </button>
+                )}
+              </div>
+
+              {powerCards.activeEffects.length === 0 ? (
+                <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-[11px] text-slate-400 text-center">
+                  No hay cartas pendientes de resolver para esta prueba.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {powerCards.activeEffects.map((eff) => {
+                    const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
+                    const targetTeam = eff.targetTeamId ? activeTeams.find((t) => t.id === eff.targetTeamId) : null;
+                    return (
+                      <div
+                        key={eff.id}
+                        className="p-2.5 rounded-xl bg-slate-950 border border-amber-400/40 flex flex-wrap items-center justify-between gap-2 shadow"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-lg">{eff.cardEmoji}</span>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-black text-white">{eff.cardName}</span>
+                              <span className="text-[10px] font-bold text-amber-300">({team?.name || eff.sourceTeamName})</span>
+                              {targetTeam && (
+                                <span className="text-[10px] font-bold text-red-400">➔ {targetTeam.name}</span>
+                              )}
+                              {eff.targetPlayerName && (
+                                <span className="text-[10px] font-bold text-red-400">➔ {eff.targetPlayerName}</span>
+                              )}
+                            </div>
+                            {eff.sensoryLimitation && (
+                              <span className="text-[10px] text-purple-300 block font-medium">
+                                {eff.sensoryLimitation}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ACCIONES DE RESOLUCIÓN SEGÚN LA CARTA */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {eff.cardId === 'bomba' && eff.targetTeamId && (
+                            <button
+                              onClick={() => {
+                                handleScoreChange(eff.targetTeamId!, -3);
+                                handleRemoveActiveEffect(eff.id);
+                              }}
+                              className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                              title="Detonar Bomba: el objetivo pierde 3 puntos"
+                            >
+                              💣 Detonar (-3)
+                            </button>
+                          )}
+
+                          {eff.cardId === 'objetivo' && (
+                            <button
+                              onClick={() => {
+                                handleScoreChange(eff.sourceTeamId, 2);
+                                handleRemoveActiveEffect(eff.id);
+                              }}
+                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                              title="Objetivo cumplido: el equipo emisor gana +2 pts"
+                            >
+                              🎯 Cobrar (+2)
+                            </button>
+                          )}
+
+                          {eff.cardId === 'caza_lider' && (
+                            <button
+                              onClick={() => {
+                                if (eff.targetTeamId) handleScoreChange(eff.targetTeamId, -3);
+                                handleScoreChange(eff.sourceTeamId, 3);
+                                handleRemoveActiveEffect(eff.id);
+                              }}
+                              className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                              title="Destronar al líder: robar 3 pts al líder"
+                            >
+                              👑 Destronar (+3 / -3)
+                            </button>
+                          )}
+
+                          {eff.cardId === 'ruleta_rusa' && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  handleScoreChange(eff.sourceTeamId, 6);
+                                  handleRemoveActiveEffect(eff.id);
+                                }}
+                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                              >
+                                +6 pts (1º-2º)
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleScoreChange(eff.sourceTeamId, -4);
+                                  handleRemoveActiveEffect(eff.id);
+                                }}
+                                className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                              >
+                                -4 pts (3º-5º)
+                              </button>
+                            </div>
+                          )}
+
+                          {eff.cardId === 'la_sentencia' && eff.targetTeamId && (
+                            <button
+                              onClick={() => {
+                                handleScoreChange(eff.targetTeamId!, -4);
+                                handleRemoveActiveEffect(eff.id);
+                              }}
+                              className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                            >
+                              💀 Ejecutar (-4)
+                            </button>
+                          )}
+
+                          {eff.cardId === 'golpe_maestro' && (
+                            <button
+                              onClick={() => {
+                                let stolenTotal = 0;
+                                const updated = teams.map((t) => {
+                                  if (t.id === eff.sourceTeamId) return t;
+                                  if (t.is_active && t.score > 0) {
+                                    stolenTotal += 1;
+                                    return { ...t, score: Math.max(0, t.score - 1) };
+                                  }
+                                  return t;
+                                });
+                                const finalTeams = updated.map((t) =>
+                                  t.id === eff.sourceTeamId ? { ...t, score: t.score + stolenTotal } : t
+                                );
+                                setTeams(finalTeams);
+                                roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: finalTeams });
+                                handleRemoveActiveEffect(eff.id);
+                                alert(`💥 ¡Golpe Maestro! ${stolenTotal} pts recolectados de los rivales.`);
+                              }}
+                              className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow active:scale-95"
+                            >
+                              💥 Golpe Maestro (+1 c/u)
+                            </button>
+                          )}
+
+                          {eff.cardId === 'robo_siglo' && eff.targetTeamId && (
+                            <button
+                              onClick={() => {
+                                const tTeam = teams.find((t) => t.id === eff.targetTeamId);
+                                const pts = prompt(`¿Cuántos puntos ganó ${tTeam?.name || 'el rival'} en esta prueba? (Se robará el 50%)`, '4');
+                                const num = parseInt(pts || '0', 10);
+                                if (num > 0) {
+                                  const steal = Math.round(num * 0.5);
+                                  handleScoreChange(eff.targetTeamId!, -steal);
+                                  handleScoreChange(eff.sourceTeamId, steal);
+                                  handleRemoveActiveEffect(eff.id);
+                                }
+                              }}
+                              className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow active:scale-95"
+                            >
+                              👑 Robo 50%
+                            </button>
+                          )}
+
+                          {eff.cardId === 'doble' && (
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-lg font-black">
+                              x2 Aplicado
+                            </span>
+                          )}
+
+                          <button
+                            onClick={() => handleRemoveActiveEffect(eff.id)}
+                            className="p-1 text-slate-500 hover:text-red-400 text-xs font-bold"
+                            title="Quitar efecto"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* PENALIZACIÓN DE LA MALDICIÓN ÉPICA (-1 PT POR PRUEBA EN MANO) */}
+              {(() => {
+                const cursedTeams = activeTeams.filter((t) => {
+                  const hand = powerCards.teamHands[t.id] || [];
+                  return hand.includes('la_maldicion');
+                });
+                if (cursedTeams.length === 0) return null;
+                return (
+                  <div className="mt-2 p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 space-y-1.5">
+                    <span className="text-[10px] font-black uppercase text-purple-300 block flex items-center gap-1">
+                      <span>☠️</span> Equipos con La Maldición en Mano (-1 pt al final de prueba):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cursedTeams.map((cTeam) => (
+                        <button
+                          key={cTeam.id}
+                          onClick={() => {
+                            handleScoreChange(cTeam.id, -1);
+                            alert(`☠️ Penalización de -1 pt aplicada a ${cTeam.name} por tener La Maldición.`);
+                          }}
+                          className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 border border-purple-400/50 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow active:scale-95"
+                          title="Descontar 1 punto por tener La Maldición"
+                        >
+                          <span>-1 pt a {cTeam.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* AJUSTES FINALES DE PUNTOS POR EQUIPO */}

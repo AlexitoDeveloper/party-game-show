@@ -795,7 +795,7 @@ export default function TvView() {
                   icon: '🟡',
                   sampleCardId: 'el_cuarto_mono',
                   badge: 'Giro Legendario',
-                  desc: 'Limitaciones sensoriales (ojo tapado, sin hablar), rescate temporal y todo o nada.',
+                  desc: 'Limitaciones sensoriales (el mono), el titiritero cómico, robo del siglo y golpe maestro.',
                 },
               ].map((r) => {
                 const sampleCard =
@@ -1132,6 +1132,11 @@ export default function TvView() {
                     <span className="text-slate-400">({team?.name || eff.sourceTeamName})</span>
                     {targetTeam && <span className="text-red-400 font-extrabold">➔ {targetTeam.name}</span>}
                     {eff.targetPlayerName && <span className="text-red-400 font-extrabold">➔ {eff.targetPlayerName}</span>}
+                    {eff.sensoryLimitation && (
+                      <span className="text-amber-300 font-extrabold bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded-lg text-[11px] shadow-sm">
+                        {eff.sensoryLimitation}
+                      </span>
+                    )}
                   </span>
                 );
               })}
@@ -2160,6 +2165,16 @@ export default function TvView() {
                 const hasBomb = powerCards?.activeEffects.some(
                   (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
                 );
+                const hasShield = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'escudo'
+                );
+                const hasSentence = powerCards?.activeEffects.some(
+                  (e) => e.targetTeamId === team.id && e.cardId === 'la_sentencia'
+                );
+                const hasRussianRoulette = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'ruleta_rusa'
+                );
+                const hasCurse = teamHand.includes('la_maldicion');
                 const hasCaptainGamble = !!captainGambles[team.id];
                 const teamCaptain = players.find(
                   (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
@@ -2177,6 +2192,10 @@ export default function TvView() {
                     activeEffects={{
                       hasDouble,
                       hasBomb,
+                      hasShield,
+                      hasSentence,
+                      hasRussianRoulette,
+                      hasCurse,
                       hasGamble: hasCaptainGamble,
                     }}
                   />
