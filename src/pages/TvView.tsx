@@ -2082,8 +2082,11 @@ export default function TvView() {
                   <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">
                     Cadena Cósmica de Arte
                   </h2>
+                  <div className="inline-block px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-xs font-bold text-purple-300 mb-3">
+                    💡 El Jugador 1 decide qué dibujar para iniciar la cadena
+                  </div>
                   <p className="text-xs text-slate-400 max-w-lg mx-auto mb-6">
-                    J1 dibuja en papel ➔ J2 adivina ➔ J3 dibuja ➔ J4 adivina ➔ J5 dibuja la obra final. ¡Puntuación al final por acierto y desastre artístico!
+                    J1 piensa y dibuja en su folio ➔ J2 adivina y escribe ➔ J3 dibuja lo escrito ➔ J4 adivina ➔ J5 dibuja la obra final. ¡Al terminar, se revelan los folios!
                   </p>
                   <div className="my-4">
                     <div className={`text-7xl font-black font-mono ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-amber-400'}`}>

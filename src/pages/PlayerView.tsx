@@ -1011,13 +1011,15 @@ export default function PlayerView() {
                 </div>
                 <h3 className="text-lg font-black uppercase text-white mb-1">Prueba en Papel Físico</h3>
                 <p className="text-xs text-slate-400 mb-3">
-                  Dibuja y escribe en los folios de papel siguiendo las indicaciones del anfitrión en la sala.
+                  El <strong>Jugador 1</strong> decide libremente qué dibujar para iniciar la cadena. Dibuja y escribe en los folios de papel siguiendo los turnos.
                 </p>
                 <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-1.5 text-xs text-slate-300">
                   <div className="font-bold text-amber-300">Mecánica de la cadena:</div>
-                  <div>🎯 J1 dibuja palabra secreta ➔ J2 adivina ➔ J3 dibuja...</div>
+                  <div>💡 J1 piensa su idea y dibuja (sin frases impuestas)</div>
+                  <div>✍️ J2 adivina por escrito y oculta el dibujo anterior</div>
+                  <div>🎨 J3 dibuja lo escrito... ¡hasta la revelación final!</div>
                   <div className="text-[11px] text-slate-400 pt-1">
-                    El host asignará los puntos al final según los resultados y el humor.
+                    El anfitrión asignará los puntos al final según los resultados y el humor.
                   </div>
                 </div>
               </div>

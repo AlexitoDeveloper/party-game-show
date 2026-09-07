@@ -673,26 +673,6 @@ export default function HostView() {
     syncMimicaState(0, 90, false);
   };
 
-  // ==========================================================================
-  // 🎨 TELÉFONO DIBUJADO - GENERADOR DE FRASES SECRETAS
-  // ==========================================================================
-  const DRAWING_SECRET_PROMPTS = [
-    'Astronauta montando a caballo en la Luna',
-    'Perrito caliente surfeando una ola de ketchup',
-    'Pingüino camarero tropezando con una bandeja de pizzas',
-    'Dinosaurio intentando bailar flamenco con tacones',
-    'Pirata con pata de palo jugando al baloncesto',
-    'Gato con gafas de sol tomando el sol en una tumbona',
-    'Superhéroe planchando su capa en una nube',
-    'Pulpo DJ mezclando música en una discoteca submarina',
-  ];
-  const [drawingPromptIndex, setDrawingPromptIndex] = useState(0);
-  const currentDrawingPrompt = DRAWING_SECRET_PROMPTS[drawingPromptIndex % DRAWING_SECRET_PROMPTS.length];
-
-  const handleRandomDrawingPrompt = () => {
-    const nextIdx = (drawingPromptIndex + 1) % DRAWING_SECRET_PROMPTS.length;
-    setDrawingPromptIndex(nextIdx);
-  };
 
   // ==========================================================================
   // 🎬 ADIVINA LA PELÍCULA - VALIDACIÓN AUTOMÁTICA SEGÚN PISTAS
@@ -3869,29 +3849,40 @@ export default function HostView() {
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎨</span>
                   <span className="text-sm font-bold uppercase tracking-wider text-slate-200">
-                    Teléfono Dibujado — Frase Secreta Inicial
+                    Teléfono Dibujado — Dinámica en Papel Real
                   </span>
                 </div>
-                <button
-                  onClick={handleRandomDrawingPrompt}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1"
-                >
-                  <Shuffle className="w-3 h-3" />
-                  <span>Nueva Frase</span>
-                </button>
+                <div className="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+                  Decisión libre del Jugador 1
+                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-purple-500/30 text-center">
-                <span className="text-[10px] uppercase font-bold text-purple-400 block mb-1">
-                  Frase Secreta para susurrar al Jugador 1:
-                </span>
-                <div className="text-lg font-black text-white">
-                  "{currentDrawingPrompt}"
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-indigo-500/30 text-left space-y-2">
+                <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase">
+                  <span>💡</span>
+                  <span>Sin palabras previas impuestas</span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  El <strong>Jugador 1</strong> de cada equipo decide libremente qué frase, palabra o concepto va a dibujar en el primer folio para iniciar la cadena (no requiere de frases generadas por el sistema).
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-slate-400">
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-indigo-400 font-bold block mb-0.5">1.º Turno (Dibujo)</span>
+                    J1 piensa su idea y la dibuja. Dobla el papel y se lo entrega a J2.
+                  </div>
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-amber-400 font-bold block mb-0.5">2.º Turno (Texto)</span>
+                    J2 solo ve el dibujo, escribe lo que cree que es, dobla para ocultar el dibujo y pasa a J3.
+                  </div>
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-emerald-400 font-bold block mb-0.5">Final y Revelación</span>
+                    Se despliegan todos los folios en la sala, se comprueba la evolución y se asignan los puntos.
+                  </div>
                 </div>
               </div>
 
               <p className="text-xs text-slate-400 text-center">
-                📝 Se juega presencialmente en papel real. Al terminar la cadena, asigna las puntuaciones en los botones superiores.
+                📝 Se juega presencialmente en papel real. Al terminar la cadena, asigna las puntuaciones con los botones superiores.
               </p>
             </div>
           )}
