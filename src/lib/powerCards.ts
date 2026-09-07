@@ -16,6 +16,33 @@ export interface PowerCard {
   rarityColorHex: string; // Color primario de la rareza
 }
 
+// Mapeo exacto de IDs de carta a los archivos .jpeg oficiales en public/cards
+export const CARD_IMAGE_MAP: Record<string, string> = {
+  maldicion_comun: 'maldicion.jpeg',
+  baneo: 'baneo.jpeg',
+  objetivo: 'objetivo.jpeg',
+  bomba: 'bomba.jpeg',
+  intercambio_cartas: 'intercambio_de_cartas.jpeg',
+  banco_cartas: 'banco_de_cartas.jpeg',
+  cambio_forzoso: 'cambio_forzoso.jpeg',
+  escudo: 'escudo.jpeg',
+  caza_lider: 'caza_al_lider.jpeg',
+  robo: 'robo.jpeg',
+  la_maldicion: 'maldicion_epica.jpeg',
+  doble: 'doble.jpeg',
+  ruleta_rusa: 'ruleta_rusa.jpeg',
+  la_sentencia: 'la_sentencia.jpeg',
+  el_intercambio: 'el_intercambio.jpeg',
+  viaje_tiempo: 'viaje_en_el_tiempo.jpeg',
+  todo_o_nada: 'todo_o_nada.jpeg',
+  el_cuarto_mono: 'cuarto_mono.jpeg',
+};
+
+export function getCardImageUrl(cardId: string): string {
+  const filename = CARD_IMAGE_MAP[cardId] || `${cardId}.jpeg`;
+  return `/cards/${filename}`;
+}
+
 export interface ActivePowerEffect {
   id: string;
   cardId: string;
@@ -58,66 +85,8 @@ export const RARITY_WEIGHTS: Record<CardRarity, number> = {
   'Legendaria': 5,  // 5%
 };
 
-// Configuración de estilo visual y metadatos de rareza de las cartas
-export const RARITY_METADATA: Record<CardRarity, {
-  label: string;
-  gemEmoji: string;
-  gemClass: string;
-  frameGradient: string;
-  bannerBg: string;
-  parchmentBorder: string;
-  badgeBorder: string;
-  textGlow: string;
-  pillColor: string;
-}> = {
-  'Común': {
-    label: 'COMÚN',
-    gemEmoji: '🟢',
-    gemClass: 'bg-emerald-500 text-white shadow-emerald-500/50',
-    frameGradient: 'from-emerald-900 via-stone-900 to-emerald-950',
-    bannerBg: 'bg-gradient-to-r from-emerald-950 via-emerald-800 to-emerald-950',
-    parchmentBorder: 'border-emerald-700/60',
-    badgeBorder: 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300',
-    textGlow: '0 0 12px rgba(16, 185, 129, 0.4)',
-    pillColor: 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40',
-  },
-  'Rara': {
-    label: 'RARA',
-    gemEmoji: '🔵',
-    gemClass: 'bg-blue-500 text-white shadow-blue-500/50',
-    frameGradient: 'from-blue-900 via-slate-900 to-indigo-950',
-    bannerBg: 'bg-gradient-to-r from-blue-950 via-blue-800 to-blue-950',
-    parchmentBorder: 'border-blue-700/60',
-    badgeBorder: 'border-blue-500/50 bg-blue-500/20 text-blue-300',
-    textGlow: '0 0 14px rgba(59, 130, 246, 0.5)',
-    pillColor: 'bg-blue-500/20 text-blue-200 border-blue-500/40',
-  },
-  'Épica': {
-    label: 'ÉPICA',
-    gemEmoji: '🟣',
-    gemClass: 'bg-purple-500 text-white shadow-purple-500/50',
-    frameGradient: 'from-purple-900 via-zinc-900 to-fuchsia-950',
-    bannerBg: 'bg-gradient-to-r from-purple-950 via-purple-800 to-purple-950',
-    parchmentBorder: 'border-purple-700/60',
-    badgeBorder: 'border-purple-500/50 bg-purple-500/20 text-purple-300',
-    textGlow: '0 0 16px rgba(168, 85, 247, 0.6)',
-    pillColor: 'bg-purple-500/20 text-purple-200 border-purple-500/40',
-  },
-  'Legendaria': {
-    label: 'LEGENDARIA',
-    gemEmoji: '🟠',
-    gemClass: 'bg-amber-500 text-slate-950 shadow-amber-500/80 ring-2 ring-amber-300',
-    frameGradient: 'from-amber-900 via-yellow-950 to-orange-950',
-    bannerBg: 'bg-gradient-to-r from-amber-950 via-amber-700 to-yellow-950',
-    parchmentBorder: 'border-amber-500/80',
-    badgeBorder: 'border-amber-400/80 bg-amber-500/25 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.5)]',
-    textGlow: '0 0 20px rgba(245, 158, 11, 0.8)',
-    pillColor: 'bg-amber-500/25 text-amber-200 border-amber-400/60',
-  },
-};
-
 // ============================================================================
-// 🃏 CATÁLOGO MAESTRO DEFINITIVO (17 CARTAS CON RAREZAS OFICIALES)
+// 🃏 CATÁLOGO MAESTRO DEFINITIVO (18 CARTAS CON RAREZAS OFICIALES)
 // ============================================================================
 export const MASTER_POWER_CARDS: PowerCard[] = [
   // 🟢 COMUNES (Probabilidad: 50%)
@@ -348,6 +317,19 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
     glowColorHex: '#f59e0b',
     rarityColorHex: '#f59e0b',
   },
+  {
+    id: 'el_cuarto_mono',
+    name: 'El Cuarto Mono',
+    emoji: '🌀',
+    rarity: 'Legendaria',
+    timing: 'Antes de la prueba',
+    tagline: 'Sentidos bloqueados',
+    description: 'Elige a un representante rival antes de una prueba. Se le asignará una limitación sensorial: 👁️ Un ojo tapado, 🔇 Sin sonido, 🤚 Mano menos hábil o 🗣️ No puede hablar.',
+    requiresTarget: 'player',
+    badgeColor: 'amber',
+    glowColorHex: '#f59e0b',
+    rarityColorHex: '#f59e0b',
+  },
 ];
 
 // Helper para buscar carta por ID
@@ -370,8 +352,8 @@ export function shuffleDeck(cardIds: string[]): string[] {
  * - 50% Comunes (30 cartas)
  * - 30% Raras (18 cartas)
  * - 15% Épicas (9 cartas)
- * - 5% Legendarias (3 cartas)
- * Total: 60 cartas
+ * - 5% Legendarias (4 cartas — 1 copia de cada una)
+ * Total: 61 cartas
  */
 export function generateWeightedDeck(): string[] {
   const deck: string[] = [];
@@ -395,37 +377,12 @@ export function generateWeightedDeck(): string[] {
     deck.push(epicas[i % epicas.length].id);
   }
 
-  // 3 cartas legendarias (1 copia exacta de cada una)
-  for (let i = 0; i < 3; i++) {
-    deck.push(legendarias[i % legendarias.length].id);
+  // 4 cartas legendarias (1 copia exacta de cada una)
+  for (let i = 0; i < legendarias.length; i++) {
+    deck.push(legendarias[i].id);
   }
 
   return shuffleDeck(deck);
-}
-
-/**
- * Roba 1 carta aleatoria respetando las probabilidades ponderadas:
- * 50% Común, 30% Rara, 15% Épica, 5% Legendaria
- */
-export function drawRandomCardByRarity(availableCards: PowerCard[] = MASTER_POWER_CARDS): PowerCard {
-  const roll = Math.random() * 100;
-  let targetRarity: CardRarity = 'Común';
-
-  if (roll < 50) {
-    targetRarity = 'Común';
-  } else if (roll < 80) {
-    targetRarity = 'Rara';
-  } else if (roll < 95) {
-    targetRarity = 'Épica';
-  } else {
-    targetRarity = 'Legendaria';
-  }
-
-  const matches = availableCards.filter((c) => c.rarity === targetRarity);
-  if (matches.length === 0) {
-    return availableCards[Math.floor(Math.random() * availableCards.length)];
-  }
-  return matches[Math.floor(Math.random() * matches.length)];
 }
 
 // Estado inicial del sistema de cartas

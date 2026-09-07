@@ -380,6 +380,30 @@ export default function HostView() {
   const [spotifyPlaylistInput, setSpotifyPlaylistInput] = useState('');
   const [isImportingPlaylist, setIsImportingPlaylist] = useState(false);
   const [musicSearchMode, setMusicSearchMode] = useState<'search' | 'playlist' | 'bank'>('search');
+  const [hostAudioEnabled, setHostAudioEnabled] = useState(true);
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Reproductor local de audio en el Host
+  useEffect(() => {
+    if (!musicAudioRef.current) return;
+    if (musicPlaying && hostAudioEnabled && currentSongTrack?.previewUrl) {
+      musicAudioRef.current.play().catch((err) => {
+        console.warn('Error al reproducir audio en Host:', err);
+      });
+    } else {
+      musicAudioRef.current.pause();
+    }
+  }, [musicPlaying, hostAudioEnabled, currentSongTrack?.previewUrl, currentSongTrack?.id]);
+
+  const prevHostSongIdRef = useRef<string | undefined>(currentSongTrack?.id);
+  useEffect(() => {
+    if (currentSongTrack && prevHostSongIdRef.current !== currentSongTrack.id) {
+      prevHostSongIdRef.current = currentSongTrack.id;
+      if (musicAudioRef.current) {
+        musicAudioRef.current.currentTime = 0;
+      }
+    }
+  }, [currentSongTrack?.id]);
 
   const syncMusicState = (
     playing: boolean,
@@ -1075,6 +1099,16 @@ export default function HostView() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none">
+      {/* Reproductor de Audio HTML5 en el Host */}
+      <audio
+        ref={musicAudioRef}
+        src={currentSongTrack?.previewUrl || ''}
+        preload="auto"
+        onEnded={() => {
+          setMusicPlaying(false);
+          syncMusicState(false, musicRevealed);
+        }}
+      />
       {/* HEADER ANFITRIÓN */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-4">
         <div>
@@ -1504,7 +1538,20 @@ export default function HostView() {
                   </div>
 
                   {/* Botones de acción principales: Reproducir/Pausar + Revelar */}
-                  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto">
+                  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto items-center">
+                    <button
+                      onClick={() => setHostAudioEnabled(!hostAudioEnabled)}
+                      className={`px-3 py-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                        hostAudioEnabled
+                          ? 'bg-slate-800/90 text-emerald-400 border-emerald-500/40 hover:bg-slate-700'
+                          : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'
+                      }`}
+                      title={hostAudioEnabled ? 'Silenciar sonido en este dispositivo' : 'Activar sonido en este dispositivo'}
+                    >
+                      {hostAudioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                      <span className="text-[11px] font-bold">{hostAudioEnabled ? 'Host: ON' : 'Host: OFF'}</span>
+                    </button>
+
                     <button
                       onClick={handleTogglePlayMusic}
                       className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
@@ -1514,7 +1561,7 @@ export default function HostView() {
                       }`}
                     >
                       {musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                      <span>{musicPlaying ? 'Pausar Audio en TV' : 'Reproducir Preview'}</span>
+                      <span>{musicPlaying ? 'Pausar Audio' : 'Reproducir Preview'}</span>
                     </button>
 
                     <button

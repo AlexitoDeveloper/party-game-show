@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PowerCard } from '../lib/powerCards';
+import { PowerCard, getCardImageUrl } from '../lib/powerCards';
 
 interface PowerCardViewProps {
   card: PowerCard;
@@ -25,7 +25,7 @@ export default function PowerCardView({
     setImageError(false);
   }, [card.id]);
 
-  const imageSrc = `/cards/${card.id}.jpg`;
+  const imageSrc = getCardImageUrl(card.id);
 
   // Proporción estándar de naipe 2:3 optimizada para móvil y TV
   const sizeClasses =

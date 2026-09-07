@@ -9,7 +9,7 @@ import { useBuzzerRace } from '../lib/useBuzzerRace';
 import { RoomSync, getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards';
-import UnoPowerCard, { PowerCardView } from '../components/UnoPowerCard';
+import PowerCardView from '../components/PowerCardView';
 import { ArcadeBuzzer } from '../components/ArcadeBuzzer';
 import { getTeamTheme } from '../lib/teamThemes';
 import { LobbyProfilePicker } from '../components/LobbyProfilePicker';

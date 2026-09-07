@@ -8,6 +8,10 @@
       "destination": "/api/spotify-preview/[id]"
     },
     {
+      "source": "/api/spotify-playlist/:id",
+      "destination": "/api/spotify-playlist/[id]"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

@@ -147,60 +147,119 @@ export function extractSpotifyPlaylistId(input: string): string | null {
 }
 
 /**
- * Importa canciones de cualquier playlist pública de Spotify utilizando la API de Spotify
+ * Fallback de audio 30s garantizado mediante iTunes Search API
+ */
+async function resolveItunesPreview(title: string, artist: string): Promise<string> {
+  try {
+    const q = `${title} ${artist}`.replace(/[-_()]/g, ' ').trim();
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=1&country=ES`);
+    if (res.ok) {
+      const d = await res.json();
+      return d.results?.[0]?.previewUrl || '';
+    }
+  } catch {}
+  return '';
+}
+
+/**
+ * Importa canciones de cualquier playlist pública de Spotify utilizando el scraper oficial sin CORS
+ * y el fallback de previews de 30 segundos.
  */
 export async function fetchSpotifyPlaylistTracks(
   playlistUrlOrId: string,
-  category: SongTrack['category'] = 'Pop Español'
+  category: SongTrack['category'] = 'Spotify'
 ): Promise<{ tracks: SongTrack[]; playlistName: string }> {
   const playlistId = extractSpotifyPlaylistId(playlistUrlOrId);
   if (!playlistId) {
-    throw new Error('Enlace o ID de Playlist de Spotify no válido');
+    throw new Error('Enlace o ID de Playlist de Spotify no válido. Pega un enlace como https://open.spotify.com/playlist/...');
   }
 
+  // 1. Intentar importar mediante el endpoint de extracción de playlist sin CORS
+  try {
+    const res = await fetch(`/api/spotify-playlist/${playlistId}`);
+    if (res.ok) {
+      const data = await res.json();
+      const playlistName = data.playlistName || 'Playlist de Spotify';
+      const rawTracks = data.tracks || [];
+
+      if (rawTracks.length > 0) {
+        // Tomar hasta 35 canciones para no saturar la memoria
+        const selected = rawTracks.slice(0, 35);
+        const resolvedTracks: SongTrack[] = await Promise.all(
+          selected.map(async (t: any): Promise<SongTrack> => {
+            let previewUrl = t.previewUrl;
+            if (!previewUrl) {
+              previewUrl = await resolveItunesPreview(t.title, t.artist);
+            }
+            return {
+              id: t.id,
+              title: t.title,
+              artist: t.artist,
+              category,
+              previewUrl,
+              coverUrl: t.coverUrl || data.playlistCover || '',
+              year: 2022,
+              extraClue: `De la playlist de Spotify "${playlistName}"`,
+            };
+          })
+        );
+
+        const playableTracks = resolvedTracks.filter((t) => Boolean(t.previewUrl));
+        if (playableTracks.length > 0) {
+          return { tracks: playableTracks, playlistName };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Error en proxy de playlist, intentando alternativa directa:', err);
+  }
+
+  // 2. Fallback de respaldo: Spotify Web API oficial
   const token = await getSpotifyAccessToken();
-  if (!token) {
-    throw new Error('No se pudo conectar con la API de Spotify');
+  if (token) {
+    try {
+      const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=ES`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const playlistName = data.name || 'Playlist de Spotify';
+        const rawItems = (data.tracks?.items || []).slice(0, 30);
+
+        const tracks: SongTrack[] = await Promise.all(
+          rawItems.map(async (entry: any): Promise<SongTrack | null> => {
+            const item = entry.track;
+            if (!item || !item.name) return null;
+
+            const title = item.name;
+            const artist = item.artists?.map((a: any) => a.name).join(', ') || 'Varios';
+            const coverUrl = item.album?.images?.[0]?.url || item.album?.images?.[1]?.url || '';
+            const year = item.album?.release_date ? parseInt(item.album.release_date.substring(0, 4), 10) : 2020;
+            const previewUrl = await getSpotifyPreviewAudio(item.id, item.preview_url, title, artist);
+
+            if (!previewUrl) return null;
+
+            return {
+              id: `spotify_${item.id}`,
+              title,
+              artist,
+              category,
+              previewUrl,
+              coverUrl,
+              year: isNaN(year) ? 2020 : year,
+              extraClue: `De la playlist "${playlistName}"`,
+            };
+          })
+        );
+
+        const validTracks = tracks.filter((t): t is SongTrack => t !== null);
+        if (validTracks.length > 0) {
+          return { tracks: validTracks, playlistName };
+        }
+      }
+    } catch {}
   }
 
-  const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=ES`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    throw new Error('No se pudo encontrar la playlist. Asegúrate de que sea pública.');
-  }
-
-  const data = await res.json();
-  const playlistName = data.name || 'Playlist de Spotify';
-  const rawItems = data.tracks?.items || [];
-
-  const items = rawItems.slice(0, 25);
-
-  const tracks: SongTrack[] = await Promise.all(
-    items.map(async (entry: any): Promise<SongTrack | null> => {
-      const item = entry.track;
-      if (!item || !item.name) return null;
-
-      const title = item.name;
-      const artist = item.artists?.map((a: any) => a.name).join(', ') || 'Varios';
-      const coverUrl = item.album?.images?.[0]?.url || item.album?.images?.[1]?.url || '';
-      const year = item.album?.release_date ? parseInt(item.album.release_date.substring(0, 4), 10) : 2020;
-      const previewUrl = await getSpotifyPreviewAudio(item.id, item.preview_url, title, artist);
-
-      return {
-        id: `spotify_${item.id}`,
-        title,
-        artist,
-        category,
-        previewUrl,
-        coverUrl,
-        year: isNaN(year) ? 2020 : year,
-        extraClue: `De la playlist de Spotify "${playlistName}"`,
-      };
-    })
-  );
-
-  const validTracks = tracks.filter((t): t is SongTrack => t !== null);
-  return { tracks: validTracks, playlistName };
+  throw new Error('No se encontraron canciones con audio disponible en esta playlist. Asegúrate de que la playlist sea pública.');
 }

@@ -46,7 +46,7 @@ import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
 import { SongTrack } from '../lib/musicData';
 import { PowerCardsState, PowerCard } from '../lib/powerCards';
-import UnoPowerCard from '../components/UnoPowerCard';
+import PowerCardView from '../components/PowerCardView';
 import { RetroGridBackground } from '../components/RetroGridBackground';
 import { TeamScoreCard } from '../components/TeamScoreCard';
 import { getTeamTheme } from '../lib/teamThemes';
@@ -180,6 +180,7 @@ export default function TvView() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicRevealed, setMusicRevealed] = useState(false);
   const [remoteMusicTrack, setRemoteMusicTrack] = useState<SongTrack | null>(null);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const musicAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const currentSong: SongTrack | null = remoteMusicTrack;
@@ -210,14 +211,19 @@ export default function TvView() {
     if (!musicAudioRef.current) return;
     // Si la canción está revelada (acierto validado por el host), suena la música para celebrar
     const shouldPlay = musicPlaying && (!buzzerLocked || musicRevealed);
-    if (shouldPlay) {
-      musicAudioRef.current.play().catch((err) => {
-        console.warn('Auto-play bloqueado o error en preview:', err);
+    if (shouldPlay && currentSong?.previewUrl) {
+      musicAudioRef.current.play().then(() => {
+        setAutoplayBlocked(false);
+      }).catch((err) => {
+        console.warn('Auto-play bloqueado o error en preview en TV:', err);
+        if (err.name === 'NotAllowedError') {
+          setAutoplayBlocked(true);
+        }
       });
     } else {
       musicAudioRef.current.pause();
     }
-  }, [musicPlaying, currentSong, buzzerLocked, musicRevealed]);
+  }, [musicPlaying, currentSong?.previewUrl, currentSong?.id, buzzerLocked, musicRevealed]);
 
   // Estados de Capitanes
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
@@ -483,6 +489,29 @@ export default function TvView() {
 
   return (
     <main className="min-h-screen w-full bg-slate-950 text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
+      {/* Reproductor de Audio HTML5 persistente en la TV para todas las pantallas y fases */}
+      <audio
+        ref={musicAudioRef}
+        src={currentSong?.previewUrl || ''}
+        preload="auto"
+        onEnded={() => setMusicPlaying(false)}
+      />
+
+      {/* Aviso flotante si el navegador bloquea el autoplay en la TV */}
+      {autoplayBlocked && (
+        <div
+          onClick={() => {
+            if (musicAudioRef.current) {
+              musicAudioRef.current.play().then(() => setAutoplayBlocked(false)).catch(() => {});
+            }
+          }}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-950 px-6 py-3.5 rounded-2xl font-black text-sm shadow-2xl flex items-center gap-3 cursor-pointer animate-bounce border-2 border-amber-300 backdrop-blur-md"
+        >
+          <Volume2 className="w-5 h-5 animate-pulse" />
+          <span>🔊 Haz clic aquí para activar el sonido de la TV</span>
+        </div>
+      )}
+
       {/* FONDO RETRO-GRID DINÁMICO ACELERADO POR GPU */}
       <RetroGridBackground activeTeamColor={winningTeamCatalog?.colorHex} />
 
@@ -1033,13 +1062,6 @@ export default function TvView() {
                 /* ESCENARIO ESPECIAL ADIVINA LA CANCIÓN */
                 currentSong ? (
                   <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-                    <audio
-                      ref={musicAudioRef}
-                      src={currentSong.previewUrl}
-                      preload="auto"
-                      onEnded={() => setMusicPlaying(false)}
-                    />
-
                   <div className="w-full bg-slate-900/90 border-2 border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
                     {/* Glows ambientales */}
                     <div className="absolute -top-24 left-1/4 w-96 h-48 bg-pink-500/20 blur-[100px] pointer-events-none" />
@@ -1511,9 +1533,9 @@ export default function TvView() {
                   {activeCardAnimation.teamName}
                 </h3>
 
-                {/* CARTA DE PODER ESTILO UNO EN ESPAÑOL */}
+                {/* CARTA DE PODER EN PANTALLA COMPLETA */}
                 <div className="flex justify-center my-3">
-                  <UnoPowerCard card={activeCardAnimation.card} size="lg" />
+                  <PowerCardView card={activeCardAnimation.card} size="lg" />
                 </div>
 
                 {activeCardAnimation.targetName && (
