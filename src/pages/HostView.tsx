@@ -66,6 +66,8 @@ import {
   dealCardToSingleTeam,
   executePlayCard,
   executeStealCard,
+  executeSwapCard,
+  executeRecoverDiscardedCard,
   getPowerCardById,
 } from '../lib/powerCards';
 
@@ -582,12 +584,14 @@ export default function HostView() {
     sourceTeamId: string,
     cardId: string,
     targetTeamId?: string,
-    targetPlayerName?: string
+    targetPlayerName?: string,
+    targetCardId?: string
   ) => {
     const card = getPowerCardById(cardId);
     const team = activeTeams.find((t) => t.id === sourceTeamId);
     const targetTeam = targetTeamId ? activeTeams.find((t) => t.id === targetTeamId) : undefined;
 
+    // Caso Especial: ROBO
     if (cardId === 'robo' && targetTeamId) {
       const { nextState, stolenCardId } = executeStealCard(powerCards, sourceTeamId, targetTeamId);
       if (!stolenCardId) {
@@ -606,6 +610,49 @@ export default function HostView() {
             teamName: team.name,
             card,
             targetName: targetTeam?.name,
+          },
+        });
+      }
+      return;
+    }
+
+    // Caso Especial: INTERCAMBIO DE CARTAS
+    if (cardId === 'intercambio_cartas' && targetTeamId) {
+      const { nextState, receivedCardId } = executeSwapCard(powerCards, sourceTeamId, targetTeamId, cardId);
+      const finalState = executePlayCard(nextState, sourceTeamId, cardId, targetTeamId);
+      setPowerCards(finalState);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });
+      if (card && team) {
+        roomSync.broadcast({
+          type: 'POWER_CARD_ANIMATION',
+          payload: {
+            type: 'play',
+            teamName: team.name,
+            card,
+            targetName: targetTeam?.name,
+          },
+        });
+      }
+      return;
+    }
+
+    // Caso Especial: VIAJE EN EL TIEMPO
+    if (cardId === 'viaje_tiempo' && targetCardId) {
+      const stateWithRecovered = executeRecoverDiscardedCard(powerCards, sourceTeamId, targetCardId);
+      const finalState = executePlayCard(stateWithRecovered, sourceTeamId, cardId);
+      setPowerCards(finalState);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });
+      const recCard = getPowerCardById(targetCardId);
+      if (card && team) {
+        roomSync.broadcast({
+          type: 'POWER_CARD_ANIMATION',
+          payload: {
+            type: 'play',
+            teamName: team.name,
+            card,
+            targetName: recCard ? `Recupera: ${recCard.name}` : undefined,
           },
         });
       }
@@ -805,8 +852,8 @@ export default function HostView() {
           setMovieCategoryFilter(event.payload.categoryFilter as any);
         }
       } else if (event.type === 'POWER_CARD_PLAY_REQUEST') {
-        const { sourceTeamId, sourceTeamName, cardId, targetTeamId, targetTeamName, targetPlayerName } = event.payload;
-        handlePlayCardDirectly(sourceTeamId, cardId, targetTeamId, targetPlayerName);
+        const { sourceTeamId, sourceTeamName, cardId, targetTeamId, targetTeamName, targetPlayerName, targetCardId } = event.payload;
+        handlePlayCardDirectly(sourceTeamId, cardId, targetTeamId, targetPlayerName, targetCardId);
       } else if (event.type === 'SET_CAPTAIN') {
         setPlayers((prev) =>
           prev.map((p) => {
@@ -2207,7 +2254,22 @@ export default function HostView() {
                             <div className="flex items-center gap-2">
                               <span className="text-lg">{card.emoji}</span>
                               <div>
-                                <span className="text-xs font-black text-white block">{card.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-black text-white">{card.name}</span>
+                                  <span
+                                    className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${
+                                      card.rarity === 'Legendaria'
+                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                        : card.rarity === 'Épica'
+                                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                        : card.rarity === 'Rara'
+                                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                    }`}
+                                  >
+                                    {card.rarity}
+                                  </span>
+                                </div>
                                 <span className="text-[10px] text-slate-400 block">{card.tagline}</span>
                               </div>
                             </div>

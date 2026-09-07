@@ -70,6 +70,7 @@ export default function PlayerView() {
   const [selectedCardToPlay, setSelectedCardToPlay] = useState<PowerCard | null>(null);
   const [targetTeamId, setTargetTeamId] = useState<string>('');
   const [targetPlayerName, setTargetPlayerName] = useState<string>('');
+  const [targetCardId, setTargetCardId] = useState<string>('');
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // Estados del Sistema de Capitanes
@@ -414,6 +415,7 @@ export default function PlayerView() {
       setSelectedCardToPlay(card);
       setTargetTeamId('');
       setTargetPlayerName('');
+      setTargetCardId('');
       return;
     }
     executeCardAction(card);
@@ -454,7 +456,7 @@ export default function PlayerView() {
     setTimeout(() => setFeedbackToast(null), 4000);
   };
 
-  const executeCardAction = (card: PowerCard, tTeamId?: string, tPlayerName?: string) => {
+  const executeCardAction = (card: PowerCard, tTeamId?: string, tPlayerName?: string, tCardId?: string) => {
     if (!myTeamId || !selectedTeam) return;
 
     roomSync.broadcast({
@@ -466,10 +468,14 @@ export default function PlayerView() {
         targetTeamId: tTeamId,
         targetTeamName: activeTeams.find((t) => t.id === tTeamId)?.name,
         targetPlayerName: tPlayerName,
+        targetCardId: tCardId,
       },
     });
 
     setSelectedCardToPlay(null);
+    setTargetTeamId('');
+    setTargetPlayerName('');
+    setTargetCardId('');
     setIsCardModalOpen(false);
     setFeedbackToast(`¡Carta ${card.name} lanzada! Mira a la TV...`);
     setTimeout(() => setFeedbackToast(null), 4000);
@@ -920,6 +926,52 @@ export default function PlayerView() {
                   </div>
                 )}
 
+                {selectedCardToPlay.requiresTarget === 'card' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-300 block">
+                      Elige la Carta a Recuperar del Descarte:
+                    </label>
+                    {!powerCards?.discardPile || powerCards.discardPile.length === 0 ? (
+                      <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-center space-y-1">
+                        <span className="text-xl">📭</span>
+                        <p className="text-xs text-slate-400">
+                          No hay cartas en la pila de descartes aún.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {powerCards.discardPile.map((dCardId, idx) => {
+                          const dCard = getPowerCardById(dCardId);
+                          if (!dCard) return null;
+                          const isSelected = targetCardId === dCardId;
+                          return (
+                            <button
+                              key={`${dCardId}_${idx}`}
+                              onClick={() => setTargetCardId(dCardId)}
+                              className={`w-full p-2.5 rounded-xl border text-left font-bold text-xs flex items-center justify-between transition-all ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-amber-300 shadow-md font-black'
+                                  : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">{dCard.emoji}</span>
+                                <div>
+                                  <span className="block">{dCard.name}</span>
+                                  <span className="text-[10px] opacity-75 font-normal">
+                                    ★ {dCard.rarity}
+                                  </span>
+                                </div>
+                              </div>
+                              {isSelected && <span>✓ Elegida</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setSelectedCardToPlay(null)}
@@ -930,10 +982,12 @@ export default function PlayerView() {
                   <button
                     disabled={
                       (selectedCardToPlay.requiresTarget === 'team' && !targetTeamId) ||
-                      (selectedCardToPlay.requiresTarget === 'player' && !targetPlayerName.trim())
+                      (selectedCardToPlay.requiresTarget === 'player' && !targetPlayerName.trim()) ||
+                      (selectedCardToPlay.requiresTarget === 'card' &&
+                        (!targetCardId || !powerCards?.discardPile?.length))
                     }
                     onClick={() =>
-                      executeCardAction(selectedCardToPlay, targetTeamId, targetPlayerName)
+                      executeCardAction(selectedCardToPlay, targetTeamId, targetPlayerName, targetCardId)
                     }
                     className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-40 disabled:pointer-events-none text-slate-950 font-black text-xs uppercase shadow-lg shadow-amber-500/30 active:scale-95 transition-all"
                   >
