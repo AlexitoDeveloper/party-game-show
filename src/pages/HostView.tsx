@@ -45,6 +45,7 @@ import {
   ListMusic,
   Shuffle,
   Trash2,
+  X,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { soundFX } from '../lib/audio';
@@ -57,6 +58,7 @@ import { MOVIES_DATABASE, DEV_MOCK_MOVIES, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
 import { SongTrack } from '../lib/musicData';
 import { searchSpotifyTracks, fetchSpotifyPlaylistTracks } from '../lib/spotify';
+import PowerCardView from '../components/PowerCardView';
 import {
   PowerCardsState,
   PowerCard,
@@ -68,6 +70,9 @@ import {
   executeStealCard,
   executeSwapCard,
   executeRecoverDiscardedCard,
+  executeDrawTwoForBank,
+  executeChooseBankCard,
+  getRandomSensoryLimitation,
   getPowerCardById,
 } from '../lib/powerCards';
 
@@ -380,30 +385,31 @@ export default function HostView() {
   const [spotifyPlaylistInput, setSpotifyPlaylistInput] = useState('');
   const [isImportingPlaylist, setIsImportingPlaylist] = useState(false);
   const [musicSearchMode, setMusicSearchMode] = useState<'search' | 'playlist' | 'bank'>('search');
-  const [hostAudioEnabled, setHostAudioEnabled] = useState(true);
-  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Estados para la gestión y proyección de cartas de poder
+  const [activeCardOnScreen, setActiveCardOnScreen] = useState<{
+    card: PowerCard;
+    teamName: string;
+    targetName?: string;
+    sensoryLimitation?: string;
+    recoveredCard?: PowerCard;
+  } | null>(null);
 
-  // Reproductor local de audio en el Host
-  useEffect(() => {
-    if (!musicAudioRef.current) return;
-    if (musicPlaying && hostAudioEnabled && currentSongTrack?.previewUrl) {
-      musicAudioRef.current.play().catch((err) => {
-        console.warn('Error al reproducir audio en Host:', err);
-      });
-    } else {
-      musicAudioRef.current.pause();
-    }
-  }, [musicPlaying, hostAudioEnabled, currentSongTrack?.previewUrl, currentSongTrack?.id]);
+  const [bankChoiceState, setBankChoiceState] = useState<{
+    teamId: string;
+    teamName: string;
+    cards: [PowerCard, PowerCard];
+  } | null>(null);
 
-  const prevHostSongIdRef = useRef<string | undefined>(currentSongTrack?.id);
-  useEffect(() => {
-    if (currentSongTrack && prevHostSongIdRef.current !== currentSongTrack.id) {
-      prevHostSongIdRef.current = currentSongTrack.id;
-      if (musicAudioRef.current) {
-        musicAudioRef.current.currentTime = 0;
-      }
-    }
-  }, [currentSongTrack?.id]);
+  const [timeTravelModal, setTimeTravelModal] = useState<{
+    teamId: string;
+    teamName: string;
+  } | null>(null);
+
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
+  const [targetModalState, setTargetModalState] = useState<{
+    card: PowerCard;
+    teamId: string;
+  } | null>(null);
 
   const syncMusicState = (
     playing: boolean,
@@ -613,9 +619,57 @@ export default function HostView() {
   ) => {
     const card = getPowerCardById(cardId);
     const team = activeTeams.find((t) => t.id === sourceTeamId);
+    if (!card || !team) return;
+
+    if (card.requiresTarget === 'team' && !targetTeamId) {
+      setTargetModalState({ card, teamId: sourceTeamId });
+      return;
+    }
+
+    if (card.requiresTarget === 'player' && !targetPlayerName) {
+      setTargetModalState({ card, teamId: sourceTeamId });
+      return;
+    }
+
     const targetTeam = targetTeamId ? activeTeams.find((t) => t.id === targetTeamId) : undefined;
 
-    // Caso Especial: ROBO
+    let sensoryLimitationText: string | undefined = undefined;
+    let recoveredCardObj: PowerCard | undefined = undefined;
+
+    // Caso Especial 1: BANCO DE CARTAS
+    if (cardId === 'banco_cartas') {
+      const { nextState, drawnCards } = executeDrawTwoForBank(powerCards);
+      if (!drawnCards) {
+        alert('¡No hay suficientes cartas en el mazo ni en descartes para el Banco de Cartas!');
+        return;
+      }
+      // Descartar la carta jugada
+      const playedState = executePlayCard(nextState, sourceTeamId, cardId);
+      setPowerCards(playedState);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(playedState));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: playedState });
+
+      const c1 = getPowerCardById(drawnCards[0])!;
+      const c2 = getPowerCardById(drawnCards[1])!;
+      setBankChoiceState({
+        teamId: sourceTeamId,
+        teamName: team.name,
+        cards: [c1, c2],
+      });
+
+      const animPayload = {
+        type: 'play' as const,
+        teamName: team.name,
+        teamId: team.id,
+        teamColorHex: team.color_hex,
+        card,
+      };
+      roomSync.broadcast({ type: 'POWER_CARD_ANIMATION', payload: animPayload });
+      setActiveCardOnScreen(animPayload);
+      return;
+    }
+
+    // Caso Especial 2: ROBO
     if (cardId === 'robo' && targetTeamId) {
       const { nextState, stolenCardId } = executeStealCard(powerCards, sourceTeamId, targetTeamId);
       if (!stolenCardId) {
@@ -626,79 +680,144 @@ export default function HostView() {
       setPowerCards(finalState);
       localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
       roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });
-      if (card && team) {
-        roomSync.broadcast({
-          type: 'POWER_CARD_ANIMATION',
-          payload: {
-            type: 'play',
-            teamName: team.name,
-            card,
-            targetName: targetTeam?.name,
-          },
-        });
-      }
+
+      const animPayload = {
+        type: 'play' as const,
+        teamName: team.name,
+        teamId: team.id,
+        teamColorHex: team.color_hex,
+        card,
+        targetName: targetTeam?.name,
+      };
+      roomSync.broadcast({ type: 'POWER_CARD_ANIMATION', payload: animPayload });
+      setActiveCardOnScreen(animPayload);
       return;
     }
 
-    // Caso Especial: INTERCAMBIO DE CARTAS
+    // Caso Especial 3: INTERCAMBIO DE CARTAS
     if (cardId === 'intercambio_cartas' && targetTeamId) {
       const { nextState, receivedCardId } = executeSwapCard(powerCards, sourceTeamId, targetTeamId, cardId);
       const finalState = executePlayCard(nextState, sourceTeamId, cardId, targetTeamId);
       setPowerCards(finalState);
       localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
       roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });
-      if (card && team) {
-        roomSync.broadcast({
-          type: 'POWER_CARD_ANIMATION',
-          payload: {
-            type: 'play',
-            teamName: team.name,
-            card,
-            targetName: targetTeam?.name,
-          },
-        });
-      }
+
+      const animPayload = {
+        type: 'play' as const,
+        teamName: team.name,
+        teamId: team.id,
+        teamColorHex: team.color_hex,
+        card,
+        targetName: targetTeam?.name,
+      };
+      roomSync.broadcast({ type: 'POWER_CARD_ANIMATION', payload: animPayload });
+      setActiveCardOnScreen(animPayload);
       return;
     }
 
-    // Caso Especial: VIAJE EN EL TIEMPO
-    if (cardId === 'viaje_tiempo' && targetCardId) {
-      const stateWithRecovered = executeRecoverDiscardedCard(powerCards, sourceTeamId, targetCardId);
-      const finalState = executePlayCard(stateWithRecovered, sourceTeamId, cardId);
-      setPowerCards(finalState);
-      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
-      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });
-      const recCard = getPowerCardById(targetCardId);
-      if (card && team) {
-        roomSync.broadcast({
-          type: 'POWER_CARD_ANIMATION',
-          payload: {
-            type: 'play',
-            teamName: team.name,
-            card,
-            targetName: recCard ? `Recupera: ${recCard.name}` : undefined,
-          },
-        });
+    // Caso Especial 4: VIAJE EN EL TIEMPO
+    if (cardId === 'viaje_tiempo') {
+      if (targetCardId) {
+        const stateWithRecovered = executeRecoverDiscardedCard(powerCards, sourceTeamId, targetCardId);
+        const finalState = executePlayCard(stateWithRecovered, sourceTeamId, cardId);
+        setPowerCards(finalState);
+        localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
+        roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });
+        recoveredCardObj = getPowerCardById(targetCardId);
+
+        const animPayload = {
+          type: 'play' as const,
+          teamName: team.name,
+          teamId: team.id,
+          teamColorHex: team.color_hex,
+          card,
+          recoveredCard: recoveredCardObj,
+          targetName: recoveredCardObj ? `Recupera: ${recoveredCardObj.name}` : undefined,
+        };
+        roomSync.broadcast({ type: 'POWER_CARD_ANIMATION', payload: animPayload });
+        setActiveCardOnScreen(animPayload);
+        return;
+      } else {
+        if (powerCards.discardPile.length === 0) {
+          alert('¡No hay cartas en la pila de descartes para recuperar!');
+          return;
+        }
+        setTimeTravelModal({ teamId: sourceTeamId, teamName: team.name });
+        return;
       }
-      return;
     }
 
-    const nextState = executePlayCard(powerCards, sourceTeamId, cardId, targetTeamId, targetPlayerName);
+    // Caso Especial 5: EL CUARTO MONO
+    if (cardId === 'el_cuarto_mono') {
+      const limitation = getRandomSensoryLimitation();
+      sensoryLimitationText = `${limitation.emoji} ${limitation.label}: ${limitation.rule}`;
+    }
+
+    // Caso Especial 6: MALDICIÓN COMÚN (-2 puntos inmediatos)
+    if (cardId === 'maldicion_comun') {
+      handleScoreChange(sourceTeamId, -2);
+    }
+
+    // Caso Especial 7: LA MALDICIÓN ÉPICA (-3 puntos al jugarla para descartarla)
+    if (cardId === 'la_maldicion') {
+      handleScoreChange(sourceTeamId, -3);
+    }
+
+    const nextState = executePlayCard(
+      powerCards,
+      sourceTeamId,
+      cardId,
+      targetTeamId,
+      targetPlayerName,
+      sensoryLimitationText
+    );
     setPowerCards(nextState);
     localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
     roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
 
-    if (card && team) {
-      roomSync.broadcast({
-        type: 'POWER_CARD_ANIMATION',
-        payload: {
-          type: 'play',
-          teamName: team.name,
-          card,
-          targetName: targetPlayerName || targetTeam?.name,
-        },
-      });
+    const animPayload = {
+      type: 'play' as const,
+      teamName: team.name,
+      teamId: team.id,
+      teamColorHex: team.color_hex,
+      card,
+      targetName: targetPlayerName || targetTeam?.name,
+      sensoryLimitation: sensoryLimitationText,
+    };
+    roomSync.broadcast({ type: 'POWER_CARD_ANIMATION', payload: animPayload });
+    setActiveCardOnScreen(animPayload);
+  };
+
+  const handleDismissCardOnScreen = () => {
+    setActiveCardOnScreen(null);
+    roomSync.broadcast({ type: 'DISMISS_POWER_CARD_ANIMATION' });
+  };
+
+  const handleSelectBankChoice = (chosenCardId: string, rejectedCardId: string) => {
+    if (!bankChoiceState) return;
+    const nextState = executeChooseBankCard(
+      powerCards,
+      bankChoiceState.teamId,
+      chosenCardId,
+      rejectedCardId
+    );
+    setPowerCards(nextState);
+    localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
+    roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
+    setBankChoiceState(null);
+  };
+
+  const handleInitiatePlayCard = (teamId: string, card: PowerCard) => {
+    if (card.requiresTarget === 'team' || card.requiresTarget === 'player') {
+      setTargetModalState({ card, teamId });
+      return;
     }
+    if (card.requiresTarget === 'card') {
+      const team = activeTeams.find((t) => t.id === teamId);
+      setTimeTravelModal({ teamId, teamName: team?.name || 'Equipo' });
+      return;
+    }
+    handlePlayCardDirectly(teamId, card.id);
   };
 
   const handleRemoveActiveEffect = (effectId: string) => {
@@ -1001,11 +1120,20 @@ export default function HostView() {
   // Modificar puntuación manual con celebración y sincronización a TV
   const handleScoreChange = async (teamId: string, delta: number) => {
     let effectiveDelta = delta;
+
+    // EFECTO DOBLE (Carta de Poder): Si el equipo tiene el efecto Doble activo y gana puntos
+    const hasDobleActive = powerCardsRef.current?.activeEffects.some(
+      (e) => e.sourceTeamId === teamId && e.cardId === 'doble'
+    );
+    if (hasDobleActive && delta > 0) {
+      effectiveDelta = effectiveDelta * 2;
+    }
+
     if (captainGambles[teamId] && delta !== 0) {
       // Si el capitán apostó Doble o Nada:
       // Si acertó (delta > 0), duplica los puntos ganados (x2).
       if (delta > 0) {
-        effectiveDelta = delta * 2;
+        effectiveDelta = effectiveDelta * 2;
       }
       // Consumir y limpiar la apuesta tras aplicar el resultado del turno
       handleClearCaptainGambles(teamId);
@@ -1046,7 +1174,7 @@ export default function HostView() {
     // LÓGICA AUTOMÁTICA PARA ADIVINA LA CANCIÓN:
     if (room.active_game_id === 'music') {
       if (option.delta > 0) {
-        // 1. ACIERTO: Revelar la canción en la TV y reproducir el preview en celebración
+        // 1. ACIERTO: Revelar la canción en la TV
         setMusicRevealed(true);
         setMusicPlaying(true);
         if (isLocked) {
@@ -1060,6 +1188,22 @@ export default function HostView() {
           resetBuzzer();
         }
         syncMusicState(true, false);
+      }
+    } else if (room.active_game_id === 'movies') {
+      // LÓGICA AUTOMÁTICA PARA ADIVINA LA PELÍCULA (EMOJIS):
+      if (option.delta > 0) {
+        // 1. ACIERTO: Marcar como resuelta y revelar el título en grande en la TV
+        setMovieRevealed(true);
+        if (isLocked) {
+          resetBuzzer();
+        }
+        syncMovieState(movieIndex, movieFrameLevel, true);
+        soundFX.playVictory();
+      } else {
+        // 2. FALLO: Resetear el pulsador para dar oportunidad de rebote a otros equipos
+        if (isLocked) {
+          resetBuzzer();
+        }
       }
     } else {
       // Si había un buzzer activo en otros juegos, resetearlo tras emitir veredicto
@@ -1099,16 +1243,6 @@ export default function HostView() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none">
-      {/* Reproductor de Audio HTML5 en el Host */}
-      <audio
-        ref={musicAudioRef}
-        src={currentSongTrack?.previewUrl || ''}
-        preload="auto"
-        onEnded={() => {
-          setMusicPlaying(false);
-          syncMusicState(false, musicRevealed);
-        }}
-      />
       {/* HEADER ANFITRIÓN */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-4">
         <div>
@@ -1539,19 +1673,6 @@ export default function HostView() {
 
                   {/* Botones de acción principales: Reproducir/Pausar + Revelar */}
                   <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto items-center">
-                    <button
-                      onClick={() => setHostAudioEnabled(!hostAudioEnabled)}
-                      className={`px-3 py-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
-                        hostAudioEnabled
-                          ? 'bg-slate-800/90 text-emerald-400 border-emerald-500/40 hover:bg-slate-700'
-                          : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'
-                      }`}
-                      title={hostAudioEnabled ? 'Silenciar sonido en este dispositivo' : 'Activar sonido en este dispositivo'}
-                    >
-                      {hostAudioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                      <span className="text-[11px] font-bold">{hostAudioEnabled ? 'Host: ON' : 'Host: OFF'}</span>
-                    </button>
-
                     <button
                       onClick={handleTogglePlayMusic}
                       className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
@@ -2219,11 +2340,17 @@ export default function HostView() {
             </div>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-2xl flex items-center gap-3">
-            <span className="text-2xl">🪦</span>
+          <div
+            onClick={() => setIsDiscardModalOpen(true)}
+            className="bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-400/50 p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all group"
+            title="Ver cartas en la pila de descartes"
+          >
+            <span className="text-2xl group-hover:scale-110 transition-transform">🪦</span>
             <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">Descartes</span>
-              <span className="text-lg font-black text-slate-400">{powerCards.discardPile.length} cartas</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase block group-hover:text-amber-300">
+                Descartes (Ver)
+              </span>
+              <span className="text-lg font-black text-slate-300">{powerCards.discardPile.length} cartas</span>
             </div>
           </div>
 
@@ -2236,40 +2363,166 @@ export default function HostView() {
           </div>
         </div>
 
-        {/* LISTA DE EFECTOS ACTIVOS SI HAY ALGUNO */}
+        {/* LISTA DE EFECTOS ACTIVOS CON BOTONES DE RESOLUCIÓN */}
         {powerCards.activeEffects.length > 0 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl space-y-2">
+          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl space-y-2.5">
             <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5" /> Efectos de Poder Activos en Esta Prueba:
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {powerCards.activeEffects.map((eff) => {
                 const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
                 const targetTeam = eff.targetTeamId ? activeTeams.find((t) => t.id === eff.targetTeamId) : null;
                 return (
                   <div
                     key={eff.id}
-                    className="bg-slate-950/90 border border-amber-400/40 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"
+                    className="bg-slate-950/95 border-2 border-amber-400/50 px-3 py-2 rounded-xl text-xs flex flex-wrap items-center gap-2 shadow-lg"
                   >
                     <span>{eff.cardEmoji}</span>
-                    <strong className="text-white">{eff.cardName}</strong>
-                    <span className="text-slate-400">de</span>
+                    <strong className="text-white font-bold">{eff.cardName}</strong>
+                    <span className="text-slate-400 text-[11px]">de</span>
                     <span className="text-amber-300 font-bold">{team?.name || eff.sourceTeamName}</span>
                     {targetTeam && (
                       <>
-                        <span className="text-slate-400">➔ Objetivo:</span>
+                        <span className="text-slate-400 text-[11px]">➔ Rival:</span>
                         <span className="text-red-300 font-bold">{targetTeam.name}</span>
                       </>
                     )}
                     {eff.targetPlayerName && (
                       <>
-                        <span className="text-slate-400">➔ Jugador:</span>
+                        <span className="text-slate-400 text-[11px]">➔ Jugador:</span>
                         <span className="text-red-300 font-bold">{eff.targetPlayerName}</span>
                       </>
                     )}
+                    {eff.sensoryLimitation && (
+                      <span className="bg-purple-950/80 border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                        {eff.sensoryLimitation}
+                      </span>
+                    )}
+
+                    {/* BOTONES INTERACTIVOS SEGÚN LA CARTA */}
+                    {eff.cardId === 'bomba' && eff.targetTeamId && (
+                      <button
+                        onClick={() => {
+                          handleScoreChange(eff.targetTeamId!, -1);
+                          handleRemoveActiveEffect(eff.id);
+                        }}
+                        className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                      >
+                        💣 Detonar (-1 pt)
+                      </button>
+                    )}
+
+                    {eff.cardId === 'objetivo' && (
+                      <button
+                        onClick={() => {
+                          handleScoreChange(eff.sourceTeamId, 2);
+                          handleRemoveActiveEffect(eff.id);
+                        }}
+                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                      >
+                        🎯 Cobrar (+2 pts)
+                      </button>
+                    )}
+
+                    {eff.cardId === 'caza_lider' && (
+                      <button
+                        onClick={() => {
+                          handleScoreChange(eff.sourceTeamId, 3);
+                          handleRemoveActiveEffect(eff.id);
+                        }}
+                        className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[10px] shadow"
+                      >
+                        👑 Cobrar (+3 pts)
+                      </button>
+                    )}
+
+                    {eff.cardId === 'ruleta_rusa' && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            handleScoreChange(eff.sourceTeamId, 8);
+                            handleRemoveActiveEffect(eff.id);
+                          }}
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                        >
+                          +8 pts (1º-2º)
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleScoreChange(eff.sourceTeamId, -5);
+                            handleRemoveActiveEffect(eff.id);
+                          }}
+                          className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                        >
+                          -5 pts (3º-5º)
+                        </button>
+                      </div>
+                    )}
+
+                    {eff.cardId === 'la_sentencia' && eff.targetTeamId && (
+                      <button
+                        onClick={() => {
+                          handleScoreChange(eff.targetTeamId!, -5);
+                          handleRemoveActiveEffect(eff.id);
+                        }}
+                        className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold text-[10px] shadow"
+                      >
+                        💀 Ejecutar (-5 pts)
+                      </button>
+                    )}
+
+                    {eff.cardId === 'todo_o_nada' && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            handleScoreChange(eff.sourceTeamId, 10);
+                            handleRemoveActiveEffect(eff.id);
+                          }}
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                        >
+                          +10 pts (1.º)
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleScoreChange(eff.sourceTeamId, -5);
+                            handleRemoveActiveEffect(eff.id);
+                          }}
+                          className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                        >
+                          -5 pts (Otro)
+                        </button>
+                      </div>
+                    )}
+
+                    {eff.cardId === 'el_intercambio' && eff.targetTeamId && (
+                      <button
+                        onClick={() => {
+                          const sTeam = teams.find((t) => t.id === eff.sourceTeamId);
+                          const tTeam = teams.find((t) => t.id === eff.targetTeamId);
+                          if (sTeam && tTeam) {
+                            const sScore = sTeam.score;
+                            const tScore = tTeam.score;
+                            const updated = teams.map((t) => {
+                              if (t.id === sTeam.id) return { ...t, score: tScore };
+                              if (t.id === tTeam.id) return { ...t, score: sScore };
+                              return t;
+                            });
+                            setTeams(updated);
+                            roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
+                            handleRemoveActiveEffect(eff.id);
+                            alert(`🔄 Puntuaciones intercambiadas entre ${sTeam.name} y ${tTeam.name}`);
+                          }
+                        }}
+                        className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
+                      >
+                        🔄 Intercambiar Puntos
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleRemoveActiveEffect(eff.id)}
-                      className="ml-2 text-slate-500 hover:text-red-400 text-xs font-bold"
+                      className="ml-1 text-slate-500 hover:text-red-400 text-xs font-bold p-1 rounded"
                       title="Quitar efecto"
                     >
                       ✕
@@ -2343,13 +2596,32 @@ export default function HostView() {
                               </div>
                             </div>
 
-                            <button
-                              onClick={() => handlePlayCardDirectly(team.id, card.id)}
-                              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/30 text-[10px] font-black uppercase transition-all"
-                              title="Activar carta"
-                            >
-                              Jugar
-                            </button>
+                            {card.id === 'la_maldicion' ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleScoreChange(team.id, -1)}
+                                  className="px-2 py-1 rounded-lg bg-red-950/80 hover:bg-red-800 text-red-200 border border-red-500/40 text-[10px] font-black uppercase transition-all"
+                                  title="Penalizar 1 punto al equipo por conservar la maldición al terminar la prueba"
+                                >
+                                  💀 -1 pt
+                                </button>
+                                <button
+                                  onClick={() => handlePlayCardDirectly(team.id, card.id)}
+                                  className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-[10px] font-black uppercase transition-all"
+                                  title="Descartar la maldición perdiendo 3 puntos"
+                                >
+                                  ✕ Descartar (-3)
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleInitiatePlayCard(team.id, card)}
+                                className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/30 text-[10px] font-black uppercase transition-all"
+                                title="Activar carta"
+                              >
+                                Jugar
+                              </button>
+                            )}
                           </div>
                         );
                       })
@@ -2605,6 +2877,302 @@ export default function HostView() {
           })}
         </div>
       </section>
+
+      {/* BANNER FLOTANTE: CARTA PROYECTADA EN TV (CONTROL HOST) */}
+      {activeCardOnScreen && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border-2 border-amber-400 rounded-2xl px-6 py-3.5 shadow-2xl backdrop-blur-xl flex items-center gap-4 animate-bounce">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">{activeCardOnScreen.card.emoji}</span>
+            <div>
+              <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
+                Carta Proyectada en TV
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-black text-white">{activeCardOnScreen.card.name}</span>
+                <span className="text-xs text-slate-300">({activeCardOnScreen.teamName})</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleDismissCardOnScreen}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
+          >
+            <span>✕ Quitar de la TV</span>
+          </button>
+        </div>
+      )}
+
+      {/* MODAL: BANCO DE CARTAS (ELEGIR 1 DE LAS 2 ROBADAS) */}
+      {bankChoiceState && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-indigo-500 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 text-center">
+            <div>
+              <span className="text-3xl">🏛️</span>
+              <h3 className="text-xl font-black text-white uppercase mt-1">Banco de Cartas</h3>
+              <p className="text-xs text-indigo-300 font-medium">
+                Equipo: <strong className="text-white">{bankChoiceState.teamName}</strong>. Elige 1 carta para su mano. La otra volverá al mazo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center">
+              {bankChoiceState.cards.map((c, idx) => {
+                const otherCard = bankChoiceState.cards[1 - idx];
+                return (
+                  <div key={c.id} className="flex flex-col items-center gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 w-full">
+                    <PowerCardView card={c} size="md" />
+                    <button
+                      onClick={() => handleSelectBankChoice(c.id, otherCard.id)}
+                      className="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase rounded-xl shadow-md active:scale-95 transition-all"
+                    >
+                      ✓ Quedarse con esta
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIAJE EN EL TIEMPO (RECUPERAR DEL DESCARTE) */}
+      {timeTravelModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">⏳</span>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase">Viaje en el Tiempo</h3>
+                  <p className="text-xs text-amber-300">
+                    Equipo: <strong className="text-white">{timeTravelModal.teamName}</strong>. Elige una carta descartada para recuperarla.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTimeTravelModal(null)}
+                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {powerCards.discardPile.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-sm">
+                No hay cartas en la pila de descartes.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {powerCards.discardPile.map((cId, idx) => {
+                  const card = getPowerCardById(cId);
+                  if (!card) return null;
+                  return (
+                    <div
+                      key={`${cId}_${idx}`}
+                      onClick={() => {
+                        handlePlayCardDirectly(timeTravelModal.teamId, 'viaje_tiempo', undefined, undefined, cId);
+                        setTimeTravelModal(null);
+                      }}
+                      className="cursor-pointer hover:scale-105 transition-transform flex flex-col items-center p-2 bg-slate-950 rounded-xl border border-slate-800 hover:border-amber-400"
+                    >
+                      <PowerCardView card={card} size="sm" />
+                      <span className="text-[10px] font-bold text-amber-300 uppercase mt-2">
+                        Recuperar ➔
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PILA DE DESCARTES (VISUALIZADOR GENERAL) */}
+      {isDiscardModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🪦</span>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase">Pila de Descartes</h3>
+                  <p className="text-xs text-slate-400">
+                    Total: {powerCards.discardPile.length} cartas jugadas hasta ahora
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDiscardModalOpen(false)}
+                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {powerCards.discardPile.length === 0 ? (
+              <div className="text-center py-10 text-slate-500 text-sm">
+                No se ha descartado ninguna carta todavía.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {powerCards.discardPile.map((cId, idx) => {
+                  const card = getPowerCardById(cId);
+                  if (!card) return null;
+                  return (
+                    <div key={`${cId}_${idx}`} className="flex flex-col items-center p-2 bg-slate-950 rounded-xl border border-slate-800">
+                      <PowerCardView card={card} size="sm" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SELECCIONAR EQUIPO O JUGADOR RIVAL OBJETIVO */}
+      {targetModalState && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{targetModalState.card.emoji}</span>
+                <div>
+                  <h3 className="text-base font-black text-white uppercase">
+                    Objetivo para "{targetModalState.card.name}"
+                  </h3>
+                  <p className="text-xs text-amber-300">
+                    Equipo emisor: <strong>{activeTeams.find((t) => t.id === targetModalState.teamId)?.name}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTargetModalState(null)}
+                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* SI REQUIERE EQUIPO */}
+            {targetModalState.card.requiresTarget === 'team' && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+                  Haz clic en el equipo rival objetivo:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {activeTeams
+                    .filter((t) => t.id !== targetModalState.teamId)
+                    .map((rival) => {
+                      const rivalCat = TEAMS_CATALOG.find((c) => c.index === rival.team_index);
+                      const rivalMembers = players.filter((p) => p.team_id === rival.id || p.team_index === rival.team_index);
+                      return (
+                        <button
+                          key={rival.id}
+                          onClick={() => {
+                            handlePlayCardDirectly(targetModalState.teamId, targetModalState.card.id, rival.id);
+                            setTargetModalState(null);
+                          }}
+                          className={`p-3.5 rounded-2xl border ${rivalCat?.twBorder || 'border-slate-700'} bg-slate-950/80 hover:scale-102 hover:shadow-lg transition-all text-left flex items-center justify-between group`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`w-3.5 h-3.5 rounded-full ${rivalCat?.twBg}`} />
+                            <div>
+                              <span className={`text-sm font-black uppercase ${rivalCat?.twText || 'text-white'}`}>
+                                {rival.name}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block font-medium">
+                                {rivalMembers.length} miembros • {rival.score} pts
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform uppercase">
+                            Elegir ➔
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* SI REQUIERE JUGADOR */}
+            {targetModalState.card.requiresTarget === 'player' && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+                  Haz clic en el jugador rival objetivo:
+                </span>
+                {(() => {
+                  const rivalPlayersList = players.filter(
+                    (p) =>
+                      p.team_id !== targetModalState.teamId &&
+                      p.team_index !== activeTeams.find((t) => t.id === targetModalState.teamId)?.team_index
+                  );
+                  if (rivalPlayersList.length === 0) {
+                    return (
+                      <div className="p-4 bg-slate-950/70 rounded-2xl border border-slate-800 text-center space-y-2">
+                        <p className="text-xs text-slate-400">No hay jugadores rivales conectados actualmente.</p>
+                        <input
+                          type="text"
+                          placeholder="Escribe el nombre del jugador rival y pulsa Enter..."
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-400"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                              handlePlayCardDirectly(
+                                targetModalState.teamId,
+                                targetModalState.card.id,
+                                undefined,
+                                e.currentTarget.value.trim()
+                              );
+                              setTargetModalState(null);
+                            }
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                      {rivalPlayersList.map((p) => {
+                        const pTeam = activeTeams.find((t) => t.id === p.team_id || t.team_index === p.team_index);
+                        const pCat = pTeam ? TEAMS_CATALOG.find((c) => c.index === pTeam.team_index) : null;
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => {
+                              handlePlayCardDirectly(
+                                targetModalState.teamId,
+                                targetModalState.card.id,
+                                pTeam?.id,
+                                p.nickname
+                              );
+                              setTargetModalState(null);
+                            }}
+                            className="p-3 rounded-xl border border-slate-800 bg-slate-950/90 hover:border-amber-400 hover:scale-102 transition-all text-left flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{p.badge_emoji || '👤'}</span>
+                              <div>
+                                <span className="text-xs font-black text-white block leading-tight">{p.nickname}</span>
+                                <span className={`text-[9px] font-bold uppercase ${pCat?.twText || 'text-slate-400'}`}>
+                                  {pCat?.name || pTeam?.name || 'Rival'}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[11px] font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform">
+                              Elegir ➔
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

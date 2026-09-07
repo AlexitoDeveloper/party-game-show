@@ -23,8 +23,20 @@ export type RoomSyncEvent =
   | { type: 'MUSIC_STATE_UPDATE'; payload: { trackIndex: number; isPlaying: boolean; isRevealed: boolean; category?: string; trackData?: SongTrack } }
   | { type: 'MOVIE_STATE_UPDATE'; payload: { movieIndex: number; frameLevel: 1 | 2 | 3 | 4; isRevealed: boolean; categoryFilter?: string; movieData?: MovieItem } }
   | { type: 'POWER_CARDS_STATE_UPDATE'; payload: PowerCardsState }
-  | { type: 'POWER_CARD_PLAY_REQUEST'; payload: { sourceTeamId: string; sourceTeamName: string; cardId: string; targetTeamId?: string; targetTeamName?: string; targetPlayerName?: string; targetCardId?: string } }
-  | { type: 'POWER_CARD_ANIMATION'; payload: { type: 'deal' | 'play'; teamName: string; card: PowerCard; targetName?: string } }
+  | { type: 'POWER_CARD_ANIMATION'; payload: { type: 'deal' | 'play'; teamName: string; card: PowerCard; targetName?: string; teamId?: string; teamColorHex?: string; teamThemeIndex?: number; sensoryLimitation?: string; recoveredCard?: PowerCard } }
+  | { type: 'DISMISS_POWER_CARD_ANIMATION' }
+  | {
+      type: 'POWER_CARD_PLAY_REQUEST';
+      payload: {
+        sourceTeamId: string;
+        sourceTeamName: string;
+        cardId: string;
+        targetTeamId?: string;
+        targetTeamName?: string;
+        targetPlayerName?: string;
+        targetCardId?: string;
+      };
+    }
   | { type: 'BABY_PHOTO_UPDATE'; payload: { photoIndex: number; isRevealed: boolean; photoData?: BabyPhotoItem } }
   | { type: 'SET_CAPTAIN'; payload: { teamId: string; playerId: string } }
   | { type: 'CAPTAIN_DOUBLE_OR_NOTHING'; payload: CaptainGamble }

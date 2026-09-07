@@ -152,6 +152,11 @@ export default function TvView() {
     teamName: string;
     card: PowerCard;
     targetName?: string;
+    teamId?: string;
+    teamColorHex?: string;
+    teamThemeIndex?: number;
+    sensoryLimitation?: string;
+    recoveredCard?: PowerCard;
   } | null>(null);
 
   // Estados del minijuego de adivinar películas
@@ -340,14 +345,13 @@ export default function TvView() {
       } else if (event.type === 'POWER_CARDS_STATE_UPDATE') {
         setPowerCards(event.payload);
       } else if (event.type === 'POWER_CARD_ANIMATION') {
-        // Solo mostrar cartas en pantalla cuando son USADAS/JUGADAS, nunca al repartir
+        // Mostrar carta en pantalla completa sin temporizador (el anfitrión la descarta)
         if (event.payload.type === 'play') {
           soundFX.playPowerCard();
           setActiveCardAnimation(event.payload);
-          setTimeout(() => {
-            setActiveCardAnimation((curr) => (curr === event.payload ? null : curr));
-          }, 5500);
         }
+      } else if (event.type === 'DISMISS_POWER_CARD_ANIMATION') {
+        setActiveCardAnimation(null);
       } else if (event.type === 'BABY_PHOTO_UPDATE') {
         setBabyPhotoIndex(event.payload.photoIndex);
         setBabyPhotoRevealed(event.payload.isRevealed);
@@ -1512,46 +1516,92 @@ export default function TvView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 select-none"
+            className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col items-center justify-center p-4 sm:p-6 select-none"
           >
-            <div className="relative max-w-sm w-full text-center">
-              {/* Resplandor épico */}
+            <div className="relative max-w-md w-full text-center space-y-4">
+              {/* Resplandor épico basado en la rareza de la carta */}
               <div
-                className="absolute -inset-6 rounded-3xl opacity-60 blur-3xl pointer-events-none transition-all"
+                className="absolute -inset-10 rounded-3xl opacity-70 blur-3xl pointer-events-none transition-all"
                 style={{ backgroundColor: activeCardAnimation.card.glowColorHex }}
               />
 
-              <div className="relative bg-slate-900/95 border-4 border-amber-400/80 rounded-3xl p-6 shadow-[0_0_80px_rgba(0,0,0,0.9)] space-y-4">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-widest border border-amber-500/40">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>
-                    {activeCardAnimation.type === 'deal' ? '🎁 NUEVA CARTA REPARTIDA' : '⚡ ¡CARTA ACTIVADA!'}
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-black text-white font-arcade uppercase">
-                  {activeCardAnimation.teamName}
-                </h3>
+              {/* Contenedor principal con borde dorado */}
+              <div className="relative bg-slate-900/95 border-4 border-amber-400/80 rounded-3xl p-5 sm:p-6 shadow-[0_0_90px_rgba(0,0,0,0.95)] space-y-4">
+                {/* CABECERA CON EL EQUIPO QUE HA ACTIVADO LA CARTA */}
+                {(() => {
+                  const teamHex = activeCardAnimation.teamColorHex || '#f59e0b';
+                  return (
+                    <div
+                      className="p-3.5 rounded-2xl border-2 shadow-2xl flex items-center justify-center gap-3 transition-all"
+                      style={{
+                        backgroundColor: `${teamHex}22`,
+                        borderColor: teamHex,
+                        boxShadow: `0 0 35px ${teamHex}55`,
+                      }}
+                    >
+                      <span className="text-2xl animate-bounce">⚡</span>
+                      <div>
+                        <span className="text-[10px] sm:text-xs uppercase font-black tracking-widest block text-slate-300">
+                          {activeCardAnimation.type === 'deal' ? 'CARTA REPARTIDA A' : '¡CARTA ACTIVADA POR!'}
+                        </span>
+                        <h3 className="text-xl sm:text-2xl md:text-3xl font-black font-arcade uppercase text-white drop-shadow-md">
+                          {activeCardAnimation.teamName}
+                        </h3>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* CARTA DE PODER EN PANTALLA COMPLETA */}
-                <div className="flex justify-center my-3">
+                <div className="flex justify-center my-2 scale-95 sm:scale-100">
                   <PowerCardView card={activeCardAnimation.card} size="lg" />
                 </div>
 
+                {/* LIMITACIÓN SENSORIAL (SI ES EL CUARTO MONO) */}
+                {activeCardAnimation.sensoryLimitation && (
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-gradient-to-r from-purple-950/90 via-slate-900 to-purple-950/90 border-2 border-amber-400 p-3.5 rounded-2xl text-center space-y-1 shadow-xl"
+                  >
+                    <span className="text-[10px] uppercase font-black tracking-widest text-amber-300 block">
+                      🌀 Limitación Sensorial Impuesta al Rival:
+                    </span>
+                    <p className="text-sm sm:text-base font-black text-white">
+                      {activeCardAnimation.sensoryLimitation}
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* CARTA RECUPERADA (SI ES VIAJE EN EL TIEMPO) */}
+                {activeCardAnimation.recoveredCard && (
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-amber-500/20 border-2 border-amber-400/60 p-3 rounded-2xl text-center space-y-1 shadow-lg"
+                  >
+                    <span className="text-[10px] uppercase font-black tracking-widest text-amber-300 block">
+                      ⏳ ¡Carta Rescatada del Pasado!
+                    </span>
+                    <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
+                      <span>{activeCardAnimation.recoveredCard.emoji}</span>
+                      <span>{activeCardAnimation.recoveredCard.name}</span>
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* OBJETIVO DE LA CARTA */}
                 {activeCardAnimation.targetName && (
-                  <div className="bg-red-500/20 border border-red-500/40 rounded-xl px-4 py-2 text-xs text-red-200 font-bold">
-                    🎯 Objetivo: <span className="text-white font-black">{activeCardAnimation.targetName}</span>
+                  <div className="bg-red-500/20 border-2 border-red-500/50 rounded-xl px-4 py-2 text-xs text-red-200 font-bold">
+                    🎯 Objetivo: <span className="text-white font-black text-sm">{activeCardAnimation.targetName}</span>
                   </div>
                 )}
 
-                {/* Barra de progreso de auto-cierre */}
-                <div className="w-full bg-slate-800 rounded-full h-1 overflow-hidden mt-3">
-                  <motion.div
-                    initial={{ width: '100%' }}
-                    animate={{ width: '0%' }}
-                    transition={{ duration: 5.5, ease: 'linear' }}
-                    className="bg-amber-400 h-full"
-                  />
+                {/* PIE: CONTROL DEL ANFITRIÓN */}
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-center">
+                  <span className="text-[11px] text-amber-300/80 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1.5">
+                    <span>👑</span> Control de sala: El anfitrión quitará la carta
+                  </span>
                 </div>
               </div>
             </div>

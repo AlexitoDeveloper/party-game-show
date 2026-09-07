@@ -43,6 +43,24 @@ export function getCardImageUrl(cardId: string): string {
   return `/cards/${filename}`;
 }
 
+export interface SensoryLimitation {
+  id: 'eye' | 'mute' | 'hand' | 'speak';
+  label: string;
+  emoji: string;
+  rule: string;
+}
+
+export const SENSORY_LIMITATIONS: SensoryLimitation[] = [
+  { id: 'eye', label: 'Un ojo tapado', emoji: '👁️', rule: 'Debe jugar con un ojo totalmente tapado' },
+  { id: 'mute', label: 'Sin sonido', emoji: '🔇', rule: 'Debe jugar tapándose los oídos o sin escuchar audio' },
+  { id: 'hand', label: 'Mano menos hábil', emoji: '🤚', rule: 'Debe usar exclusivamente su mano no dominante' },
+  { id: 'speak', label: 'No puede hablar', emoji: '🗣️', rule: 'Prohibido hablar o emitir palabras en la prueba' },
+];
+
+export function getRandomSensoryLimitation(): SensoryLimitation {
+  return SENSORY_LIMITATIONS[Math.floor(Math.random() * SENSORY_LIMITATIONS.length)];
+}
+
 export interface ActivePowerEffect {
   id: string;
   cardId: string;
@@ -53,6 +71,7 @@ export interface ActivePowerEffect {
   targetTeamId?: string;
   targetTeamName?: string;
   targetPlayerName?: string;
+  sensoryLimitation?: string;
   appliedAt: string;
 }
 
@@ -492,7 +511,8 @@ export function executePlayCard(
   sourceTeamId: string,
   cardId: string,
   targetTeamId?: string,
-  targetPlayerName?: string
+  targetPlayerName?: string,
+  sensoryLimitation?: string
 ): PowerCardsState {
   const teamHand = state.teamHands[sourceTeamId] || [];
   const cardIndex = teamHand.indexOf(cardId);
@@ -521,6 +541,7 @@ export function executePlayCard(
     sourceTeamName: sourceTeamId,
     targetTeamId,
     targetPlayerName,
+    sensoryLimitation,
     appliedAt: new Date().toISOString(),
   };
 
@@ -626,6 +647,64 @@ export function executeRecoverDiscardedCard(
     teamHands: {
       ...state.teamHands,
       [teamId]: [...currentHand, recoveredCardId],
+    },
+  };
+}
+
+/**
+ * Ejecutar BANCO DE CARTAS - Paso 1: Roba 2 cartas del mazo para presentar al equipo
+ */
+export function executeDrawTwoForBank(state: PowerCardsState): {
+  nextState: PowerCardsState;
+  drawnCards: [string, string] | null;
+} {
+  let currentDeck = [...state.deck];
+  let discard = [...state.discardPile];
+
+  if (currentDeck.length < 2) {
+    if (discard.length > 0) {
+      currentDeck = [...currentDeck, ...shuffleDeck(discard)];
+      discard = [];
+    } else {
+      currentDeck = [...currentDeck, ...generateWeightedDeck()];
+    }
+  }
+
+  if (currentDeck.length < 2) return { nextState: state, drawnCards: null };
+
+  const card1 = currentDeck.shift()!;
+  const card2 = currentDeck.shift()!;
+
+  return {
+    nextState: {
+      ...state,
+      deck: currentDeck,
+      discardPile: discard,
+    },
+    drawnCards: [card1, card2],
+  };
+}
+
+/**
+ * Ejecutar BANCO DE CARTAS - Paso 2: El equipo se queda con una y la otra vuelve al fondo del mazo
+ */
+export function executeChooseBankCard(
+  state: PowerCardsState,
+  teamId: string,
+  chosenCardId: string,
+  rejectedCardId: string
+): PowerCardsState {
+  const currentHand = state.teamHands[teamId] || [];
+  const nextHand = [...currentHand, chosenCardId];
+  // La rechazada vuelve al fondo del mazo
+  const nextDeck = [...state.deck, rejectedCardId];
+
+  return {
+    ...state,
+    deck: nextDeck,
+    teamHands: {
+      ...state.teamHands,
+      [teamId]: nextHand,
     },
   };
 }
