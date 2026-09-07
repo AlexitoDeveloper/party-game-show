@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PowerCard, getCardImageUrl } from '../lib/powerCards';
+import { DecoProceduralSpandrel } from './deco/DecoProceduralSpandrel';
+import { ThreeCardViewer } from './3d/ThreeCardViewer';
 
 interface PowerCardViewProps {
   card: PowerCard;
@@ -9,6 +11,8 @@ interface PowerCardViewProps {
   onClick?: () => void;
   showRule?: boolean;
   className?: string;
+  enable3dInspect?: boolean;
+  priority?: boolean;
 }
 
 export default function PowerCardView({
@@ -18,8 +22,11 @@ export default function PowerCardView({
   onClick,
   showRule = true,
   className = '',
+  enable3dInspect = false,
+  priority = false,
 }: PowerCardViewProps) {
   const [imageError, setImageError] = useState(false);
+  const [show3dModal, setShow3dModal] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0, shineX: 50, shineY: 50 });
 
   React.useEffect(() => {
@@ -31,10 +38,10 @@ export default function PowerCardView({
   // Proporción estándar de naipe 2:3 optimizada para móvil y TV
   const sizeClasses =
     size === 'sm'
-      ? 'w-28 h-42 sm:w-32 sm:h-48 rounded-xl'
+      ? 'w-28 h-[168px] sm:w-32 sm:h-[192px] rounded-xl'
       : size === 'lg'
       ? 'w-72 sm:w-88 h-[440px] sm:h-[530px] rounded-3xl'
-      : 'w-56 sm:w-64 h-[350px] sm:h-[390px] rounded-2xl';
+      : 'w-48 sm:w-60 h-[300px] sm:h-[370px] rounded-2xl';
 
   const glowShadow =
     size === 'lg'
@@ -79,17 +86,31 @@ export default function PowerCardView({
         perspective: 1000,
         transformStyle: 'preserve-3d',
         boxShadow: glowShadow,
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
       }}
     >
       {/* Marco Art Deco exterior de oro pulido y esquinas grabadas */}
       <div className="w-full h-full rounded-[inherit] overflow-hidden relative bg-[#0d0d12] border-2 sm:border-3 border-[#d4af37] shadow-2xl flex flex-col justify-between">
+        {/* Procedural Art Deco Corner Spandrels */}
+        <DecoProceduralSpandrel size={size === 'sm' ? 18 : 32} position="top-left" />
+        <DecoProceduralSpandrel size={size === 'sm' ? 18 : 32} position="top-right" />
+        <DecoProceduralSpandrel size={size === 'sm' ? 18 : 32} position="bottom-left" />
+        <DecoProceduralSpandrel size={size === 'sm' ? 18 : 32} position="bottom-right" />
+
         {!imageError ? (
           <img
             src={imageSrc}
             alt={card.name}
             onError={() => setImageError(true)}
             className="w-full h-full object-cover select-none pointer-events-none rounded-[inherit]"
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
+            style={{
+              imageRendering: '-webkit-optimize-contrast',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
+            }}
           />
         ) : (
           <div className="w-full h-full flex flex-col justify-between p-4 bg-gradient-to-b from-[#1c160c] via-[#0d0d12] to-[#140e06] text-center border border-[#d4af37]/60 rounded-[inherit]">
@@ -114,11 +135,11 @@ export default function PowerCardView({
           </div>
         )}
 
-        {/* Reflejo metálico foil interactivo sobre el naipe */}
+        {/* Reflejo metálico foil interactivo sobre el naipe con filtro SVG */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-30 rounded-[inherit] mix-blend-overlay transition-opacity duration-300"
+          className="absolute inset-0 pointer-events-none opacity-35 rounded-[inherit] mix-blend-overlay transition-opacity duration-300"
           style={{
-            background: `radial-gradient(circle at ${tilt.shineX}% ${tilt.shineY}%, rgba(255, 255, 255, 0.8) 0%, rgba(212, 175, 55, 0.4) 30%, transparent 70%)`,
+            background: `radial-gradient(circle at ${tilt.shineX}% ${tilt.shineY}%, rgba(255, 255, 255, 0.85) 0%, rgba(212, 175, 55, 0.45) 35%, transparent 70%)`,
           }}
         />
 
@@ -131,7 +152,59 @@ export default function PowerCardView({
             </div>
           </div>
         )}
+
+        {/* Botón discreto para abrir visor 3D táctil */}
+        {enable3dInspect && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShow3dModal(true);
+            }}
+            className="absolute top-2.5 right-2.5 z-30 px-2 py-0.5 rounded-full bg-black/70 border border-[#d4af37]/70 text-[#f3e5ab] text-[10px] font-vintage tracking-wider hover:bg-black active:scale-95"
+          >
+            3D 🔍
+          </button>
+        )}
       </div>
+
+      {/* Modal Visor 3D Táctil */}
+      {show3dModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShow3dModal(false);
+          }}
+        >
+          <div
+            className="relative w-full max-w-sm flex flex-col items-center bg-[#130c08] border-2 border-[#d4af37] rounded-2xl p-4 shadow-[0_0_50px_rgba(212,175,55,0.35)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShow3dModal(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-center text-sm font-bold active:scale-95"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-broadway text-amber-300 mb-1">
+              {card.name}
+            </h3>
+            <p className="text-xs text-amber-200/70 font-vintage uppercase tracking-widest mb-3">
+              {card.rarity} · Volteo & Tacto 3D
+            </p>
+
+            <ThreeCardViewer
+              frontImageUrl={imageSrc}
+              name={card.name}
+              rarity={card.rarity as any}
+              className="w-full"
+            />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

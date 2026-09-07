@@ -3,18 +3,24 @@
 // Sin síntesis 8-bit ni ondas pixeladas: sonido real de televisión y concursos
 
 const SOUND_FILES: Record<string, string> = {
-  buzzer: '/sounds/buzzer.mp3',
+  buzzer: '/sounds/buzzer.opus',
   fail: '/sounds/fail.mp3',
   buzzer_wrong: '/sounds/fail.mp3',
-  victory: '/sounds/victory.mp3',
-  success: '/sounds/success.mp3',
-  drumroll: '/sounds/drumroll.mp3',
-  applause: '/sounds/applause.mp3',
+  victory: '/sounds/victory.opus',
+  success: '/sounds/success.opus',
+  drumroll: '/sounds/drumroll.opus',
+  applause: '/sounds/applause.opus',
   airhorn: '/sounds/airhorn.mp3',
-  suspense: '/sounds/suspense.mp3',
-  power_card: '/sounds/power_card.mp3',
-  tick: '/sounds/tick.mp3',
-  join: '/sounds/success.mp3',
+  suspense: '/sounds/suspense.opus',
+  power_card: '/sounds/power_card.opus',
+  tick: '/sounds/tick.opus',
+  join: '/sounds/success.opus',
+  card_snap: '/sounds/power_card.opus',
+  card_slam: '/sounds/power_card.opus',
+  chips: '/sounds/tick.opus',
+  deco_bell: '/sounds/buzzer.opus',
+  speakeasy_brass: '/sounds/victory.opus',
+  wah_wah: '/sounds/fail.mp3',
 };
 
 class SoundFX {
@@ -119,9 +125,288 @@ class SoundFX {
     }
   }
 
-  // Métodos específicos
+  // ==========================================
+  // SÍNTESIS DE SONIDO VINTAGE 1930s SPEAKEASY
+  // ==========================================
+
+  // 1. Chasquido nítido de naipe sobre tapete verde de casino
+  playCardSnap(volume: number = 0.85) {
+    const ctx = this.initContext();
+    if (!ctx) {
+      this.playPowerCard();
+      return;
+    }
+
+    try {
+      const now = ctx.currentTime;
+      
+      // Ruido filtrado para el roce del cartón satinado
+      const bufferSize = ctx.sampleRate * 0.05; // 50ms
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(2200, now);
+      filter.Q.setValueAtTime(3.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(volume * 0.9, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+      whiteNoise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      whiteNoise.start(now);
+
+      // Golpe sordo del naipe aterrizando (120Hz -> 50Hz)
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.06);
+
+      oscGain.gain.setValueAtTime(volume * 0.7, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    } catch {
+      this.playPowerCard();
+    }
+  }
+
+  // 2. Impacto cinemático de naipe en TV: subgrave + chasquido + destello mágico pentatónico
+  playCardSlam(volume: number = 1.0) {
+    const ctx = this.initContext();
+    if (!ctx) {
+      this.playPowerCard();
+      return;
+    }
+
+    try {
+      const now = ctx.currentTime;
+
+      // Chasquido inicial
+      this.playCardSnap(volume * 0.9);
+
+      // Impacto grave de mesa de madera noble (Sub-bass thud)
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(95, now);
+      subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.28);
+
+      subGain.gain.setValueAtTime(volume * 0.9, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 0.32);
+
+      // Destello mágico Art Déco (Arpegio de campanillas C6, E6, G6, C7)
+      const chimeFreqs = [1046.5, 1318.5, 1567.98, 2093.0];
+      chimeFreqs.forEach((freq, idx) => {
+        const chimeOsc = ctx.createOscillator();
+        const chimeGain = ctx.createGain();
+        chimeOsc.type = 'sine';
+        chimeOsc.frequency.setValueAtTime(freq, now + 0.04 * idx);
+
+        const startTime = now + 0.04 * idx;
+        chimeGain.gain.setValueAtTime(0.001, now);
+        chimeGain.gain.setValueAtTime(volume * 0.35, startTime);
+        chimeGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.6);
+
+        chimeOsc.connect(chimeGain);
+        chimeGain.connect(ctx.destination);
+        chimeOsc.start(startTime);
+        chimeOsc.stop(startTime + 0.65);
+      });
+    } catch {
+      this.playPowerCard();
+    }
+  }
+
+  // 3. Tintineo de fichas de casino de arcilla (Clay Poker Chips Clink)
+  playChipClink(volume: number = 0.8) {
+    const ctx = this.initContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      // Golpe 1 de ficha
+      [2400, 3800].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(volume * 0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      });
+
+      // Rebote ligero de la segunda ficha a los 28ms
+      [2250, 3650].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + 0.028);
+
+        const t = now + 0.028;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.setValueAtTime(volume * 0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.05);
+      });
+    } catch {}
+  }
+
+  // 4. Campana de recepción / boxeo vintage Art Déco (1930s Bell)
+  playDecoBell(volume: number = 0.85) {
+    const ctx = this.initContext();
+    if (!ctx) {
+      this.playBuzzer();
+      return;
+    }
+
+    try {
+      const now = ctx.currentTime;
+      const partials = [
+        { f: 1760, g: 0.55 },
+        { f: 3520, g: 0.25 },
+        { f: 5280, g: 0.12 },
+      ];
+
+      partials.forEach(({ f, g }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now);
+
+        gain.gain.setValueAtTime(volume * g, now);
+        gain.gain.exponentialRampToValueAtTime(0.0005, now + 1.1);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 1.15);
+      });
+    } catch {
+      this.playBuzzer();
+    }
+  }
+
+  // 5. Fanfarria de metales Speakeasy 1930s (Big Band Brass Accord)
+  playSpeakeasyBrass(volume: number = 0.9) {
+    const ctx = this.initContext();
+    if (!ctx) {
+      this.playVictory();
+      return;
+    }
+
+    try {
+      const now = ctx.currentTime;
+      // Acorde triunfal estilo años 30: C4, E4, G4, C5
+      const notes = [261.63, 329.63, 392.0, 523.25];
+
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.02);
+
+        // Filtro cálido de gramófono / válvulas de vacío
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, now);
+        filter.frequency.exponentialRampToValueAtTime(1800, now + 0.1);
+        filter.frequency.exponentialRampToValueAtTime(900, now + 0.8);
+
+        const startTime = now + idx * 0.02;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.setValueAtTime(volume * 0.25, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.85);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.9);
+      });
+    } catch {
+      this.playVictory();
+    }
+  }
+
+  // 6. Trompeta cómica Wah-Wah años 30 (Rubber-hose Cartoon Fail)
+  playWahWahFail(volume: number = 0.85) {
+    const ctx = this.initContext();
+    if (!ctx) {
+      this.playFail();
+      return;
+    }
+
+    try {
+      const now = ctx.currentTime;
+      const pitches = [311.13, 293.66, 277.18, 246.94]; // Eb4, D4, Db4, B3 slide
+
+      pitches.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        const stepTime = now + i * 0.26;
+        const dur = i === pitches.length - 1 ? 0.6 : 0.24;
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, stepTime);
+        if (i === pitches.length - 1) {
+          osc.frequency.linearRampToValueAtTime(freq - 20, stepTime + dur);
+        }
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(650, stepTime);
+        filter.frequency.linearRampToValueAtTime(1100, stepTime + dur * 0.5);
+        filter.frequency.linearRampToValueAtTime(550, stepTime + dur);
+        filter.Q.setValueAtTime(4.0, stepTime);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.setValueAtTime(volume * 0.35, stepTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, stepTime + dur);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(stepTime);
+        osc.stop(stepTime + dur + 0.05);
+      });
+    } catch {
+      this.playFail();
+    }
+  }
+
+  // Métodos específicos (100% tematizados 1930s Speakeasy, Cartoon y Casino)
   playBuzzer() {
-    this.playAudioFile('buzzer', 0.9);
+    this.playAudioFile('buzzer', 0.95);
   }
 
   playFail() {
@@ -133,7 +418,7 @@ class SoundFX {
   }
 
   playSuccess() {
-    this.playAudioFile('success', 0.85);
+    this.playAudioFile('success', 0.9);
   }
 
   playVictory() {
@@ -145,11 +430,11 @@ class SoundFX {
   }
 
   playApplause() {
-    this.playAudioFile('applause', 0.9);
+    this.playAudioFile('applause', 0.95);
   }
 
   playAirHorn() {
-    this.playAudioFile('airhorn', 0.9);
+    this.playAudioFile('airhorn', 0.95);
   }
 
   playSuspense() {
@@ -157,19 +442,41 @@ class SoundFX {
   }
 
   playPowerCard() {
-    this.playAudioFile('power_card', 0.85);
+    this.playAudioFile('power_card', 1.0);
   }
 
   playTick(urgent: boolean = false) {
-    this.playAudioFile('tick', urgent ? 0.7 : 0.4);
+    this.playAudioFile('tick', urgent ? 0.85 : 0.55);
   }
 
   playJoin() {
-    this.playAudioFile('join', 0.7);
+    this.playAudioFile('success', 0.7);
   }
 
   playSound(name: string) {
     switch (name) {
+      case 'card_snap':
+        this.playCardSnap();
+        break;
+      case 'card_slam':
+        this.playCardSlam();
+        break;
+      case 'chip_clink':
+      case 'chips':
+        this.playChipClink();
+        break;
+      case 'deco_bell':
+      case 'bell':
+        this.playDecoBell();
+        break;
+      case 'brass':
+      case 'speakeasy_brass':
+        this.playSpeakeasyBrass();
+        break;
+      case 'wah_wah':
+      case 'cartoon_fail':
+        this.playWahWahFail();
+        break;
       case 'fail':
       case 'buzzer_wrong':
         this.playFail();
@@ -212,3 +519,4 @@ class SoundFX {
 }
 
 export const soundFX = new SoundFX();
+

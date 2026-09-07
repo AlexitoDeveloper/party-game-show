@@ -68,6 +68,9 @@ import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDo
 import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
 import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 import PowerCardView from '../components/PowerCardView';
+import { ThreeCasinoChip } from '../components/3d/ThreeCasinoChip';
+import { CoinBurstCelebration } from '../components/particles/CoinBurstCelebration';
+import { DecoProceduralSpandrel } from '../components/deco/DecoProceduralSpandrel';
 import {
   PowerCardsState,
   PowerCard,
@@ -154,6 +157,7 @@ export default function HostView() {
   });
 
   const [selectedTeamForPoints, setSelectedTeamForPoints] = useState<string | null>(null);
+  const [showCoinBurst, setShowCoinBurst] = useState(false);
 
   // Estados del Sistema de Capitanes
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
@@ -1703,6 +1707,8 @@ export default function HostView() {
       if (effectiveDelta > 0) {
         roomSync.broadcast({ type: 'TRIGGER_CONFETTI', payload: { teamId } });
         soundFX.playSuccess();
+        setShowCoinBurst(true);
+        setTimeout(() => setShowCoinBurst(false), 2200);
       } else if (effectiveDelta < 0) {
         soundFX.playFail();
       }
@@ -2275,6 +2281,77 @@ export default function HostView() {
           <span className="text-center leading-tight">Pulsador</span>
         </button>
       </div>
+
+      {/* SECCIÓN TEMÁTICA: EFECTOS 1930s SPEAKEASY & CASINO */}
+      <div className="pt-4 border-t border-amber-500/20 space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🎷</span>
+          <div>
+            <h4 className="text-xs font-broadway uppercase tracking-wider text-gold-gradient">
+              Efectos Temáticos Speakeasy & Casino 1930s
+            </h4>
+            <p className="text-[11px] text-amber-200/70 font-vintage">
+              Sonidos táctiles procedimentales de naipes, fichas de casino y metales de big band.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <button
+            onClick={() => handlePlaySoundEffect('card_snap')}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#160e08] hover:bg-[#22150c] border border-amber-500/40 text-amber-200 font-vintage font-bold text-xs gap-1 active:scale-95 transition-all shadow-deco-gold"
+            title="Chasquido nítido de naipe sobre tapete verde"
+          >
+            <span className="text-2xl">🎴</span>
+            <span className="text-center leading-tight">Chasquido Carta</span>
+          </button>
+
+          <button
+            onClick={() => handlePlaySoundEffect('card_slam')}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-amber-950/70 to-[#120b06] hover:brightness-110 border border-[#d4af37] text-amber-300 font-broadway font-bold text-xs gap-1 active:scale-95 transition-all shadow-deco-gold"
+            title="Impacto cinemático de naipe con resplandor mágico"
+          >
+            <span className="text-2xl animate-pulse">💥</span>
+            <span className="text-center leading-tight">Impacto Naipe</span>
+          </button>
+
+          <button
+            onClick={() => handlePlaySoundEffect('chips')}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#160e08] hover:bg-[#22150c] border border-amber-500/40 text-amber-200 font-vintage font-bold text-xs gap-1 active:scale-95 transition-all shadow-deco-gold"
+            title="Tintineo de fichas de casino de arcilla"
+          >
+            <span className="text-2xl">🪙</span>
+            <span className="text-center leading-tight">Fichas Casino</span>
+          </button>
+
+          <button
+            onClick={() => handlePlaySoundEffect('deco_bell')}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#160e08] hover:bg-[#22150c] border border-amber-500/40 text-amber-200 font-vintage font-bold text-xs gap-1 active:scale-95 transition-all shadow-deco-gold"
+            title="Campana de conserje / boxeo 1930s"
+          >
+            <span className="text-2xl">🛎️</span>
+            <span className="text-center leading-tight">Campana Déco</span>
+          </button>
+
+          <button
+            onClick={() => handlePlaySoundEffect('speakeasy_brass')}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#160e08] hover:bg-[#22150c] border border-amber-500/40 text-amber-200 font-vintage font-bold text-xs gap-1 active:scale-95 transition-all shadow-deco-gold"
+            title="Fanfarria de metales Big Band años 30"
+          >
+            <span className="text-2xl">🎺</span>
+            <span className="text-center leading-tight">Brass 1930s</span>
+          </button>
+
+          <button
+            onClick={() => handlePlaySoundEffect('wah_wah')}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#160e08] hover:bg-[#22150c] border border-amber-500/40 text-amber-200 font-vintage font-bold text-xs gap-1 active:scale-95 transition-all shadow-deco-gold"
+            title="Trompeta cómica Rubber-Hose Wah-Wah"
+          >
+            <span className="text-2xl">🤡</span>
+            <span className="text-center leading-tight">Wah-Wah Fail</span>
+          </button>
+        </div>
+      </div>
     </section>
   );
 
@@ -2338,7 +2415,10 @@ export default function HostView() {
   );
 
   return (
-    <main className="min-h-screen bg-[#08080c] text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none">
+    <main className="min-h-screen bg-[#08080c] text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none relative">
+      {/* Celebración con fuente física balística de fichas y monedas */}
+      <CoinBurstCelebration active={showCoinBurst} onComplete={() => setShowCoinBurst(false)} />
+
       {/* HEADER ANFITRIÓN (CONSOLA DE RADIO / PIT BOSS 1930s) */}
       <header className="flex items-center justify-between border-b border-[#d4af37]/35 pb-3 gap-2">
         <div className="min-w-0">
@@ -2772,6 +2852,75 @@ export default function HostView() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* FICHAS TÁCTILES DE CASINO 3D (AJUSTE RÁPIDO MOBILE-FIRST) */}
+            <div className="mt-4 p-3 bg-gradient-to-r from-[#170e08] via-[#0d0905] to-[#170e08] border border-[#d4af37]/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎰</span>
+                <div>
+                  <span className="text-xs font-broadway uppercase tracking-wider text-amber-300 block">
+                    Fichas Rápidas de Casino 3D
+                  </span>
+                  <span className="text-[10px] text-amber-400/70 font-vintage">
+                    Toca una ficha para asignarla a {selectedTeamCatalog ? selectedTeamCatalog.name : 'el equipo activo'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <ThreeCasinoChip
+                    value="+5"
+                    color="#b45309"
+                    size={48}
+                    onClick={() => {
+                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
+                      if (tId) handleScoreChange(tId, 5);
+                    }}
+                  />
+                  <span className="text-[9px] font-vintage text-amber-300 font-bold mt-0.5">+5 PTS</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <ThreeCasinoChip
+                    value="+2"
+                    color="#047857"
+                    size={48}
+                    onClick={() => {
+                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
+                      if (tId) handleScoreChange(tId, 2);
+                    }}
+                  />
+                  <span className="text-[9px] font-vintage text-emerald-300 font-bold mt-0.5">+2 PTS</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <ThreeCasinoChip
+                    value="+1"
+                    color="#d97706"
+                    size={48}
+                    onClick={() => {
+                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
+                      if (tId) handleScoreChange(tId, 1);
+                    }}
+                  />
+                  <span className="text-[9px] font-vintage text-amber-200 font-bold mt-0.5">+1 PTO</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <ThreeCasinoChip
+                    value="-1"
+                    color="#991b1b"
+                    size={48}
+                    onClick={() => {
+                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
+                      if (tId) handleScoreChange(tId, -1);
+                    }}
+                  />
+                  <span className="text-[9px] font-vintage text-red-300 font-bold mt-0.5">-1 PTO</span>
+                </div>
+              </div>
             </div>
           </div>
 

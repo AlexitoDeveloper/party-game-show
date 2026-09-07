@@ -10,6 +10,7 @@ import { RoomSync, getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards';
 import PowerCardView from '../components/PowerCardView';
+import { FannedHandDeck } from '../components/cards/FannedHandDeck';
 import { ArcadeBuzzer } from '../components/ArcadeBuzzer';
 import { getTeamTheme } from '../lib/teamThemes';
 import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
@@ -1187,8 +1188,8 @@ export default function PlayerView() {
 
       {/* MODAL COLECCIONABLE DE NAIPES DE PODER (ESTILO SPEAKEASY) */}
       {isCardModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#07070a]/95 backdrop-blur-xl flex flex-col justify-end sm:justify-center items-center p-4 select-none">
-          <div className="bg-[#0c0c14] border-2 border-[#d4af37]/60 rounded-3xl w-full max-w-sm max-h-[85vh] overflow-y-auto p-5 shadow-deco-gold space-y-4 deco-card-frame">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/95 backdrop-blur-xl flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 select-none">
+          <div className="bg-[#0c0c14] border-2 border-[#d4af37]/60 rounded-3xl w-full max-w-sm max-h-[92vh] overflow-y-auto p-3.5 sm:p-5 shadow-deco-gold space-y-3 deco-card-frame">
             <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🃏</span>
@@ -1418,55 +1419,44 @@ export default function PlayerView() {
                 </div>
               </div>
             ) : (
-              /* LISTA DE CARTAS EN MANO */
+              /* LISTA DE CARTAS EN MANO CON CARRUSEL 3D COVERFLOW */
               <div className="space-y-4">
                 {myTeamCards.length === 0 ? (
                   <div className="py-10 text-center space-y-2">
                     <span className="text-4xl select-none opacity-40 block">📭</span>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-amber-200/70 font-vintage">
                       Tu equipo no tiene cartas de poder en este momento.
                     </p>
-                    <p className="text-[11px] text-amber-400/80 italic">
+                    <p className="text-[11px] text-amber-400/80 italic font-editorial">
                       ¡Atento a la TV cuando el anfitrión reparta cartas al inicio o tras una prueba!
                     </p>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-5">
-                    {myTeamCards.map((card) => {
-                      const canPlay = !!player?.is_captain;
-                      return (
-                        <div
-                          key={card.id}
-                          className="flex flex-col items-center space-y-3 p-3.5 rounded-2xl bg-slate-900/80 border border-amber-400/30 w-full shadow-lg"
-                        >
-                          <PowerCardView
-                            card={card}
-                            size="md"
-                            isClickable={canPlay}
-                            onClick={() => {
-                              if (canPlay) handlePlayCard(card);
-                              else {
-                                setFeedbackToast('👑 Solo el Capitán puede jugar las cartas.');
-                                setTimeout(() => setFeedbackToast(null), 3500);
-                              }
-                            }}
-                          />
-                          {canPlay ? (
-                            <button
-                              onClick={() => handlePlayCard(card)}
-                              className="w-full max-w-[220px] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
-                            >
-                              <span>👑 Jugar Carta</span>
-                            </button>
-                          ) : (
-                            <div className="px-3 py-1.5 rounded-xl bg-slate-950/90 border border-amber-400/20 text-[11px] text-amber-300 font-bold flex items-center gap-1.5 text-center">
-                              <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                              <span>Solo el Capitán 👑 puede jugar esta carta</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div className="flex flex-col items-center">
+                    {/* Header bar indicando rol del jugador */}
+                    <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-[11px] text-amber-300 font-vintage mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{player?.is_captain ? 'Eres el Capitán: Puedes Jugar Naipes' : 'Solo Capitán puede jugarlas'}</span>
+                      </div>
+                      <span className="text-[10px] text-amber-400/70">
+                        {myTeamCards.length} en mano
+                      </span>
+                    </div>
+
+                    {/* Carrusel 3D Coverflow de Naipes */}
+                    <FannedHandDeck
+                      cards={myTeamCards}
+                      disabled={!player?.is_captain}
+                      onPlayCard={(card) => {
+                        if (player?.is_captain) {
+                          handlePlayCard(card);
+                        } else {
+                          setFeedbackToast('👑 Solo el Capitán puede jugar las cartas.');
+                          setTimeout(() => setFeedbackToast(null), 3500);
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </div>

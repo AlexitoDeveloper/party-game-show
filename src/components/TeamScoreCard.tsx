@@ -7,6 +7,7 @@ import CountUp from 'react-countup';
 import { GameIcon } from './GameIcon';
 import { TwemojiText } from './TwemojiText';
 import { generateAvatarDataUri } from '../lib/dicebear';
+import { CasinoChipMountain } from './casino/CasinoChipMountain';
 
 export interface TeamMemberInfo {
   id: string;
@@ -244,8 +245,8 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
             </span>
           </div>
 
-          {/* LISTA DE JUGADORES / MIEMBROS DEL EQUIPO */}
-          <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[290px] pr-1">
+          {/* LISTA DE JUGADORES / MIEMBROS DEL EQUIPO (Máx 4-5 jugadores) */}
+          <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[165px] pr-1">
             {members.map((m) => (
               <div
                 key={m.id}
@@ -279,18 +280,23 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               </div>
             ))}
             {members.length === 0 && (
-              <div className="text-center py-8 text-slate-500 text-xs italic">
+              <div className="text-center py-6 text-slate-500 text-xs italic">
                 Esperando reclutas...
               </div>
             )}
           </div>
         </div>
 
-        {/* PIE DE TARJETA: TOTAL JUGADORES */}
-        <div className="pt-2.5 border-t border-slate-800/80 text-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            {members.length} {members.length === 1 ? 'jugador' : 'jugadores'}
-          </span>
+        {/* PARTE INFERIOR: MONTAÑA DE FICHAS DE CASINO QUE CRECE EN LA BASE */}
+        <div className="relative mt-2 pt-2 border-t border-slate-800/80 flex flex-col items-center">
+          <CasinoChipMountain score={team.score} theme={theme} className="w-full mb-1.5" />
+
+          {/* PIE DE TARJETA: TOTAL JUGADORES */}
+          <div className="w-full text-center">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              {members.length} {members.length === 1 ? 'jugador' : 'jugadores'}
+            </span>
+          </div>
         </div>
       </div>
     </motion.div>

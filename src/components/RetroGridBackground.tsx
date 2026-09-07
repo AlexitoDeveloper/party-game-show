@@ -1,18 +1,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { AmbientSpeakeasyAtmosphere } from './particles/AmbientSpeakeasyAtmosphere';
 
 interface RetroGridBackgroundProps {
   activeTeamColor?: string;
   className?: string;
+  showParticles?: boolean;
 }
 
 /**
  * RetroGridBackground: Fondo escénico Art Déco / Speakeasy 1930s acelerado por GPU,
- * con abanico sunburst dorado, halos de latón y grano analógico de celuloide.
+ * con abanico sunburst dorado, halos de latón, grano de celuloide y polvo de oro ambiental.
  */
 export const RetroGridBackground: React.FC<RetroGridBackgroundProps> = ({
   activeTeamColor,
   className = '',
+  showParticles = true,
 }) => {
   return (
     <div className={`fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#07070a] select-none ${className}`}>
@@ -45,7 +48,10 @@ export const RetroGridBackground: React.FC<RetroGridBackgroundProps> = ({
         className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-amber-300/15 blur-[110px] pointer-events-none"
       />
 
-      {/* 6. Textura de celuloide / grano analógico sutil */}
+      {/* 6. Partículas de Polvo Dorado en Suspensión */}
+      {showParticles && <AmbientSpeakeasyAtmosphere />}
+
+      {/* 7. Textura de celuloide / grano analógico sutil */}
       <div
         className="absolute inset-0 pointer-events-none opacity-15 mix-blend-overlay"
         style={{ filter: 'url(#vintage-grain)' }}

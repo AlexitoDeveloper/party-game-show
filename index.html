@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Josefin+Sans:wght@400;600;700&family=Limelight&family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Righteous&display=swap" rel="stylesheet">
   </head>
   <body class="bg-[#0a0a0e] text-amber-50 selection:bg-[#d4af37] selection:text-[#0a0a0e] overflow-x-hidden antialiased">
-    <!-- SVG Filters for authentic 1930s vintage grain and metallic foil -->
+    <!-- SVG Filters for authentic 1930s vintage grain, embossed foil & speakeasy textures -->
     <svg class="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
       <defs>
         <filter id="vintage-grain" x="0%" y="0%" width="100%" height="100%">
@@ -19,9 +19,25 @@
           <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.05 0" in="noise" result="coloredNoise" />
           <feComposite operator="in" in2="SourceGraphic" />
         </filter>
-        <filter id="gold-foil-shimmer" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="2" result="turb" />
-          <feDisplacementMap in2="turb" in="SourceGraphic" scale="3" xChannelSelector="R" yChannelSelector="G" />
+        
+        <!-- Realistic 1930s Hot-Stamped Gold Foil with Specular Lighting -->
+        <filter id="gold-leaf-emboss" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise" />
+          <feDiffuseLighting in="noise" lighting-color="#ffdf73" surfaceScale="2" result="light">
+            <feDistantLight azimuth="45" elevation="60" />
+          </feDiffuseLighting>
+          <feSpecularLighting in="noise" surfaceScale="2" specularConstant="1.5" specularExponent="20" lighting-color="#fff8db" result="spec">
+            <fePointLight x="-50" y="-100" z="200" />
+          </feSpecularLighting>
+          <feComposite in="SourceGraphic" in2="light" operator="arithmetic" k1="1" k2="0.6" k3="0.4" k4="0" result="lit" />
+          <feComposite in="lit" in2="spec" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" />
+        </filter>
+
+        <!-- Copperplate Etching Shading Filter -->
+        <filter id="copperplate-hatch" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="etch" />
+          <feColorMatrix type="matrix" values="0.8 0 0 0 0.1  0 0.6 0 0 0.08  0 0 0.3 0 0.02  0 0 0 1 0" in="etch" result="sepiaEtch" />
+          <feBlend mode="multiply" in="SourceGraphic" in2="sepiaEtch" />
         </filter>
       </defs>
     </svg>
