@@ -11,6 +11,7 @@ export type RoomSyncEvent =
   | { type: 'PLAYER_JOINED'; payload: Player }
   | { type: 'PLAYER_UPDATED'; payload: Player }
   | { type: 'REQUEST_PLAYERS_SYNC' }
+  | { type: 'REQUEST_ROOM_SYNC' }
   | { type: 'SWITCH_GAME'; payload: { status: RoomStatus; current_game: MinigameType; game_id?: string } }
   | { type: 'RETURN_TO_LOBBY' }
   | { type: 'BUZZER_PRESS'; payload: BuzzerPressPayload }
@@ -27,7 +28,8 @@ export type RoomSyncEvent =
   | { type: 'CAPTAIN_REPRESENTATIVE'; payload: TeamRepresentative }
   | { type: 'PLAY_SOUND'; payload: { sound: string } }
   | { type: 'LAUNCH_TIMER'; payload: { seconds: number } }
-  | { type: 'TRIGGER_CONFETTI' };
+  | { type: 'CLEAR_CAPTAIN_GAMBLES'; payload?: { teamId?: string } }
+  | { type: 'TRIGGER_CONFETTI'; payload?: { teamId?: string | number } };
 
 interface RelayMessage {
   roomCode: string;

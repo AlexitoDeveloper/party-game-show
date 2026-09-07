@@ -32,6 +32,9 @@ export interface Player {
   team_id: string | null;
   team_index?: number | null;
   nickname: string;
+  avatar_seed?: string;
+  avatar_style?: string;
+  badge_emoji?: string;
   session_token: string;
   is_connected: boolean;
   is_captain?: boolean;
@@ -89,4 +92,7 @@ export interface BuzzerPressPayload {
   teamColorHex: string;
   teamIndex: number;
   clientTimestamp: number;
+  avatarSeed?: string;
+  avatarStyle?: string;
+  badgeEmoji?: string;
 }

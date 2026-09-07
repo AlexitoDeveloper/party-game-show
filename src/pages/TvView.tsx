@@ -42,10 +42,19 @@ import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
 import { PowerCardsState, PowerCard } from '../lib/powerCards';
 import UnoPowerCard from '../components/UnoPowerCard';
+import { RetroGridBackground } from '../components/RetroGridBackground';
+import { TeamScoreCard } from '../components/TeamScoreCard';
+import { getTeamTheme } from '../lib/teamThemes';
+import { useGameAudio } from '../lib/useGameAudio';
+import { triggerTeamConfetti } from '../lib/triggerTeamConfetti';
+import { TwemojiText } from '../components/TwemojiText';
+import { GameIcon } from '../components/GameIcon';
+import { generateAvatarDataUri, DiceBearStyle } from '../lib/dicebear';
 
 export default function TvView() {
   const { code } = useParams<{ code: string }>();
   const roomCode = (code || '').toUpperCase();
+  const { playBuzzer, playCountdown, playCorrect, playWrong, playVictory } = useGameAudio();
 
   const [room, setRoom] = useState<Room>(() => {
     const saved = localStorage.getItem(`party_room_${roomCode}`);
@@ -216,6 +225,17 @@ export default function TvView() {
         });
       } else if (event.type === 'PLAYERS_UPDATE') {
         setPlayers(event.payload);
+      } else if (event.type === 'REQUEST_ROOM_SYNC') {
+        roomSync.broadcast({
+          type: 'ROOM_UPDATE',
+          payload: {
+            status: room.status,
+            current_game: room.current_game,
+            active_game_id: room.active_game_id,
+            active_teams_count: room.active_teams_count,
+          },
+        });
+        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teams });
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
         resetBuzzer();
@@ -249,14 +269,14 @@ export default function TvView() {
       } else if (event.type === 'POWER_CARDS_STATE_UPDATE') {
         setPowerCards(event.payload);
       } else if (event.type === 'POWER_CARD_ANIMATION') {
-        soundFX.playPowerCard();
-        setActiveCardAnimation(event.payload);
-        if (event.payload.type === 'deal') {
-          confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
+        // Solo mostrar cartas en pantalla cuando son USADAS/JUGADAS, nunca al repartir
+        if (event.payload.type === 'play') {
+          soundFX.playPowerCard();
+          setActiveCardAnimation(event.payload);
+          setTimeout(() => {
+            setActiveCardAnimation((curr) => (curr === event.payload ? null : curr));
+          }, 5500);
         }
-        setTimeout(() => {
-          setActiveCardAnimation((curr) => (curr === event.payload ? null : curr));
-        }, 5500);
       } else if (event.type === 'BABY_PHOTO_UPDATE') {
         setBabyPhotoIndex(event.payload.photoIndex);
         setBabyPhotoRevealed(event.payload.isRevealed);
@@ -279,6 +299,16 @@ export default function TvView() {
         setCaptainGambles((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
         soundFX.playPowerCard();
         confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
+      } else if (event.type === 'CLEAR_CAPTAIN_GAMBLES') {
+        if (event.payload?.teamId) {
+          setCaptainGambles((prev) => {
+            const next = { ...prev };
+            delete next[event.payload!.teamId!];
+            return next;
+          });
+        } else {
+          setCaptainGambles({});
+        }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
         if (event.payload.isActive) {
@@ -289,7 +319,8 @@ export default function TvView() {
       } else if (event.type === 'LAUNCH_TIMER') {
         setTimerSeconds(event.payload.seconds);
       } else if (event.type === 'TRIGGER_CONFETTI') {
-        triggerVictoryConfetti();
+        playVictory();
+        triggerTeamConfetti(event.payload?.teamId || winningTeamCatalog?.index);
       }
     });
 
@@ -299,99 +330,34 @@ export default function TvView() {
     };
   }, [roomSync, resetBuzzer]);
 
-  const getTvTeamIcon = (teamIndex: number, className = 'w-5 h-5') => {
-    switch (teamIndex) {
-      case 1:
-        // Azul: Agua
-        return <Droplets className={`${className} text-cyan-400 fill-cyan-400/20`} />;
-      case 2:
-        // Rojo: Fuego
-        return <Flame className={`${className} text-red-400 fill-red-400/20`} />;
-      case 3:
-        // Amarillo: Electricidad
-        return <Zap className={`${className} text-yellow-400 fill-yellow-400/20`} />;
-      case 4:
-        // Blanco: Luz
-        return <Sparkles className={`${className} text-slate-100 fill-white/20`} />;
-      case 5:
-        // Negro: Sombra
-        return <Moon className={`${className} text-zinc-300 fill-zinc-300/20`} />;
-      case 6:
-        // Verde: Ácido
-        return <Sparkles className={`${className} text-green-400 fill-green-400/20`} />;
-      case 7:
-        // Morado: Galaxia
-        return <Orbit className={`${className} text-purple-400 fill-purple-400/20`} />;
-      case 8:
-        // Naranja: Magma
-        return <Sun className={`${className} text-orange-400 fill-orange-400/20`} />;
-      default:
-        return <Sparkles className={`${className} text-amber-400`} />;
-    }
-  };
 
-  const getTeamThemeBorderClass = (teamIndex: number) => {
-    switch (teamIndex) {
-      case 1:
-        return 'lobby-border-agua';
-      case 2:
-        return 'lobby-border-fuego';
-      case 3:
-        return 'lobby-border-electricidad';
-      case 4:
-        return 'lobby-border-luz';
-      case 5:
-        return 'lobby-border-sombra';
-      case 6:
-        return 'lobby-border-acido';
-      case 7:
-        return 'lobby-border-galaxia';
-      case 8:
-        return 'lobby-border-magma';
-      default:
-        return 'lobby-border-fuego';
-    }
-  };
-
-  const getTeamThemeBadge = (teamIndex: number) => {
-    switch (teamIndex) {
-      case 1:
-        return { emoji: '💧', label: 'AGUA', color: 'text-cyan-300', bg: 'bg-cyan-950/70 border-cyan-400/40' };
-      case 2:
-        return { emoji: '🔥', label: 'FUEGO', color: 'text-red-300', bg: 'bg-red-950/70 border-red-400/40' };
-      case 3:
-        return { emoji: '⚡', label: 'ELECTRICIDAD', color: 'text-yellow-200', bg: 'bg-yellow-950/70 border-yellow-400/40' };
-      case 4:
-        return { emoji: '✨', label: 'LUZ', color: 'text-slate-100', bg: 'bg-slate-800/80 border-white/50' };
-      case 5:
-        return { emoji: '🌑', label: 'SOMBRA', color: 'text-zinc-200', bg: 'bg-zinc-900/90 border-zinc-500/40' };
-      case 6:
-        return { emoji: '🧪', label: 'ÁCIDO', color: 'text-green-300', bg: 'bg-green-950/70 border-green-400/40' };
-      case 7:
-        return { emoji: '🌌', label: 'GALAXIA', color: 'text-purple-300', bg: 'bg-purple-950/70 border-purple-400/40' };
-      case 8:
-        return { emoji: '🌋', label: 'MAGMA', color: 'text-orange-300', bg: 'bg-orange-950/70 border-orange-400/40' };
-      default:
-        return { emoji: '⭐', label: 'ELEMENTO', color: 'text-amber-300', bg: 'bg-amber-950/70 border-amber-400/40' };
-    }
-  };
-
-  // Temporizador interactivo
+  // Temporizador interactivo con audio de cuenta atrás
   useEffect(() => {
     if (timerSeconds === null || timerSeconds <= 0) return;
     const interval = setInterval(() => {
       setTimerSeconds((prev) => {
         if (prev === null || prev <= 1) {
-          soundFX.playFail();
+          playWrong();
           return 0;
         }
-        soundFX.playTick(prev <= 5);
+        if (prev <= 6) {
+          playCountdown();
+        } else {
+          soundFX.playTick();
+        }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerSeconds]);
+  }, [timerSeconds, playWrong, playCountdown]);
+
+  // Reproducir sonido de buzzer en la TV cuando alguien pulsa primero
+  useEffect(() => {
+    if (buzzerLocked && buzzerWinner) {
+      playBuzzer();
+    }
+  }, [buzzerLocked, buzzerWinner, playBuzzer]);
 
   const launchTimer = (seconds: number) => {
     setTimerSeconds(seconds);
@@ -419,14 +385,19 @@ export default function TvView() {
     }
   };
 
-  // Modificar puntuación desde la TV
+  // Modificar puntuación desde la TV con celebración sonora y confeti del equipo
   const handleScoreChange = (teamId: string, delta: number) => {
     const updated = teams.map((t) =>
       t.id === teamId ? { ...t, score: Math.max(0, t.score + delta) } : t
     );
     setTeams(updated);
     roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
-    triggerVictoryConfetti();
+    if (delta > 0) {
+      playCorrect();
+      triggerTeamConfetti(teamId);
+    } else {
+      playWrong();
+    }
     resetBuzzer();
   };
 
@@ -448,6 +419,9 @@ export default function TvView() {
 
   return (
     <main className="min-h-screen w-full bg-slate-950 text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
+      {/* FONDO RETRO-GRID DINÁMICO ACELERADO POR GPU */}
+      <RetroGridBackground activeTeamColor={winningTeamCatalog?.colorHex} />
+
       {/* FLASH NEÓN PERIMETRAL A PANTALLA COMPLETA CUANDO SUENA EL BUZZER */}
       <AnimatePresence>
         {buzzerLocked && winningTeamCatalog && (
@@ -468,19 +442,19 @@ export default function TvView() {
       <header className="flex items-center justify-between border-b border-slate-800/80 pb-4 z-20">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-purple-500/30">
-            <Tv2 className="w-8 h-8 text-white" />
+            <GameIcon name="Tv" size={32} color="#FFFFFF" glow={true} weight="fill" />
           </div>
           <div>
             <h1 className="text-3xl font-black font-arcade uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-pink-500 to-purple-400">
               {room.title || 'GAME SHOW ARENA'}
             </h1>
             <p className="text-slate-400 text-sm flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <GameIcon name="Sparkle" size={16} color="#FBBF24" glow="#FBBF24" weight="fill" />
               {room.status === 'lobby' ? (
                 <span>Lobby de Convocatoria • Esperando Jugadores</span>
               ) : (
                 <span className="text-white font-bold flex items-center gap-1.5">
-                  <span>{activeGame.emoji}</span>
+                  <TwemojiText className="text-base">{activeGame.emoji}</TwemojiText>
                   <span className="uppercase">{activeGame.title}</span>
                   <span className="text-xs text-amber-400 font-normal">({activeGame.category})</span>
                 </span>
@@ -544,7 +518,7 @@ export default function TvView() {
             {/* CONTADOR DE JUGADORES */}
             <div className="w-full bg-slate-800/90 rounded-2xl p-3.5 border border-slate-700/60 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-indigo-400" />
+                <GameIcon name="Users" size={22} color="#818CF8" glow="#818CF8" weight="fill" />
                 <div>
                   <span className="text-[10px] text-slate-400 block uppercase font-bold">Jugadores</span>
                   <span className="text-base font-black text-white">{players.length} conectados</span>
@@ -559,17 +533,26 @@ export default function TvView() {
             {/* JUGADORES ENTRADOS QUE ESTÁN ELIGIENDO BANDO */}
             {unassignedPlayers.length > 0 && (
               <div className="w-full bg-amber-500/10 border-2 border-amber-400/30 rounded-2xl p-3 my-2 text-left animate-pulse">
-                <span className="text-[10px] uppercase font-bold text-amber-400 block mb-1">
-                  ⚡ Recién entrados ({unassignedPlayers.length}):
+                <span className="text-[10px] uppercase font-bold text-amber-400 block mb-1.5 flex items-center gap-1">
+                  <GameIcon name="Lightning" size={14} color="#FBBF24" weight="fill" glow="#FBBF24" />
+                  <span>Recién entrados ({unassignedPlayers.length}):</span>
                 </span>
-                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                   {unassignedPlayers.map((p) => (
-                    <span
+                    <div
                       key={p.id}
-                      className="bg-amber-400/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded-lg text-xs font-bold"
+                      className="bg-slate-900/90 border border-amber-400/40 px-2 py-1 rounded-xl text-xs font-bold text-amber-200 flex items-center gap-1.5 shadow-sm"
                     >
-                      {p.nickname}
-                    </span>
+                      <div className="w-4 h-4 rounded-md bg-slate-950 overflow-hidden shrink-0">
+                        <img
+                          src={generateAvatarDataUri(p.avatar_seed || p.nickname, (p.avatar_style as any) || 'avataaars')}
+                          alt={p.nickname}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      {p.badge_emoji && <TwemojiText className="text-[10px]">{p.badge_emoji}</TwemojiText>}
+                      <span>{p.nickname}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -582,116 +565,24 @@ export default function TvView() {
             style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
           >
             {activeTeams.map((team) => {
-              const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
-              const themeBorderClass = getTeamThemeBorderClass(team.team_index);
-              const themeBadge = getTeamThemeBadge(team.team_index);
+              const theme = getTeamTheme(team.team_index);
               const teamMembers = players.filter(
                 (p) =>
                   (p.team_index !== undefined && p.team_index !== null && p.team_index === team.team_index) ||
                   p.team_id === team.id ||
                   p.team_id === `team_${team.team_index}`
               );
+              const hand = powerCards?.teamHands[team.id] || [];
 
               return (
-                <motion.div
+                <TeamScoreCard
                   key={team.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`rounded-3xl p-[3.5px] shadow-2xl relative overflow-hidden flex flex-col justify-between transition-all duration-300 ${themeBorderClass}`}
-                >
-                  <div className="bg-slate-950/90 rounded-[21px] p-4 flex flex-col justify-between h-full backdrop-blur-xl relative z-10">
-                    <div>
-                      {/* CABECERA CON ICONO Y NOMBRE COMPLETO DEL EQUIPO (SIN TAG PARA NO RECORTAR TEXTO) */}
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-10 h-10 rounded-2xl bg-slate-900/90 border border-slate-700/60 flex items-center justify-center shadow-md shrink-0`}>
-                            {getTvTeamIcon(team.team_index, 'w-5 h-5')}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider block">
-                              Equipo {team.team_index}
-                            </span>
-                            <h3 className={`text-lg font-black uppercase ${catalog.twText} truncate leading-tight`}>
-                              {team.name}
-                            </h3>
-                          </div>
-                        </div>
-
-                        {/* INDICADOR DISCRETO DEL COLOR */}
-                        <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} ${catalog.index === 5 ? 'border border-zinc-400' : ''} shrink-0`} />
-                      </div>
-
-                      {/* MARCADOR EN GRANDE Y ELEMENTO EN EL LOBBY */}
-                      <div className="my-3 py-2.5 px-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">
-                            PUNTUACIÓN
-                          </span>
-                          <div className="flex items-baseline gap-1.5 mt-0.5">
-                            <span className="text-4xl font-black font-mono text-white leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                              {team.score}
-                            </span>
-                            <span className="text-[11px] font-black text-amber-400 font-arcade">PTS</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[9px] uppercase font-bold text-slate-400 block">Elemento</span>
-                          <span className={`text-xs font-black block truncate max-w-[110px] ${themeBadge.color}`}>
-                            {catalog.emoji} {catalog.name}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* CANTIDAD DE CARTAS DE PODER EN LOBBY (SIN REVELAR CUÁLES SON, MÁXIMO 3) */}
-                      <div className="mb-2 py-1.5 px-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
-                          <span>🃏 Cartas de Poder:</span>
-                        </span>
-                        <span className="text-xs font-black font-mono text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-lg">
-                          {(powerCards?.teamHands[team.id] || []).length} / 3
-                        </span>
-                      </div>
-
-                      {/* Miembros */}
-                      <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[290px] pr-1">
-                        {teamMembers.map((m) => (
-                          <div
-                            key={m.id}
-                            className={`rounded-xl px-3 py-1.5 text-xs font-bold flex items-center justify-between transition-all ${
-                              m.is_captain
-                                ? 'bg-amber-500/20 border-2 border-amber-400 text-amber-200 shadow-md'
-                                : 'bg-slate-800/90 border border-slate-700/60 text-slate-100'
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5 truncate">
-                              {m.is_captain && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 flex-shrink-0" />}
-                              <span className="truncate">{m.nickname}</span>
-                            </div>
-                            {m.is_captain ? (
-                              <span className="text-[9px] font-black uppercase text-amber-300 bg-black/50 px-1.5 py-0.5 rounded border border-amber-400/30">
-                                CAPITÁN
-                              </span>
-                            ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            )}
-                          </div>
-                        ))}
-                        {teamMembers.length === 0 && (
-                          <div className="text-center py-8 text-slate-500 text-xs italic">
-                            Esperando reclutas...
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-2.5 border-t border-slate-800/80 text-center">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                        {teamMembers.length} {teamMembers.length === 1 ? 'jugador' : 'jugadores'}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
+                  team={team}
+                  theme={theme}
+                  members={teamMembers}
+                  powerCardsCount={hand.length}
+                  variant="lobby"
+                />
               );
             })}
           </div>
@@ -904,46 +795,65 @@ export default function TvView() {
 
                   {/* OVERLAY DEL BUZZER CUANDO ALGUIEN PULSA EN MODO PELÍCULA */}
                   <AnimatePresence>
-                    {buzzerLocked && buzzerWinner && (
-                      <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 20, opacity: 0 }}
-                        className="mt-4 w-full bg-slate-900/95 border-2 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3"
-                        style={{ borderColor: buzzerWinner.teamColorHex }}
-                      >
-                        <div className="flex items-center gap-3 text-left">
-                          <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shadow-md"
-                            style={{ backgroundColor: buzzerWinner.teamColorHex }}
-                          >
-                            ⚡
-                          </div>
-                          <div>
-                            <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
-                              ¡HA PULSADO PRIMERO!
-                            </span>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-lg font-black text-white">
-                                {buzzerWinner.playerName}{' '}
-                                <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
-                              </span>
-                              {isWinnerCaptain && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black">
-                                  <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
-                                </span>
+                    {buzzerLocked && buzzerWinner && (() => {
+                      const winnerPlayer = players.find((p) => p.id === buzzerWinner.playerId || p.nickname === buzzerWinner.playerName);
+                      const winnerSeed = buzzerWinner.avatarSeed || winnerPlayer?.avatar_seed || buzzerWinner.playerName;
+                      const winnerStyle = (buzzerWinner.avatarStyle || winnerPlayer?.avatar_style || 'avataaars') as DiceBearStyle;
+                      const winnerEmoji = buzzerWinner.badgeEmoji || winnerPlayer?.badge_emoji;
+
+                      return (
+                        <motion.div
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: 20, opacity: 0 }}
+                          className="mt-4 w-full bg-slate-900/95 border-2 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3"
+                          style={{ borderColor: buzzerWinner.teamColorHex }}
+                        >
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="relative shrink-0">
+                              <div
+                                className="w-14 h-14 rounded-2xl bg-slate-950 border-2 flex items-center justify-center overflow-hidden shadow-lg p-0.5"
+                                style={{ borderColor: buzzerWinner.teamColorHex }}
+                              >
+                                <img
+                                  src={generateAvatarDataUri(winnerSeed, winnerStyle)}
+                                  alt={buzzerWinner.playerName}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              {winnerEmoji && (
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow">
+                                  <TwemojiText className="text-xs">{winnerEmoji}</TwemojiText>
+                                </div>
                               )}
                             </div>
-                          </div>
-                        </div>
 
-                        {/* Indicador pasivo en la TV sin botones */}
-                        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs font-bold text-amber-300">
-                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                          <span>Esperando veredicto del Anfitrión en su mando...</span>
-                        </div>
-                      </motion.div>
-                    )}
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
+                                ¡HA PULSADO PRIMERO!
+                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-lg font-black text-white">
+                                  {buzzerWinner.playerName}{' '}
+                                  <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
+                                </span>
+                                {isWinnerCaptain && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black">
+                                    <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Indicador pasivo en la TV sin botones */}
+                          <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs font-bold text-amber-300 w-full">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                            <span>Esperando veredicto del Anfitrión en su mando...</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
                   </AnimatePresence>
                 </div>
               ) : activeGame.id === 'fotos_proyector' ? (
@@ -1058,40 +968,72 @@ export default function TvView() {
               ) : (
                 /* VISTA CLÁSICA PARA ADIVINA LA CANCIÓN Y TRIVIAL */
                 <AnimatePresence mode="wait">
-                  {buzzerLocked && buzzerWinner ? (
-                    <motion.div
-                      key="winner"
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      className="p-8 md:p-10 rounded-3xl bg-slate-900/90 border-4 shadow-2xl max-w-2xl mx-auto backdrop-blur-2xl"
-                      style={{ borderColor: buzzerWinner.teamColorHex }}
-                    >
-                      <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-widest text-amber-300 mb-3">
-                        ⚡ ¡TURNO DE RESPUESTA!
-                      </div>
-                      <h2 className="text-5xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-md flex items-center justify-center gap-3">
-                        <span>{buzzerWinner.playerName}</span>
-                        {isWinnerCaptain && (
-                          <span title="¡Capitán del equipo!" className="inline-flex items-center text-amber-400">
-                            <Crown className="w-10 h-10 md:w-12 md:h-12 fill-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] animate-bounce" />
-                          </span>
-                        )}
-                      </h2>
-                      <p
-                        className="text-2xl md:text-3xl font-black uppercase mt-1"
-                        style={{ color: buzzerWinner.teamColorHex }}
-                      >
-                        {buzzerWinner.teamName}
-                      </p>
+                  {buzzerLocked && buzzerWinner ? (() => {
+                    const winnerPlayer = players.find((p) => p.id === buzzerWinner.playerId || p.nickname === buzzerWinner.playerName);
+                    const winnerSeed = buzzerWinner.avatarSeed || winnerPlayer?.avatar_seed || buzzerWinner.playerName;
+                    const winnerStyle = (buzzerWinner.avatarStyle || winnerPlayer?.avatar_style || 'avataaars') as DiceBearStyle;
+                    const winnerEmoji = buzzerWinner.badgeEmoji || winnerPlayer?.badge_emoji;
 
-                      {/* Indicador pasivo en TV */}
-                      <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                        <span>Esperando veredicto del Anfitrión en su mando...</span>
-                      </div>
-                    </motion.div>
-                  ) : (
+                    return (
+                      <motion.div
+                        key="winner"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        className="p-8 md:p-10 rounded-3xl bg-slate-900/90 border-4 shadow-2xl max-w-2xl mx-auto backdrop-blur-2xl text-center"
+                        style={{ borderColor: buzzerWinner.teamColorHex }}
+                      >
+                        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-widest text-amber-300 mb-4">
+                          ⚡ ¡TURNO DE RESPUESTA!
+                        </div>
+
+                        {/* AVATAR GIGANTE DEL GANADOR EN PANTALLA DE TV */}
+                        <div className="flex justify-center mb-4">
+                          <div className="relative">
+                            <div
+                              className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-slate-950 border-4 p-1 shadow-2xl overflow-hidden flex items-center justify-center"
+                              style={{
+                                borderColor: buzzerWinner.teamColorHex,
+                                boxShadow: `0 0 35px ${buzzerWinner.teamColorHex}`,
+                              }}
+                            >
+                              <img
+                                src={generateAvatarDataUri(winnerSeed, winnerStyle)}
+                                alt={buzzerWinner.playerName}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            {winnerEmoji && (
+                              <div className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center shadow-lg">
+                                <TwemojiText className="text-lg">{winnerEmoji}</TwemojiText>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <h2 className="text-5xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-md flex items-center justify-center gap-3">
+                          <span>{buzzerWinner.playerName}</span>
+                          {isWinnerCaptain && (
+                            <span title="¡Capitán del equipo!" className="inline-flex items-center text-amber-400">
+                              <Crown className="w-10 h-10 md:w-12 md:h-12 fill-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] animate-bounce" />
+                            </span>
+                          )}
+                        </h2>
+                        <p
+                          className="text-2xl md:text-3xl font-black uppercase mt-1"
+                          style={{ color: buzzerWinner.teamColorHex }}
+                        >
+                          {buzzerWinner.teamName}
+                        </p>
+
+                        {/* Indicador pasivo en TV */}
+                        <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                          <span>Esperando veredicto del Anfitrión en su mando...</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })() : (
                     <motion.div
                       key="waiting"
                       initial={{ opacity: 0 }}
@@ -1194,7 +1136,7 @@ export default function TvView() {
               style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
             >
               {activeTeams.map((team) => {
-                const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+                const theme = getTeamTheme(team.team_index);
                 const teamHand = powerCards?.teamHands[team.id] || [];
                 const hasDouble = powerCards?.activeEffects.some(
                   (e) => e.sourceTeamId === team.id && e.cardId === 'doble'
@@ -1202,55 +1144,26 @@ export default function TvView() {
                 const hasBomb = powerCards?.activeEffects.some(
                   (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
                 );
-
+                const hasCaptainGamble = !!captainGambles[team.id];
                 const teamCaptain = players.find(
                   (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
                 );
-                const hasCaptainGamble = !!captainGambles[team.id];
+                const members = teamCaptain ? [teamCaptain] : [];
 
                 return (
-                  <div
+                  <TeamScoreCard
                     key={team.id}
-                    className={`bg-slate-900/80 border ${catalog.twBorder} rounded-xl px-3 py-2 flex items-center justify-between gap-2`}
-                  >
-                    <div className="flex flex-col truncate min-w-0">
-                      <div className="flex items-center gap-1.5 truncate">
-                        {getTvTeamIcon(team.team_index, 'w-4 h-4 shrink-0')}
-                        <span className={`text-xs font-black uppercase truncate ${catalog.twText}`}>
-                          {team.name}
-                        </span>
-                        {teamHand.length > 0 && (
-                          <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-1.5 py-0.5 rounded-md font-bold font-mono">
-                            🃏{teamHand.length}
-                          </span>
-                        )}
-                        {hasDouble && (
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-md font-black animate-pulse">
-                            x2
-                          </span>
-                        )}
-                        {hasCaptainGamble && (
-                          <span className="text-[10px] bg-amber-500/25 text-amber-300 border border-amber-400/50 px-1.5 py-0.5 rounded-md font-black animate-bounce flex items-center gap-0.5">
-                            ⭐x2
-                          </span>
-                        )}
-                        {hasBomb && (
-                          <span className="text-[10px] bg-orange-500/20 text-orange-300 border border-orange-500/40 px-1.5 py-0.5 rounded-md font-black animate-bounce">
-                            💣
-                          </span>
-                        )}
-                      </div>
-                      {teamCaptain && (
-                        <span className="text-[10px] text-amber-300/90 font-bold truncate flex items-center gap-1 mt-0.5">
-                          <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />
-                          {teamCaptain.nickname}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-sm font-black font-mono text-white whitespace-nowrap">
-                      {team.score} pts
-                    </span>
-                  </div>
+                    team={team}
+                    theme={theme}
+                    members={members}
+                    powerCardsCount={teamHand.length}
+                    variant="scoreboard"
+                    activeEffects={{
+                      hasDouble,
+                      hasBomb,
+                      hasGamble: hasCaptainGamble,
+                    }}
+                  />
                 );
               })}
             </div>

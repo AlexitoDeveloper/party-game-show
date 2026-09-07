@@ -10,6 +10,11 @@ import { RoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards';
 import UnoPowerCard, { PowerCardView } from '../components/UnoPowerCard';
+import { ArcadeBuzzer } from '../components/ArcadeBuzzer';
+import { getTeamTheme } from '../lib/teamThemes';
+import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
+import { TwemojiText } from '../components/TwemojiText';
+import { DiceBearStyle, generateAvatarDataUri, generateRandomSeed } from '../lib/dicebear';
 
 export default function PlayerView() {
   const { code } = useParams<{ code: string }>();
@@ -31,6 +36,9 @@ export default function PlayerView() {
   });
 
   const [nickname, setNickname] = useState('');
+  const [avatarSeed, setAvatarSeed] = useState(() => generateRandomSeed());
+  const [avatarStyle, setAvatarStyle] = useState<DiceBearStyle>('avataaars');
+  const [badgeEmoji, setBadgeEmoji] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<TeamCatalogItem | null>(null);
   const [activeTeams, setActiveTeams] = useState<Team[]>(() =>
@@ -95,15 +103,24 @@ export default function PlayerView() {
 
   // Recuperar sesión persistente única por cada pestaña/ventana
   useEffect(() => {
-    let token = sessionStorage.getItem(`party_session_${roomCode}`);
+    // 1. Solicitar inmediatamente el estado activo de la sala a TV/Host
+    roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
+
+    let token = sessionStorage.getItem(`party_session_${roomCode}`) || localStorage.getItem(`party_session_${roomCode}`);
     if (!token) {
       token = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
       sessionStorage.setItem(`party_session_${roomCode}`, token);
+      localStorage.setItem(`party_session_${roomCode}`, token);
     }
     setSessionToken(token);
 
-    const savedNick = sessionStorage.getItem(`party_nick_${roomCode}`);
-    const savedTeamIndex = sessionStorage.getItem(`party_team_${roomCode}`);
+    const savedNick = sessionStorage.getItem(`party_nick_${roomCode}`) || localStorage.getItem(`party_nick_${roomCode}`);
+    const savedTeamIndex = sessionStorage.getItem(`party_team_${roomCode}`) || localStorage.getItem(`party_team_${roomCode}`);
+    const savedAvatarSeed = sessionStorage.getItem(`party_avatar_seed_${roomCode}`) || localStorage.getItem(`party_avatar_seed_${roomCode}`);
+    const savedAvatarStyle = (sessionStorage.getItem(`party_avatar_style_${roomCode}`) || localStorage.getItem(`party_avatar_style_${roomCode}`)) as DiceBearStyle | null;
+
+    if (savedAvatarSeed) setAvatarSeed(savedAvatarSeed);
+    if (savedAvatarStyle) setAvatarStyle(savedAvatarStyle);
 
     if (savedNick) {
       setNickname(savedNick);
@@ -121,6 +138,8 @@ export default function PlayerView() {
         team_id: targetTeam ? `team_${targetTeam.index}` : null,
         team_index: targetTeam ? targetTeam.index : null,
         nickname: savedNick,
+        avatar_seed: savedAvatarSeed || avatarSeed,
+        avatar_style: savedAvatarStyle || avatarStyle,
         session_token: token,
         is_connected: true,
         joined_at: new Date().toISOString(),
@@ -136,16 +155,30 @@ export default function PlayerView() {
   useEffect(() => {
     const unsubscribe = roomSync.onEvent((event) => {
       if (event.type === 'RETURN_TO_LOBBY') {
-        setRoom((prev) => ({ ...prev, status: 'lobby' }));
+        setRoom((prev) => {
+          const next = { ...prev, status: 'lobby' as const };
+          localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
+          return next;
+        });
+        setCaptainGambles({});
       } else if (event.type === 'SWITCH_GAME') {
-        setRoom((prev) => ({
-          ...prev,
-          status: event.payload.status,
-          current_game: event.payload.current_game,
-          active_game_id: event.payload.game_id || prev.active_game_id,
-        }));
+        setRoom((prev) => {
+          const next = {
+            ...prev,
+            status: event.payload.status,
+            current_game: event.payload.current_game,
+            active_game_id: event.payload.game_id || prev.active_game_id,
+          };
+          localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
+          return next;
+        });
+        setCaptainGambles({});
       } else if (event.type === 'ROOM_UPDATE') {
-        setRoom((prev) => ({ ...prev, ...event.payload }));
+        setRoom((prev) => {
+          const next = { ...prev, ...event.payload };
+          localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
+          return next;
+        });
       } else if (event.type === 'TEAMS_UPDATE') {
         setActiveTeams(event.payload.filter((t) => t.is_active));
       } else if (event.type === 'POWER_CARDS_STATE_UPDATE') {
@@ -175,6 +208,16 @@ export default function PlayerView() {
         );
       } else if (event.type === 'CAPTAIN_DOUBLE_OR_NOTHING') {
         setCaptainGambles((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
+      } else if (event.type === 'CLEAR_CAPTAIN_GAMBLES') {
+        if (event.payload?.teamId) {
+          setCaptainGambles((prev) => {
+            const next = { ...prev };
+            delete next[event.payload!.teamId!];
+            return next;
+          });
+        } else {
+          setCaptainGambles({});
+        }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
       } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
@@ -192,6 +235,11 @@ export default function PlayerView() {
       roomSync.destroy();
     };
   }, [roomSync, player]);
+
+  // Persistir estado de sala localmente
+  useEffect(() => {
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(room));
+  }, [room, roomCode]);
 
   // Cargar equipos reales si Supabase está conectado
   useEffect(() => {
@@ -219,6 +267,11 @@ export default function PlayerView() {
     if (!nickname.trim()) return;
 
     sessionStorage.setItem(`party_nick_${roomCode}`, nickname.trim());
+    localStorage.setItem(`party_nick_${roomCode}`, nickname.trim());
+    sessionStorage.setItem(`party_avatar_seed_${roomCode}`, avatarSeed);
+    localStorage.setItem(`party_avatar_seed_${roomCode}`, avatarSeed);
+    sessionStorage.setItem(`party_avatar_style_${roomCode}`, avatarStyle);
+    localStorage.setItem(`party_avatar_style_${roomCode}`, avatarStyle);
 
     let finalPlayerId = sessionToken;
 
@@ -244,6 +297,9 @@ export default function PlayerView() {
       team_id: null,
       team_index: null,
       nickname: nickname.trim(),
+      avatar_seed: avatarSeed,
+      avatar_style: avatarStyle,
+      badge_emoji: badgeEmoji,
       session_token: sessionToken,
       is_connected: true,
       joined_at: new Date().toISOString(),
@@ -254,11 +310,13 @@ export default function PlayerView() {
 
     // EMISIÓN INMEDIATA: Detectado por Host y TV
     roomSync.broadcast({ type: 'PLAYER_JOINED', payload: newPlayer });
+    roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
   };
 
   const handleSelectTeam = async (catalogItem: TeamCatalogItem) => {
     setSelectedTeam(catalogItem);
     sessionStorage.setItem(`party_team_${roomCode}`, catalogItem.index.toString());
+    localStorage.setItem(`party_team_${roomCode}`, catalogItem.index.toString());
 
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(60);
@@ -273,6 +331,9 @@ export default function PlayerView() {
         id: sessionToken,
         room_id: 'local_' + roomCode,
         nickname: nickname || 'Jugador',
+        avatar_seed: avatarSeed,
+        avatar_style: avatarStyle,
+        badge_emoji: badgeEmoji,
         session_token: sessionToken,
         is_connected: true,
         joined_at: new Date().toISOString(),
@@ -280,6 +341,9 @@ export default function PlayerView() {
       team_id: teamId,
       team_index: catalogItem.index,
       is_captain: shouldBeCaptain,
+      avatar_seed: avatarSeed,
+      avatar_style: avatarStyle,
+      badge_emoji: badgeEmoji,
     };
 
     setPlayer(updatedPlayer);
@@ -314,6 +378,9 @@ export default function PlayerView() {
       teamColorHex: selectedTeam.colorHex,
       teamIndex: selectedTeam.index,
       clientTimestamp: Date.now(),
+      avatarSeed: player?.avatar_seed || avatarSeed,
+      avatarStyle: player?.avatar_style || avatarStyle,
+      badgeEmoji: player?.badge_emoji || badgeEmoji,
     });
   };
 
@@ -449,13 +516,30 @@ export default function PlayerView() {
         </div>
 
         {isJoined && (
-          <div className="text-right">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">JUGADOR</span>
-            <div className="flex items-center gap-2 justify-end">
-              <span className="text-sm font-black text-white">{nickname}</span>
-              {selectedTeam && (
-                <span className={`w-3 h-3 rounded-full ${selectedTeam.twBg}`} />
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700/80 p-0.5 overflow-hidden flex items-center justify-center shadow-md">
+                <img
+                  src={generateAvatarDataUri(player?.avatar_seed || avatarSeed || nickname, (player?.avatar_style as any) || avatarStyle)}
+                  alt="Avatar"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {player?.badge_emoji && (
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow">
+                  <TwemojiText className="text-[10px]">{player.badge_emoji}</TwemojiText>
+                </div>
               )}
+            </div>
+
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block leading-tight">JUGADOR</span>
+              <div className="flex items-center gap-1.5 justify-end">
+                <span className="text-sm font-black text-white">{nickname}</span>
+                {selectedTeam && (
+                  <span className={`w-2.5 h-2.5 rounded-full ${selectedTeam.twBg}`} />
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -463,11 +547,11 @@ export default function PlayerView() {
 
       {/* CONTENIDO PRINCIPAL */}
       {!isJoined ? (
-        /* PASO 1: INTRODUCIR NOMBRE */
-        <div className="flex-1 flex flex-col justify-center my-auto z-10 max-w-sm mx-auto w-full">
-          <div className="text-center mb-6">
+        /* PASO 1: INTRODUCIR NOMBRE Y CREAR IDENTIDAD VISUAL */
+        <div className="flex-1 flex flex-col justify-center my-auto z-10 max-w-sm mx-auto w-full py-2">
+          <div className="text-center mb-4">
             <h2 className="text-3xl font-black uppercase tracking-wider font-arcade text-white">¿Quién eres?</h2>
-            <p className="text-xs text-slate-400 mt-1">Tu nombre aparecerá al instante en la pantalla del show</p>
+            <p className="text-xs text-slate-400 mt-1">Elige tu avatar para el show</p>
           </div>
 
           <form onSubmit={handleJoin} className="space-y-4">
@@ -475,11 +559,21 @@ export default function PlayerView() {
               type="text"
               required
               maxLength={15}
-              placeholder="Tu alias o nombre"
+              placeholder="Tu alias o apodo"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-4 text-center text-xl font-black text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 shadow-inner"
+              className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-3.5 text-center text-xl font-black text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 shadow-inner"
             />
+
+            {/* SELECTOR INTERACTIVO DE AVATAR */}
+            <LobbyProfilePicker
+              nickname={nickname}
+              avatarSeed={avatarSeed}
+              onAvatarSeedChange={setAvatarSeed}
+              avatarStyle={avatarStyle}
+              onAvatarStyleChange={setAvatarStyle}
+            />
+
             <button
               type="submit"
               className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-base py-4 rounded-2xl uppercase tracking-wider shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
@@ -545,7 +639,7 @@ export default function PlayerView() {
         </div>
       ) : (
         /* PASO 3B: MANDO EN JUEGO */
-        <div className="flex-1 flex flex-col justify-between my-4 z-10 max-w-sm mx-auto w-full items-center">
+        <div className="flex-1 flex flex-col justify-between my-2 pb-20 z-10 max-w-sm mx-auto w-full items-center">
           {/* BANNER DE EQUIPO Y JUEGO ACTIVO */}
           <div className="w-full space-y-2">
             <div className="w-full flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 shadow-md">
@@ -624,7 +718,7 @@ export default function PlayerView() {
             </div>
           ) : (
             /* PULSADOR 3D GIGANTE */
-            <div className="my-auto flex flex-col items-center">
+            <div className="my-auto flex flex-col items-center w-full">
               {captainDuel?.isActive && !player?.is_captain ? (
                 <div className="w-64 h-64 rounded-full bg-slate-900 border-8 border-slate-800 flex flex-col items-center justify-center p-6 text-center shadow-inner opacity-75">
                   <ShieldAlert className="w-12 h-12 text-amber-400 mb-2" />
@@ -636,36 +730,19 @@ export default function PlayerView() {
                   </span>
                 </div>
               ) : (
-                <button
-                  disabled={isLocked}
-                  onClick={handleBuzzerClick}
-                  className={`w-64 h-64 rounded-full arcade-buzzer-btn flex flex-col items-center justify-center p-6 border-8 transition-all ${
-                    isLocked
-                      ? 'bg-slate-800 border-slate-700 opacity-60 pointer-events-none'
-                      : `${selectedTeam.twBg} border-white/40 shadow-2xl`
-                  }`}
-                  style={{
-                    boxShadow: isLocked
-                      ? 'none'
-                      : `0 16px 0 rgba(0,0,0,0.5), 0 0 50px ${selectedTeam.colorHex}`,
-                  }}
-                >
-                  {captainDuel?.isActive ? (
-                    <Swords className={`w-14 h-14 mb-2 ${selectedTeam.twContrastText || 'text-slate-950'} animate-bounce`} />
-                  ) : (
-                    <Radio className={`w-14 h-14 mb-2 ${isLocked ? 'text-slate-500' : `${selectedTeam.twContrastText || 'text-slate-950'} animate-pulse`}`} />
-                  )}
-                  <span className={`text-3xl font-black font-arcade uppercase tracking-wider ${isLocked ? 'text-slate-500' : selectedTeam.twContrastText || 'text-slate-950'}`}>
-                    {isLocked ? 'BLOQUEADO' : captainDuel?.isActive ? '⚔️ ¡PULSA!' : '¡PULSAR!'}
-                  </span>
-                </button>
+                <ArcadeBuzzer
+                  theme={getTeamTheme(selectedTeam.index)}
+                  isLocked={isLocked}
+                  isDuelActive={captainDuel?.isActive}
+                  onPress={handleBuzzerClick}
+                />
               )}
 
-              {/* ESTADO EN TIEMPO REAL */}
-              <div className="mt-6 text-center">
+              {/* ESTADO EN TIEMPO REAL CON ALTURA ESTABLE */}
+              <div className="mt-4 min-h-[2.5rem] flex items-center justify-center text-center px-2">
                 {isLocked ? (
                   isMeWinner ? (
-                    <span className="text-sm font-black text-emerald-400 uppercase tracking-widest animate-bounce block">
+                    <span className="text-sm font-black text-emerald-400 uppercase tracking-wider block">
                       🎉 ¡HAS SIDO EL MÁS RÁPIDO! RESPONDE AHORA
                     </span>
                   ) : (

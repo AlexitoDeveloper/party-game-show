@@ -370,20 +370,6 @@ export default function HostView() {
     setPowerCards(nextState);
     localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
     roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
-
-    if (dealt.length > 0) {
-      const firstCard = getPowerCardById(dealt[0].cardId);
-      if (firstCard) {
-        roomSync.broadcast({
-          type: 'POWER_CARD_ANIMATION',
-          payload: {
-            type: 'deal',
-            teamName: '¡Reparto Inicial!',
-            card: firstCard,
-          },
-        });
-      }
-    }
   };
 
   const handleDealBonusCard = (chosenTeamId?: string) => {
@@ -409,19 +395,6 @@ export default function HostView() {
     setPowerCards(nextState);
     localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
     roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
-
-    const card = getPowerCardById(cardId);
-    const team = activeTeams.find((t) => t.id === targetId);
-    if (card && team) {
-      roomSync.broadcast({
-        type: 'POWER_CARD_ANIMATION',
-        payload: {
-          type: 'deal',
-          teamName: team.name,
-          card,
-        },
-      });
-    }
   };
 
   const handlePlayCardDirectly = (
@@ -538,8 +511,18 @@ export default function HostView() {
     resetBuzzer();
   };
 
-  const handleClearCaptainGambles = () => {
-    setCaptainGambles({});
+  const handleClearCaptainGambles = (teamId?: string) => {
+    if (teamId) {
+      setCaptainGambles((prev) => {
+        const next = { ...prev };
+        delete next[teamId];
+        return next;
+      });
+      roomSync.broadcast({ type: 'CLEAR_CAPTAIN_GAMBLES', payload: { teamId } });
+    } else {
+      setCaptainGambles({});
+      roomSync.broadcast({ type: 'CLEAR_CAPTAIN_GAMBLES' });
+    }
   };
 
   // Guardar en localStorage para persistencia local
@@ -578,6 +561,35 @@ export default function HostView() {
             : [...prev, event.payload];
           return updated;
         });
+
+        // Enviar estado actual de la sala para sincronizar al jugador reconectado
+        roomSync.broadcast({
+          type: 'ROOM_UPDATE',
+          payload: {
+            status: room.status,
+            current_game: room.current_game,
+            active_game_id: room.active_game_id,
+            active_teams_count: room.active_teams_count,
+          },
+        });
+        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teams });
+      } else if (event.type === 'REQUEST_ROOM_SYNC') {
+        roomSync.broadcast({
+          type: 'ROOM_UPDATE',
+          payload: {
+            status: room.status,
+            current_game: room.current_game,
+            active_game_id: room.active_game_id,
+            active_teams_count: room.active_teams_count,
+          },
+        });
+        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teams });
+        if (powerCards) {
+          roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCards });
+        }
+        if (captainDuel) {
+          roomSync.broadcast({ type: 'CAPTAIN_DUEL_STATE', payload: captainDuel });
+        }
       } else if (event.type === 'PLAYER_UPDATED') {
         setPlayers((prev) => {
           const exists = prev.some((p) => p.id === event.payload.id);
@@ -622,6 +634,16 @@ export default function HostView() {
         );
       } else if (event.type === 'CAPTAIN_DOUBLE_OR_NOTHING') {
         setCaptainGambles((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
+      } else if (event.type === 'CLEAR_CAPTAIN_GAMBLES') {
+        if (event.payload?.teamId) {
+          setCaptainGambles((prev) => {
+            const next = { ...prev };
+            delete next[event.payload!.teamId!];
+            return next;
+          });
+        } else {
+          setCaptainGambles({});
+        }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
@@ -699,21 +721,39 @@ export default function HostView() {
     }
   };
 
-  // Modificar puntuación manual
+  // Modificar puntuación manual con celebración y sincronización a TV
   const handleScoreChange = async (teamId: string, delta: number) => {
+    let effectiveDelta = delta;
+    if (captainGambles[teamId] && delta !== 0) {
+      // Si el capitán apostó Doble o Nada:
+      // Si acertó (delta > 0), duplica los puntos ganados (x2).
+      if (delta > 0) {
+        effectiveDelta = delta * 2;
+      }
+      // Consumir y limpiar la apuesta tras aplicar el resultado del turno
+      handleClearCaptainGambles(teamId);
+    }
+
     const updated = teams.map((t) =>
-      t.id === teamId ? { ...t, score: Math.max(0, t.score + delta) } : t
+      t.id === teamId ? { ...t, score: Math.max(0, t.score + effectiveDelta) } : t
     );
     setTeams(updated);
 
     roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
+
+    if (effectiveDelta > 0) {
+      roomSync.broadcast({ type: 'TRIGGER_CONFETTI', payload: { teamId } });
+      soundFX.playSuccess();
+    } else if (effectiveDelta < 0) {
+      soundFX.playFail();
+    }
 
     if (isSupabaseConfigured) {
       const targetTeam = teams.find((t) => t.id === teamId);
       if (targetTeam) {
         await supabase
           .from('teams')
-          .update({ score: Math.max(0, targetTeam.score + delta) })
+          .update({ score: Math.max(0, targetTeam.score + effectiveDelta) })
           .eq('id', teamId);
       }
     }
@@ -1032,7 +1072,7 @@ export default function HostView() {
                 </div>
               </div>
               <button
-                onClick={handleClearCaptainGambles}
+                onClick={() => handleClearCaptainGambles()}
                 className="text-xs text-slate-400 hover:text-white bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 active:scale-95 transition-all"
               >
                 Limpiar Apuesta
