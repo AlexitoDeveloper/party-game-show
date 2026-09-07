@@ -388,6 +388,7 @@ export default function HostView() {
   // Estados para la gestión y proyección de cartas de poder
   const [activeCardOnScreen, setActiveCardOnScreen] = useState<{
     card: PowerCard;
+    teamId?: string;
     teamName: string;
     targetName?: string;
     sensoryLimitation?: string;
@@ -410,6 +411,10 @@ export default function HostView() {
     card: PowerCard;
     teamId: string;
   } | null>(null);
+  const [returnCardModal, setReturnCardModal] = useState<{
+    card: PowerCard;
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<'live' | 'cards' | 'teams' | 'catalog' | 'soundboard'>('live');
 
   const syncMusicState = (
     playing: boolean,
@@ -1092,6 +1097,7 @@ export default function HostView() {
     };
     setRoom(updatedRoom);
     resetBuzzer();
+    setActiveTab('live');
 
     roomSync.broadcast({
       type: 'SWITCH_GAME',
@@ -1162,6 +1168,107 @@ export default function HostView() {
           .eq('id', teamId);
       }
     }
+  };
+
+  /**
+   * Devolver una carta a la mano de un equipo (p. ej. si se jugó por error o a destiempo)
+   */
+  const handleReturnCardToTeam = (
+    teamId: string,
+    cardId: string,
+    options?: {
+      removeEffectId?: string;
+      restorePoints?: number;
+      dismissScreen?: boolean;
+    }
+  ) => {
+    const card = getPowerCardById(cardId);
+    if (!card) return;
+
+    // 1. Quitar una instancia de la carta de la pila de descartes
+    const discard = [...powerCards.discardPile];
+    const discardIdx = discard.lastIndexOf(cardId);
+    if (discardIdx !== -1) {
+      discard.splice(discardIdx, 1);
+    }
+
+    // 2. Añadir la carta de vuelta a la mano del equipo
+    const currentHand = powerCards.teamHands[teamId] || [];
+    const nextHands = {
+      ...powerCards.teamHands,
+      [teamId]: [...currentHand, cardId],
+    };
+
+    // 3. Limpiar efectos activos asociados si procede
+    let nextEffects = [...powerCards.activeEffects];
+    if (options?.removeEffectId) {
+      nextEffects = nextEffects.filter((e) => e.id !== options.removeEffectId);
+    } else {
+      // Buscar si hay algún efecto pendiente de esta carta para este equipo
+      nextEffects = nextEffects.filter((e) => !(e.cardId === cardId && e.sourceTeamId === teamId));
+    }
+
+    const nextPowerCards: PowerCardsState = {
+      ...powerCards,
+      activeEffects: nextEffects,
+      discardPile: discard,
+      teamHands: nextHands,
+    };
+
+    setPowerCards(nextPowerCards);
+    localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextPowerCards));
+    roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextPowerCards });
+
+    // 4. Si está proyectándose en la TV, quitarla
+    if (options?.dismissScreen !== false && activeCardOnScreen && activeCardOnScreen.card.id === cardId) {
+      handleDismissCardOnScreen();
+    }
+
+    // 5. Si tenía penalización de puntos asociada, restaurarla
+    let pointsToRestore = options?.restorePoints || 0;
+    if (cardId === 'maldicion_comun' && !options?.restorePoints) {
+      pointsToRestore = 2;
+    } else if (cardId === 'la_maldicion' && !options?.restorePoints) {
+      pointsToRestore = 3;
+    }
+    if (pointsToRestore > 0) {
+      handleScoreChange(teamId, pointsToRestore);
+    }
+
+    soundFX.playSound('buzzer');
+    const team = activeTeams.find((t) => t.id === teamId);
+    alert(`↩ Carta "${card.name}" devuelta a la mano de ${team?.name || 'su equipo'}.${pointsToRestore > 0 ? ` (+${pointsToRestore} pts restaurados)` : ''}`);
+  };
+
+  /**
+   * Retirar/Descartar una carta de la mano de un equipo (p. ej. si se repartió por error)
+   */
+  const handleRevokeCardFromTeam = (teamId: string, cardId: string) => {
+    const card = getPowerCardById(cardId);
+    if (!card) return;
+
+    const currentHand = powerCards.teamHands[teamId] || [];
+    const idx = currentHand.indexOf(cardId);
+    if (idx === -1) return;
+
+    const nextHand = [...currentHand];
+    nextHand.splice(idx, 1);
+
+    const nextPowerCards: PowerCardsState = {
+      ...powerCards,
+      teamHands: {
+        ...powerCards.teamHands,
+        [teamId]: nextHand,
+      },
+      discardPile: [...powerCards.discardPile, cardId],
+    };
+
+    setPowerCards(nextPowerCards);
+    localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextPowerCards));
+    roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextPowerCards });
+
+    const team = activeTeams.find((t) => t.id === teamId);
+    alert(`✕ Carta "${card.name}" retirada de la mano de ${team?.name || 'su equipo'} y enviada al descarte.`);
   };
 
   // Aplicar acción de puntuación específica del juego activo
@@ -1241,195 +1348,616 @@ export default function HostView() {
     ? TEAMS_CATALOG.find((c) => c.index === selectedTeamObj.team_index)
     : null;
 
+  const renderTeamsScoreboard = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      {activeTeams.map((team) => {
+        const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+        const teamMembers = players.filter((p) => p.team_id === team.id || p.team_index === team.team_index);
+
+        return (
+          <div
+            key={team.id}
+            className={`p-4 rounded-2xl border ${cat.twBorder} bg-slate-900/90 flex flex-col justify-between shadow-md`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Equipo {team.team_index}</span>
+                <span className={`text-base font-black uppercase ${cat.twText}`}>{team.name}</span>
+                <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
+                  {teamMembers.length} {teamMembers.length === 1 ? 'jugador' : 'jugadores'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-3xl font-black font-mono text-white">{team.score}</span>
+                <span className="text-[10px] text-slate-400 block font-bold">PTS</span>
+              </div>
+            </div>
+
+            {/* Lista de Miembros con Selector de Capitán */}
+            {teamMembers.length > 0 && (
+              <div className="my-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 flex flex-wrap gap-1.5 items-center">
+                <span className="text-[10px] uppercase font-bold text-slate-500 w-full flex items-center gap-1">
+                  <Users className="w-3 h-3 text-slate-400" />
+                  <span>Miembros:</span>
+                </span>
+                {teamMembers.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => handleSetCaptain(team.id, m.id)}
+                    title={m.is_captain ? 'Capitán activo (Clic para desasignar o deshacer capitanía)' : 'Nombrar Capitán a este jugador'}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 ${
+                      m.is_captain
+                        ? 'bg-amber-400 hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-sm'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                    }`}
+                  >
+                    <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current' : 'text-slate-400'}`} />
+                    <span>{m.nickname}</span>
+                    {m.is_captain && <span className="text-[9px] opacity-80 ml-0.5">✕</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-1.5 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => handleScoreChange(team.id, 5)}
+                className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-black py-2 rounded-xl border border-amber-500/30 active:scale-95"
+              >
+                +5
+              </button>
+              <button
+                onClick={() => handleScoreChange(team.id, 2)}
+                className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-black py-2 rounded-xl border border-emerald-500/30 active:scale-95"
+              >
+                +2
+              </button>
+              <button
+                onClick={() => handleScoreChange(team.id, 1)}
+                className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-black py-2 rounded-xl border border-blue-500/30 active:scale-95"
+              >
+                +1
+              </button>
+              <button
+                onClick={() => handleScoreChange(team.id, -1)}
+                className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-black py-2 rounded-xl border border-red-500/30 active:scale-95"
+              >
+                -1
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderActiveEffects = () => {
+    if (powerCards.activeEffects.length === 0) return null;
+    return (
+      <div className="bg-amber-500/10 border border-amber-500/30 p-3 sm:p-4 rounded-2xl space-y-2">
+        <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+          <Zap className="w-3.5 h-3.5 text-amber-400" />
+          <span className="hidden sm:inline">Efectos de Poder Activos en Esta Prueba:</span>
+          <span className="sm:hidden">Efectos Activos:</span>
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {powerCards.activeEffects.map((eff) => {
+            const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
+            const targetTeam = eff.targetTeamId ? activeTeams.find((t) => t.id === eff.targetTeamId) : null;
+            return (
+              <div
+                key={eff.id}
+                className="bg-slate-950/95 border-2 border-amber-400/50 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs flex flex-wrap items-center gap-1.5 sm:gap-2 shadow-lg"
+              >
+                <span>{eff.cardEmoji}</span>
+                <strong className="text-white font-bold">{eff.cardName}</strong>
+                <span className="text-amber-300 font-bold">({team?.name || eff.sourceTeamName})</span>
+                {targetTeam && (
+                  <span className="text-red-300 font-bold flex items-center gap-0.5">
+                    <span>➔ 🎯</span>
+                    <span>{targetTeam.name}</span>
+                  </span>
+                )}
+                {eff.targetPlayerName && (
+                  <span className="text-red-300 font-bold flex items-center gap-0.5">
+                    <span>➔ 👤</span>
+                    <span>{eff.targetPlayerName}</span>
+                  </span>
+                )}
+                {eff.sensoryLimitation && (
+                  <span className="bg-purple-950/80 border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                    {eff.sensoryLimitation}
+                  </span>
+                )}
+
+                {/* BOTONES INTERACTIVOS SEGÚN LA CARTA */}
+                {eff.cardId === 'bomba' && eff.targetTeamId && (
+                  <button
+                    onClick={() => {
+                      handleScoreChange(eff.targetTeamId!, -1);
+                      handleRemoveActiveEffect(eff.id);
+                    }}
+                    className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                  >
+                    💣 Detonar (-1 pt)
+                  </button>
+                )}
+
+                {eff.cardId === 'objetivo' && (
+                  <button
+                    onClick={() => {
+                      handleScoreChange(eff.sourceTeamId, 2);
+                      handleRemoveActiveEffect(eff.id);
+                    }}
+                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                  >
+                    🎯 Cobrar (+2 pts)
+                  </button>
+                )}
+
+                {eff.cardId === 'caza_lider' && (
+                  <button
+                    onClick={() => {
+                      handleScoreChange(eff.sourceTeamId, 3);
+                      handleRemoveActiveEffect(eff.id);
+                    }}
+                    className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[10px] shadow"
+                  >
+                    👑 Cobrar (+3 pts)
+                  </button>
+                )}
+
+                {eff.cardId === 'ruleta_rusa' && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        handleScoreChange(eff.sourceTeamId, 8);
+                        handleRemoveActiveEffect(eff.id);
+                      }}
+                      className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                    >
+                      +8 pts (1º-2º)
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleScoreChange(eff.sourceTeamId, -5);
+                        handleRemoveActiveEffect(eff.id);
+                      }}
+                      className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                    >
+                      -5 pts (3º-5º)
+                    </button>
+                  </div>
+                )}
+
+                {eff.cardId === 'la_sentencia' && eff.targetTeamId && (
+                  <button
+                    onClick={() => {
+                      handleScoreChange(eff.targetTeamId!, -5);
+                      handleRemoveActiveEffect(eff.id);
+                    }}
+                    className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold text-[10px] shadow"
+                  >
+                    💀 Ejecutar (-5 pts)
+                  </button>
+                )}
+
+                {eff.cardId === 'todo_o_nada' && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        handleScoreChange(eff.sourceTeamId, 10);
+                        handleRemoveActiveEffect(eff.id);
+                      }}
+                      className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                    >
+                      +10 pts (1.º)
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleScoreChange(eff.sourceTeamId, -5);
+                        handleRemoveActiveEffect(eff.id);
+                      }}
+                      className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                    >
+                      -5 pts (Otro)
+                    </button>
+                  </div>
+                )}
+
+                {eff.cardId === 'el_intercambio' && eff.targetTeamId && (
+                  <button
+                    onClick={() => {
+                      const sTeam = teams.find((t) => t.id === eff.sourceTeamId);
+                      const tTeam = teams.find((t) => t.id === eff.targetTeamId);
+                      if (sTeam && tTeam) {
+                        const sScore = sTeam.score;
+                        const tScore = tTeam.score;
+                        const updated = teams.map((t) => {
+                          if (t.id === sTeam.id) return { ...t, score: tScore };
+                          if (t.id === tTeam.id) return { ...t, score: sScore };
+                          return t;
+                        });
+                        setTeams(updated);
+                        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
+                        handleRemoveActiveEffect(eff.id);
+                        alert(`🔄 Puntuaciones intercambiadas entre ${sTeam.name} y ${tTeam.name}`);
+                      }
+                    }}
+                    className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
+                  >
+                    🔄 Intercambiar Puntos
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    handleReturnCardToTeam(eff.sourceTeamId, eff.cardId, { removeEffectId: eff.id });
+                  }}
+                  className="ml-1 px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-white text-[10px] font-bold rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow"
+                  title="Anular efecto y devolver esta carta a la mano de su equipo"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span className="hidden sm:inline">Devolver</span>
+                </button>
+
+                <button
+                  onClick={() => handleRemoveActiveEffect(eff.id)}
+                  className="ml-1 text-slate-500 hover:text-red-400 text-xs font-bold p-1 rounded"
+                  title="Quitar efecto sin devolver carta"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSoundboard = () => (
+    <section className="bg-slate-900/90 border-2 border-slate-800 hover:border-amber-400/50 transition-all rounded-3xl p-5 shadow-2xl space-y-3 backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
+            <Volume2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+              Efectos de Sonido en Vivo (Soundboard)
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
+                Sincronizado con TV
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400">
+              Dispara sonidos al instante para ambientar respuestas, fallos, suspense o victorias.
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
+          Audio WebAPI • Suena en Host y TV
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        <button
+          onClick={() => handlePlaySoundEffect('fail')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-red-400"
+          title="Sonido de fallo o respuesta incorrecta"
+        >
+          <span className="text-2xl">❌</span>
+          <span className="text-center leading-tight">Fallo / Error</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('victory')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-amber-400"
+          title="Fanfarria triunfal de victoria"
+        >
+          <span className="text-2xl">🏆</span>
+          <span className="text-center leading-tight">¡Victoria!</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('success')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-emerald-400"
+          title="Acierto correcto"
+        >
+          <span className="text-2xl">✅</span>
+          <span className="text-center leading-tight">Acierto</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('drumroll')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 text-purple-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-purple-400"
+          title="Redoble de tambor con platillazo"
+        >
+          <span className="text-2xl">🥁</span>
+          <span className="text-center leading-tight">Redoble</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('applause')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-blue-950/40 hover:bg-blue-900/60 border border-blue-500/40 text-blue-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-blue-400"
+          title="Aplausos del público"
+        >
+          <span className="text-2xl">👏</span>
+          <span className="text-center leading-tight">Aplausos</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('airhorn')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-orange-950/40 hover:bg-orange-900/60 border border-orange-500/40 text-orange-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-orange-400"
+          title="Bocinazo DJ / Fiesta"
+        >
+          <span className="text-2xl">📢</span>
+          <span className="text-center leading-tight">Airhorn</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('suspense')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/40 text-indigo-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-indigo-400"
+          title="Golpe de misterio y tensión"
+        >
+          <span className="text-2xl">😨</span>
+          <span className="text-center leading-tight">Tensión</span>
+        </button>
+
+        <button
+          onClick={() => handlePlaySoundEffect('buzzer')}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-yellow-950/40 hover:bg-yellow-900/60 border border-yellow-500/40 text-yellow-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-yellow-400"
+          title="Sonido de pulsador arcade"
+        >
+          <span className="text-2xl">⚡</span>
+          <span className="text-center leading-tight">Pulsador</span>
+        </button>
+      </div>
+    </section>
+  );
+
+  const renderQuickSoundStrip = () => (
+    <div className="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-2 flex items-center justify-between gap-1 shadow-md">
+      <div className="flex items-center gap-1 pl-1 text-[11px] font-bold text-slate-400 whitespace-nowrap">
+        <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+        <span className="hidden sm:inline">Sonidos:</span>
+      </div>
+      <div className="flex items-center gap-1 sm:gap-1.5">
+        <button
+          onClick={() => handlePlaySoundEffect('fail')}
+          className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-red-950/50 hover:bg-red-900/70 border border-red-500/40 text-red-300 font-black text-xs active:scale-95 transition-all flex items-center gap-1"
+          title="Fallo / Error"
+        >
+          <span className="text-base sm:text-sm">❌</span>
+          <span className="hidden sm:inline">Fallo</span>
+        </button>
+        <button
+          onClick={() => handlePlaySoundEffect('success')}
+          className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/70 border border-emerald-500/40 text-emerald-300 font-black text-xs active:scale-95 transition-all flex items-center gap-1"
+          title="Acierto"
+        >
+          <span className="text-base sm:text-sm">🎯</span>
+          <span className="hidden sm:inline">Acierto</span>
+        </button>
+        <button
+          onClick={() => handlePlaySoundEffect('victory')}
+          className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-amber-950/50 hover:bg-amber-900/70 border border-amber-500/40 text-amber-300 font-black text-xs active:scale-95 transition-all flex items-center gap-1"
+          title="Victoria"
+        >
+          <span className="text-base sm:text-sm">🏆</span>
+          <span className="hidden sm:inline">Victoria</span>
+        </button>
+        <button
+          onClick={() => handlePlaySoundEffect('drumroll')}
+          className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/70 border border-purple-500/40 text-purple-300 font-black text-xs active:scale-95 transition-all flex items-center gap-1"
+          title="Redoble"
+        >
+          <span className="text-base sm:text-sm">🥁</span>
+          <span className="hidden sm:inline">Redoble</span>
+        </button>
+        <button
+          onClick={() => handlePlaySoundEffect('applause')}
+          className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-blue-950/50 hover:bg-blue-900/70 border border-blue-500/40 text-blue-300 font-black text-xs active:scale-95 transition-all flex items-center gap-1"
+          title="Aplausos"
+        >
+          <span className="text-base sm:text-sm">👏</span>
+          <span className="hidden sm:inline">Aplausos</span>
+        </button>
+      </div>
+      <button
+        onClick={() => setActiveTab('soundboard')}
+        className="text-[11px] text-slate-400 hover:text-amber-400 font-bold px-1.5 py-1 transition-colors whitespace-nowrap"
+        title="Ver todos los efectos"
+      >
+        <span className="hidden sm:inline">Todos</span>
+        <span>→</span>
+      </button>
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-slate-950 text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none">
       {/* HEADER ANFITRIÓN */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-4">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
-            CONSOLA DEL ANFITRIÓN
-          </span>
-          <h1 className="text-2xl font-black flex items-center gap-3">
-            Sala {roomCode}
-            <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
+      <header className="flex items-center justify-between border-b border-slate-800 pb-3 gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-white truncate">
+              Sala {roomCode}
+            </h1>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
               room.status === 'lobby' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
             }`}>
-              {room.status === 'lobby' ? 'En Lobby' : 'En Juego'}
+              {room.status === 'lobby' ? 'Lobby' : 'En Juego'}
             </span>
-          </h1>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
           <Link
             to={`/room/${roomCode}/tv`}
             target="_blank"
-            className="bg-slate-900 hover:bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all"
+            className="bg-slate-900 hover:bg-slate-800 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1 transition-all"
+            title="Abrir pantalla TV"
           >
-            <Tv className="w-3.5 h-3.5 text-amber-400" /> Abrir TV
+            <Tv className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Abrir TV</span>
+            <span className="sm:hidden">TV</span>
           </Link>
-          <div className="bg-slate-900 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 text-indigo-300">
-            <Users className="w-4 h-4" />
-            <span className="font-mono">{players.length} conectados</span>
+          <div className="bg-slate-900 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 text-indigo-300">
+            <Users className="w-3.5 h-3.5" />
+            <span className="font-mono">{players.length}</span>
+            <span className="hidden sm:inline font-mono">conectados</span>
           </div>
         </div>
       </header>
 
       {/* BARRA DE ESTADO GLOBAL Y BOTÓN PRINCIPAL */}
-      <div className={`p-4 rounded-3xl border transition-all flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl ${
+      <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all flex items-center justify-between gap-2.5 shadow-xl ${
         room.status === 'playing'
           ? 'bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-slate-900 border-amber-400/40'
           : 'bg-slate-900/90 border-slate-800'
       }`}>
-        <div className="flex items-center gap-3">
-          <div className="text-3xl p-2 bg-slate-800 rounded-2xl border border-slate-700">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="text-2xl sm:text-3xl p-1.5 sm:p-2 bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-700 flex-shrink-0">
             {activeGame.emoji}
           </div>
-          <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-              {room.status === 'lobby' ? 'ESTADO: ESPERANDO EN LOBBY' : `JUEGO ACTIVO (${activeGame.category})`}
+          <div className="min-w-0">
+            <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 block truncate">
+              {room.status === 'lobby' ? 'SALA EN ESPERA' : activeGame.category}
             </span>
-            <span className="text-lg font-black text-white block">
+            <span className="text-sm sm:text-base font-black text-white block truncate">
               {room.status === 'lobby' ? 'Lobby de Convocatoria' : activeGame.title}
-            </span>
-            <span className="text-[11px] text-amber-400 font-semibold">
-              Motor: {activeGame.engine === 'buzzer' ? '⚡ Pulsador Rápido' : activeGame.engine === 'challenges' ? '⏱ Retos & Temporizador' : '⚔️ Duelos & Mesa'}
             </span>
           </div>
         </div>
 
         {/* BOTÓN VOLVER AL LOBBY / COMENZAR */}
-        {room.status === 'playing' ? (
-          <button
-            onClick={handleReturnToLobby}
-            className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 hover:border-slate-500 text-white font-black text-xs uppercase px-5 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4 text-amber-400" />
-            <span>Volver al Lobby (QR & Equipos)</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => handleSelectGame(GAMES_CATALOG[0])}
-            className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
-          >
-            <Play className="w-4 h-4 fill-slate-950" />
-            <span>¡Comenzar: Adivina la Canción!</span>
-          </button>
-        )}
+        <div className="flex-shrink-0">
+          {room.status === 'playing' ? (
+            <button
+              onClick={handleReturnToLobby}
+              className="bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-slate-500 text-white font-black text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg active:scale-95 transition-all"
+              title="Volver al Lobby (QR y Equipos)"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Volver al Lobby</span>
+              <span className="sm:hidden">Lobby</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => handleSelectGame(GAMES_CATALOG[0])}
+              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+              title="Comenzar con el primer minijuego"
+            >
+              <Play className="w-3.5 h-3.5 fill-slate-950" />
+              <span className="hidden sm:inline">Comenzar</span>
+              <span className="sm:hidden">Jugar</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* MESA DE EFECTOS DE SONIDO EN VIVO (SOUNDBOARD DEL ANFITRIÓN) */}
-      <section className="bg-slate-900/90 border-2 border-slate-800 hover:border-amber-400/50 transition-all rounded-3xl p-5 shadow-2xl space-y-3 backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
-              <Volume2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                Efectos de Sonido en Vivo (Soundboard)
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
-                  Sincronizado con TV
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Dispara sonidos al instante para ambientar respuestas, fallos, suspense o victorias.
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
-            Audio WebAPI • Suena en Host y TV
-          </span>
-        </div>
+      {/* BARRA DE NAVEGACIÓN POR PESTAÑAS (TABS DEL ANFITRIÓN: 5 COLUMNAS EN MÓVIL) */}
+      <nav className="sticky top-2 z-30 grid grid-cols-5 gap-1 p-1 bg-slate-900/95 border border-slate-800 rounded-2xl shadow-xl backdrop-blur-xl">
+        <button
+          onClick={() => setActiveTab('live')}
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+            activeTab === 'live'
+              ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
+              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+          }`}
+          title="Consola en directo"
+        >
+          <span className="text-base sm:text-sm">🎮</span>
+          <span className="truncate">Directo</span>
+          {room.status === 'playing' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse hidden sm:inline-block" />
+          )}
+        </button>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-          <button
-            onClick={() => handlePlaySoundEffect('fail')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-red-400"
-            title="Sonido de fallo o respuesta incorrecta"
-          >
-            <span className="text-2xl">❌</span>
-            <span className="text-center leading-tight">Fallo / Error</span>
-          </button>
+        <button
+          onClick={() => setActiveTab('cards')}
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
+            activeTab === 'cards'
+              ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
+              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+          }`}
+          title="Cartas de poder"
+        >
+          <span className="text-base sm:text-sm">🃏</span>
+          <span className="truncate">Cartas</span>
+          {powerCards.activeEffects.length > 0 && (
+            <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded-full font-black">
+              {powerCards.activeEffects.length}
+            </span>
+          )}
+        </button>
 
-          <button
-            onClick={() => handlePlaySoundEffect('victory')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-amber-400"
-            title="Fanfarria triunfal de victoria"
-          >
-            <span className="text-2xl">🏆</span>
-            <span className="text-center leading-tight">¡Victoria!</span>
-          </button>
+        <button
+          onClick={() => setActiveTab('teams')}
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+            activeTab === 'teams'
+              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
+              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+          }`}
+          title="Equipos y jugadores"
+        >
+          <span className="text-base sm:text-sm">👥</span>
+          <span className="truncate">Equipos</span>
+        </button>
 
-          <button
-            onClick={() => handlePlaySoundEffect('success')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-emerald-400"
-            title="Acierto correcto"
-          >
-            <span className="text-2xl">✅</span>
-            <span className="text-center leading-tight">Acierto</span>
-          </button>
+        <button
+          onClick={() => setActiveTab('catalog')}
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+            activeTab === 'catalog'
+              ? 'bg-purple-500 text-white shadow-md shadow-purple-500/25'
+              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+          }`}
+          title="Catálogo de juegos"
+        >
+          <span className="text-base sm:text-sm">🎲</span>
+          <span className="truncate">Juegos</span>
+        </button>
 
-          <button
-            onClick={() => handlePlaySoundEffect('drumroll')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 text-purple-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-purple-400"
-            title="Redoble de tambor con platillazo"
-          >
-            <span className="text-2xl">🥁</span>
-            <span className="text-center leading-tight">Redoble</span>
-          </button>
+        <button
+          onClick={() => setActiveTab('soundboard')}
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+            activeTab === 'soundboard'
+              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25'
+              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
+          }`}
+          title="Sonidos"
+        >
+          <span className="text-base sm:text-sm">🔊</span>
+          <span className="truncate">Sonidos</span>
+        </button>
+      </nav>
 
-          <button
-            onClick={() => handlePlaySoundEffect('applause')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-blue-950/40 hover:bg-blue-900/60 border border-blue-500/40 text-blue-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-blue-400"
-            title="Aplausos del público"
-          >
-            <span className="text-2xl">👏</span>
-            <span className="text-center leading-tight">Aplausos</span>
-          </button>
+      {/* PESTAÑA: EN DIRECTO (ARBITRAJE, MINISOUNDBOARD, EFECTOS Y MARCADOR RÁPIDO) */}
+      {activeTab === 'live' && (
+        <div className="space-y-6">
+          {/* TIRA RÁPIDA DE SONIDOS */}
+          {renderQuickSoundStrip()}
 
-          <button
-            onClick={() => handlePlaySoundEffect('airhorn')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-orange-950/40 hover:bg-orange-900/60 border border-orange-500/40 text-orange-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-orange-400"
-            title="Bocinazo DJ / Fiesta"
-          >
-            <span className="text-2xl">📢</span>
-            <span className="text-center leading-tight">Airhorn</span>
-          </button>
-
-          <button
-            onClick={() => handlePlaySoundEffect('suspense')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/40 text-indigo-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-indigo-400"
-            title="Golpe de misterio y tensión"
-          >
-            <span className="text-2xl">😨</span>
-            <span className="text-center leading-tight">Tensión</span>
-          </button>
-
-          <button
-            onClick={() => handlePlaySoundEffect('buzzer')}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-yellow-950/40 hover:bg-yellow-900/60 border border-yellow-500/40 text-yellow-300 font-black text-xs gap-1.5 active:scale-95 transition-all shadow-md hover:border-yellow-400"
-            title="Sonido de pulsador arcade"
-          >
-            <span className="text-2xl">⚡</span>
-            <span className="text-center leading-tight">Pulsador</span>
-          </button>
-        </div>
-      </section>
-
-      {/* SECCIÓN DINÁMICA: CONSOLA DE ARBITRAJE DEL JUEGO ACTIVO */}
-      {room.status === 'playing' && (
-        <section className="bg-slate-900/90 border-2 border-amber-400/40 rounded-3xl p-6 shadow-2xl space-y-4">
+          {/* SECCIÓN DINÁMICA: CONSOLA DE ARBITRAJE DEL JUEGO ACTIVO */}
+          {room.status === 'playing' ? (
+            <section className="bg-slate-900/90 border-2 border-amber-400/40 rounded-3xl p-6 shadow-2xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-2">
             <div>
               <span className="text-[10px] uppercase font-bold text-amber-400 tracking-widest flex items-center gap-1.5">
-                <Award className="w-4 h-4" /> MESA DE PUNTUACIÓN AUTOMÁTICA
+                <Award className="w-4 h-4" />
+                <span className="hidden sm:inline">MESA DE PUNTUACIÓN AUTOMÁTICA</span>
+                <span className="sm:hidden">PUNTUACIÓN</span>
               </span>
-              <h2 className="text-xl font-black">{activeGame.title}</h2>
+              <h2 className="text-lg sm:text-xl font-black">{activeGame.title}</h2>
             </div>
 
             {/* Selector de equipo al que asignar puntos */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <span className="text-xs text-slate-400 font-bold whitespace-nowrap">Asignar a:</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
+              <span className="text-xs text-slate-400 font-bold whitespace-nowrap flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-slate-400" />
+                <span className="hidden sm:inline">Asignar a:</span>
+              </span>
               {activeTeams.map((team) => {
                 const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
                 const isSelected = selectedTeamForPoints === team.id;
@@ -1437,7 +1965,7 @@ export default function HostView() {
                   <button
                     key={team.id}
                     onClick={() => setSelectedTeamForPoints(team.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                    className={`px-2.5 py-1.5 sm:px-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 whitespace-nowrap ${
                       isSelected
                         ? `${cat?.twBg} ${cat?.twContrastText || 'text-slate-950'} shadow-md scale-105 ${cat?.index === 5 ? 'border border-zinc-400' : ''}`
                         : 'bg-slate-800 text-slate-300 border border-slate-700 hover:text-white'
@@ -1452,23 +1980,25 @@ export default function HostView() {
           </div>
 
           {/* CONTROL DEL SISTEMA DE CAPITANES: MINIDUELO Y APUESTAS */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-950/60 border border-slate-800 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/20 border border-amber-500/30 rounded-xl text-amber-400">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-3.5 bg-slate-950/60 border border-slate-800 rounded-2xl">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 bg-amber-500/20 border border-amber-500/30 rounded-xl text-amber-400 shrink-0">
                 <Crown className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black text-white uppercase tracking-wider">
-                    Miniduelo de Capitanes (Tie-Break)
+                    Miniduelo <span className="hidden sm:inline">de Capitanes</span>
                   </span>
                   {captainDuel?.isActive && (
-                    <span className="bg-red-500/25 border border-red-500/50 text-red-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full animate-pulse">
-                      ⚔️ DUELO ACTIVO EN TV & MÓVILES
+                    <span className="bg-red-500/25 border border-red-500/50 text-red-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1">
+                      <Swords className="w-3 h-3" />
+                      <span className="hidden sm:inline">DUELO ACTIVO EN TV & MÓVILES</span>
+                      <span className="sm:hidden">ACTIVO</span>
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-400 mt-0.5 hidden sm:block">
                   {captainDuel?.isActive
                     ? '¡Atención! Solo los capitanes 👑 tienen el pulsador habilitado. El resto de jugadores tienen el buzzer bloqueado.'
                     : 'Activa un desempate o duelo rápido donde solo pueden pulsar los capitanes de cada equipo.'}
@@ -1478,14 +2008,14 @@ export default function HostView() {
 
             <button
               onClick={handleToggleCaptainDuel}
-              className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md whitespace-nowrap ${
+              className={`w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md whitespace-nowrap ${
                 captainDuel?.isActive
                   ? 'bg-red-600 hover:bg-red-500 text-white'
                   : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/20'
               }`}
             >
               <Swords className="w-4 h-4" />
-              <span>{captainDuel?.isActive ? 'Terminar Miniduelo' : '⚔️ Iniciar Miniduelo'}</span>
+              <span>{captainDuel?.isActive ? 'Terminar Duelo' : 'Iniciar Duelo'}</span>
             </button>
           </div>
 
@@ -1550,7 +2080,9 @@ export default function HostView() {
                 }}
                 className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Desbloquear Pulsador
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Desbloquear Pulsador</span>
+                <span className="sm:hidden">Desbloquear</span>
               </button>
             </div>
           )}
@@ -1614,11 +2146,11 @@ export default function HostView() {
                     <button
                       type="button"
                       onClick={handlePickRandomSong}
-                      className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
-                      title="Elegir una canción aleatoria de la lista cargada"
+                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                      title="Elegir canción aleatoria de la lista"
                     >
                       <Shuffle className="w-3.5 h-3.5" />
-                      <span>🎲 Temazo Aleatorio</span>
+                      <span className="hidden sm:inline">Aleatorio</span>
                     </button>
                   </div>
                 )}
@@ -1626,9 +2158,9 @@ export default function HostView() {
 
               {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN CON SOLUCIÓN Y CONTROL DE AUDIO */}
               {currentSongTrack ? (
-                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-3.5 sm:p-4 shadow-lg flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-start md:items-center">
                   {/* Miniatura previa de la carátula */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-emerald-500/50 flex-shrink-0 flex items-center justify-center relative shadow-md">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-emerald-500/50 flex-shrink-0 flex items-center justify-center relative shadow-md">
                     {(currentSongTrack.coverUrl || currentSongTrack.albumArt) ? (
                       <img
                         src={currentSongTrack.coverUrl || currentSongTrack.albumArt}
@@ -1640,61 +2172,63 @@ export default function HostView() {
                     )}
                     {musicPlaying && (
                       <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center backdrop-blur-[1px]">
-                        <Volume2 className="w-7 h-7 text-white animate-bounce" />
+                        <Volume2 className="w-6 h-6 text-white animate-bounce" />
                       </div>
                     )}
                   </div>
 
                   {/* Información secreta para el presentador */}
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        🟢 Spotify Track {currentSongTrack.year ? `• Año ${currentSongTrack.year}` : ''}
+                        Spotify {currentSongTrack.year ? `• ${currentSongTrack.year}` : ''}
                       </span>
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                        Preview Oficial 30s
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hidden sm:inline-block">
+                        Preview 30s
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                        SOLUCIÓN SECRETA (CANCIÓN & ARTISTA):
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">
+                        SOLUCIÓN (TV):
                       </span>
-                      <h3 className="text-xl font-black text-white flex items-center gap-2">
-                        <span>{currentSongTrack.title}</span>
-                        <span className="text-emerald-400 text-base font-bold">— {currentSongTrack.artist}</span>
+                      <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-1.5 truncate">
+                        <span className="truncate">{currentSongTrack.title}</span>
+                        <span className="text-emerald-400 text-sm sm:text-base font-bold truncate shrink-0">— {currentSongTrack.artist}</span>
                       </h3>
                     </div>
 
-                    <p className="text-xs text-slate-400">
-                      💡 <span className="text-slate-300 font-medium">Instrucciones:</span> Dale a <strong>"Reproducir Preview"</strong> para que suene en la TV. Si alguien pulsa, se pausará automáticamente para responder.
+                    <p className="text-xs text-slate-400 hidden sm:block">
+                      💡 Dale a Reproducir para que suene en la TV. Al pulsar cualquier buzzer, se pausará automáticamente.
                     </p>
                   </div>
 
                   {/* Botones de acción principales: Reproducir/Pausar + Revelar */}
-                  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto items-center">
+                  <div className="flex gap-2 w-full md:w-auto items-center">
                     <button
                       onClick={handleTogglePlayMusic}
-                      className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
+                      className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
                         musicPlaying
                           ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
                           : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
                       }`}
+                      title={musicPlaying ? 'Pausar audio en TV' : 'Reproducir preview en TV'}
                     >
                       {musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                      <span>{musicPlaying ? 'Pausar Audio' : 'Reproducir Preview'}</span>
+                      <span className="hidden sm:inline">{musicPlaying ? 'Pausar Audio' : 'Reproducir'}</span>
                     </button>
 
                     <button
                       onClick={handleToggleRevealMusic}
-                      className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                      className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
                         musicRevealed
                           ? 'bg-purple-600 hover:bg-purple-500 text-white'
                           : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                       }`}
+                      title={musicRevealed ? 'Ocultar solución en TV' : 'Revelar solución en TV'}
                     >
                       {musicRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      <span>{musicRevealed ? 'Ocultar en TV' : '¡Revelar en TV!'}</span>
+                      <span className="hidden sm:inline">{musicRevealed ? 'Ocultar' : 'Revelar'}</span>
                     </button>
                   </div>
                 </div>
@@ -1709,53 +2243,59 @@ export default function HostView() {
               )}
 
               {/* INTEGRACIÓN OFICIAL SPOTIFY: BUSCADOR, PLAYLISTS Y BIBLIOTECA */}
-              <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                      🟢 Spotify Developer API Conectada
+              <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-3.5 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 truncate">
+                      Spotify
                     </span>
                   </div>
 
                   {/* Selector de modo: Buscar canción vs Importar Playlist vs Biblioteca */}
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
                     <button
                       type="button"
                       onClick={() => setMusicSearchMode('search')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                         musicSearchMode === 'search'
                           ? 'bg-emerald-500 text-slate-950 shadow-sm'
                           : 'text-slate-400 hover:text-white'
                       }`}
+                      title="Buscar temazo en Spotify"
                     >
                       <Search className="w-3.5 h-3.5" />
-                      <span>Buscar Temazo</span>
+                      <span className="hidden sm:inline">Buscar</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setMusicSearchMode('playlist')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                         musicSearchMode === 'playlist'
                           ? 'bg-emerald-500 text-slate-950 shadow-sm'
                           : 'text-slate-400 hover:text-white'
                       }`}
+                      title="Importar playlist de Spotify"
                     >
                       <ListMusic className="w-3.5 h-3.5" />
-                      <span>Importar Playlist</span>
+                      <span className="hidden sm:inline">Playlist</span>
                     </button>
                     {musicBank.length > 0 && (
                       <button
                         type="button"
                         onClick={() => setMusicSearchMode('bank')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                           musicSearchMode === 'bank'
                             ? 'bg-emerald-500 text-slate-950 shadow-sm'
                             : 'text-slate-400 hover:text-white'
                         }`}
+                        title="Canciones cargadas en biblioteca"
                       >
                         <Disc className="w-3.5 h-3.5" />
-                        <span>Cargadas ({musicBank.length})</span>
+                        <span className="hidden sm:inline">Lista</span>
+                        <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-black/40 text-emerald-300">
+                          {musicBank.length}
+                        </span>
                       </button>
                     )}
                   </div>
@@ -1768,16 +2308,17 @@ export default function HostView() {
                         type="text"
                         value={musicSearchQuery}
                         onChange={(e) => setMusicSearchQuery(e.target.value)}
-                        placeholder="Buscar en catálogo Spotify (ej: Despacito, Queen, Rosalía, Shakira, Bon Jovi...)"
-                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                        placeholder="Buscar en Spotify (ej: Despacito, Queen, Rosalía...)"
+                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-w-0"
                       />
                       <button
                         type="submit"
                         disabled={isSearchingMusic || !musicSearchQuery.trim()}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shrink-0"
+                        className="px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shrink-0 shadow"
+                        title="Buscar canciones"
                       >
                         {isSearchingMusic ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                        <span>Buscar</span>
+                        <span className="hidden sm:inline">Buscar</span>
                       </button>
                     </form>
 
@@ -1788,17 +2329,17 @@ export default function HostView() {
                           <div
                             key={track.id}
                             onClick={() => handleSelectSearchedTrack(track)}
-                            className="flex items-center gap-3 p-2 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/60 rounded-xl cursor-pointer transition-all group"
+                            className="flex items-center gap-2.5 p-2 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/60 rounded-xl cursor-pointer transition-all group"
                           >
                             {(track.coverUrl || track.albumArt) ? (
                               <img
                                 src={track.coverUrl || track.albumArt}
                                 alt={track.title}
-                                className="w-11 h-11 rounded-lg object-cover border border-slate-700 shrink-0"
+                                className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0"
                               />
                             ) : (
-                              <div className="w-11 h-11 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
-                                <Music className="w-5 h-5 text-emerald-400" />
+                              <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+                                <Music className="w-4 h-4 text-emerald-400" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
@@ -1809,9 +2350,14 @@ export default function HostView() {
                                 {track.artist} {track.year ? `• ${track.year}` : ''}
                               </p>
                             </div>
-                            <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 shrink-0 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
-                              ¡Poner en TV!
-                            </span>
+                            <button
+                              type="button"
+                              className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all flex items-center gap-1 text-[10px] font-bold"
+                              title="Poner en TV"
+                            >
+                              <Play className="w-3 h-3 fill-current" />
+                              <span className="hidden sm:inline">Poner</span>
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -1820,28 +2366,29 @@ export default function HostView() {
                 ) : musicSearchMode === 'playlist' ? (
                   /* IMPORTADOR DE PLAYLISTS DE SPOTIFY */
                   <div className="space-y-3">
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 hidden sm:block">
                       Pega el enlace de cualquier playlist pública de Spotify para importar sus canciones automáticamente:
                     </p>
-                    <form onSubmit={handleImportPlaylistFromSpotify} className="flex flex-col sm:flex-row gap-2">
+                    <form onSubmit={handleImportPlaylistFromSpotify} className="flex gap-2">
                       <input
                         type="text"
                         value={spotifyPlaylistInput}
                         onChange={(e) => setSpotifyPlaylistInput(e.target.value)}
-                        placeholder="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M..."
-                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                        placeholder="https://open.spotify.com/playlist/..."
+                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-w-0"
                       />
                       <button
                         type="submit"
                         disabled={isImportingPlaylist || !spotifyPlaylistInput.trim()}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-md"
+                        className="px-3.5 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-md"
+                        title="Importar playlist de Spotify"
                       >
                         {isImportingPlaylist ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListMusic className="w-3.5 h-3.5" />}
-                        <span>{isImportingPlaylist ? 'Importando...' : 'Importar Playlist'}</span>
+                        <span className="hidden sm:inline">{isImportingPlaylist ? 'Importando...' : 'Importar'}</span>
                       </button>
                     </form>
                     <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
-                      <span className="font-semibold text-slate-300">💡 Playlists populares sugeridas:</span>
+                      <span className="font-semibold text-slate-300">💡 Sugeridas:</span>
                       <button
                         type="button"
                         onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M')}
@@ -1869,26 +2416,28 @@ export default function HostView() {
                   /* LISTA DE CANCIONES CARGADAS EN LA BIBLIOTECA */
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-800 text-xs">
-                      <span className="text-slate-400 font-bold">
-                        Canciones disponibles ({musicBank.length}):
+                      <span className="text-slate-400 font-bold truncate">
+                        Disponibles ({musicBank.length}):
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={handlePickRandomSong}
                           className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+                          title="Elegir aleatoria"
                         >
                           <Shuffle className="w-3 h-3" />
-                          <span>Aleatoria</span>
+                          <span className="hidden sm:inline">Aleatoria</span>
                         </button>
                         <span className="text-slate-600">•</span>
                         <button
                           type="button"
                           onClick={handleClearMusicBank}
                           className="text-red-400 hover:text-red-300 font-bold flex items-center gap-1"
+                          title="Vaciar lista"
                         >
                           <Trash2 className="w-3 h-3" />
-                          <span>Vaciar lista</span>
+                          <span className="hidden sm:inline">Vaciar</span>
                         </button>
                       </div>
                     </div>
@@ -1930,12 +2479,17 @@ export default function HostView() {
                             <div className="flex items-center gap-1 shrink-0">
                               {isCurrent ? (
                                 <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500 text-slate-950">
-                                  En TV
+                                  TV
                                 </span>
                               ) : (
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 hover:bg-emerald-600 hover:text-white">
-                                  Poner
-                                </span>
+                                <button
+                                  type="button"
+                                  className="px-2 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 hover:bg-emerald-600 hover:text-white text-[10px] flex items-center gap-1"
+                                  title="Poner en TV"
+                                >
+                                  <Play className="w-2.5 h-2.5 fill-current" />
+                                  <span className="hidden sm:inline">Poner</span>
+                                </button>
                               )}
                               <button
                                 type="button"
@@ -1977,16 +2531,18 @@ export default function HostView() {
                 <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                   <button
                     onClick={handleLoadOfficialPack}
-                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center gap-1.5 transition-all shadow-sm"
                     title="Cargar las 21 películas oficiales para la fiesta"
                   >
                     <Sparkle className="w-3.5 h-3.5" />
-                    <span>Cargar Pack Oficial Fiesta</span>
+                    <span className="hidden sm:inline">Pack Oficial Fiesta</span>
+                    <span className="sm:hidden">Oficial</span>
                   </button>
 
-                  <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
+                  <label className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
                     <FolderUp className="w-3.5 h-3.5" />
-                    <span>Subir JSON</span>
+                    <span className="hidden sm:inline">Subir JSON</span>
+                    <span className="sm:hidden">JSON</span>
                     <input type="file" accept=".json" onChange={handleUploadJson} className="hidden" />
                   </label>
 
@@ -1996,7 +2552,8 @@ export default function HostView() {
                       className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-[11px] font-medium"
                       title="Volver a las películas de prueba para seguir desarrollando sin spoilers"
                     >
-                      Volver a Modo Demo
+                      <span className="hidden sm:inline">Modo Demo</span>
+                      <span className="sm:hidden">Demo</span>
                     </button>
                   )}
                 </div>
@@ -2086,7 +2643,8 @@ export default function HostView() {
                     }`}
                   >
                     {movieRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    <span>{movieRevealed ? 'Ocultar Solución en TV' : '¡Revelar Título en TV!'}</span>
+                    <span>{movieRevealed ? 'Ocultar' : 'Revelar'}</span>
+                    <span className="hidden sm:inline">{movieRevealed ? ' Solución en TV' : ' Título en TV!'}</span>
                   </button>
                 </div>
               </div>
@@ -2094,47 +2652,51 @@ export default function HostView() {
               {/* SELECTOR DE NIVEL DE PISTA / EMOJIS */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">Pista en TV:</span>
+                  <span className="text-xs font-bold text-slate-400">Pista:</span>
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => handleSetFrameLevel(1)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                         movieFrameLevel === 1
                           ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
                           : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
                       }`}
                     >
-                      P1: 2 Emojis (+5)
+                      <span className="sm:hidden">P1 (+5)</span>
+                      <span className="hidden sm:inline">P1: 2 Emojis (+5)</span>
                     </button>
                     <button
                       onClick={() => handleSetFrameLevel(2)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                         movieFrameLevel === 2
                           ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
                           : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
                       }`}
                     >
-                      P2: 4 Emojis (+3)
+                      <span className="sm:hidden">P2 (+3)</span>
+                      <span className="hidden sm:inline">P2: 4 Emojis (+3)</span>
                     </button>
                     <button
                       onClick={() => handleSetFrameLevel(3)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                         movieFrameLevel === 3
                           ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
                           : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
                       }`}
                     >
-                      P3: Todos los Emojis (+1)
+                      <span className="sm:hidden">P3 (+1)</span>
+                      <span className="hidden sm:inline">P3: Todos (+1)</span>
                     </button>
                     <button
                       onClick={() => handleSetFrameLevel(4)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                         movieFrameLevel === 4
                           ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
                           : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
                       }`}
                     >
-                      P4: + Pistas (+1)
+                      <span className="sm:hidden">P4 (+1)</span>
+                      <span className="hidden sm:inline">P4: Pistas (+1)</span>
                     </button>
                   </div>
                 </div>
@@ -2149,9 +2711,10 @@ export default function HostView() {
                   </button>
                   <button
                     onClick={handleNextMovie}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    className="px-3.5 sm:px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
                   >
-                    <span>Siguiente Película</span>
+                    <span className="hidden sm:inline">Siguiente Película</span>
+                    <span className="sm:hidden">Siguiente</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -2217,7 +2780,8 @@ export default function HostView() {
                     }`}
                   >
                     {babyPhotoRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    <span>{babyPhotoRevealed ? 'Ocultar Solución en TV' : '¡Revelar Solución en TV!'}</span>
+                    <span>{babyPhotoRevealed ? 'Ocultar' : 'Revelar'}</span>
+                    <span className="hidden sm:inline"> Solución en TV</span>
                   </button>
                 </div>
               </div>
@@ -2250,9 +2814,10 @@ export default function HostView() {
                   </button>
                   <button
                     onClick={handleNextBabyPhoto}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    className="px-3.5 sm:px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
                   >
-                    <span>Siguiente Foto</span>
+                    <span className="hidden sm:inline">Siguiente Foto</span>
+                    <span className="sm:hidden">Siguiente</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -2260,20 +2825,77 @@ export default function HostView() {
             </div>
           )}
         </section>
+      ) : (
+        <div className="bg-slate-900/80 border-2 border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl">
+            📺
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="text-xl font-black text-white">Sala en Pantalla de Espera (Lobby)</h3>
+            <p className="text-xs text-slate-400">
+              La TV está proyectando el código QR y la formación de equipos. Selecciona un minijuego del catálogo para empezar a jugar.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => handleSelectGame(GAMES_CATALOG[0])}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase flex items-center gap-2 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
+            >
+              <Play className="w-4 h-4 fill-slate-950" />
+              <span>Empezar con {GAMES_CATALOG[0].title}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('catalog')}
+              className="px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs uppercase flex items-center gap-2 active:scale-95 transition-all"
+            >
+              <Gamepad2 className="w-4 h-4 text-purple-400" />
+              <span>Ver Catálogo Completo</span>
+            </button>
+          </div>
+        </div>
       )}
 
+      {/* EFECTOS DE CARTAS ACTIVOS EN ESTA PRUEBA */}
+      {renderActiveEffects()}
+
+      {/* MARCADOR EN VIVO Y PUNTUACIÓN RÁPIDA */}
+      <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-3.5 sm:p-5 space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
+            <h3 className="text-xs font-black uppercase tracking-wider text-white truncate">
+              Marcador <span className="hidden sm:inline">en Vivo (+5, +2, +1, -1)</span>
+            </h3>
+          </div>
+          <button
+            onClick={() => setActiveTab('teams')}
+            className="text-[11px] text-slate-400 hover:text-emerald-400 font-bold transition-colors flex items-center gap-1 shrink-0"
+          >
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden sm:inline">Gestionar Equipos</span>
+            <span>→</span>
+          </button>
+        </div>
+        {renderTeamsScoreboard()}
+      </section>
+    </div>
+  )}
+
+  {/* PESTAÑA: SISTEMA DE CARTAS DE PODER */}
+  {activeTab === 'cards' && (
+    <div className="space-y-6">
       {/* SECCIÓN: SISTEMA DE CARTAS DE PODER PARA EQUIPOS */}
       <section className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-6 shadow-2xl space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-2xl">🃏</span>
-              <h2 className="text-lg font-black text-white">Sistema de Cartas de Poder</h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
-                Mazo Común Único
+              <h2 className="text-base sm:text-lg font-black text-white">Cartas de Poder</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
+                Mazo Único
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1 hidden sm:block">
               Reparte cartas únicas al inicio o al finalizar pruebas. Los equipos las juegan desde sus móviles.
             </p>
           </div>
@@ -2281,18 +2903,20 @@ export default function HostView() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleDealInitialCards}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black uppercase flex items-center gap-2 shadow-md active:scale-95 transition-all"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black uppercase flex items-center gap-1.5 sm:gap-2 shadow-md active:scale-95 transition-all"
             >
-              <span>🃏 Repartir 1 Carta a Todos (Inicio)</span>
+              <span>🃏</span>
+              <span className="hidden sm:inline">Repartir 1 Carta a Todos (Inicio)</span>
+              <span className="sm:hidden">Repartir a Todos</span>
             </button>
 
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
               <select
                 value={selectedBonusTeam}
                 onChange={(e) => setSelectedBonusTeam(e.target.value)}
-                className="bg-slate-900 text-slate-200 text-xs rounded-lg px-2 py-1.5 border border-slate-700 outline-none"
+                className="bg-slate-900 text-slate-200 text-xs rounded-lg px-2 py-1.5 border border-slate-700 outline-none max-w-[120px] sm:max-w-none truncate"
               >
-                <option value="random">🎲 Equipo al azar</option>
+                <option value="random">🎲 Azar</option>
                 {activeTeams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -2302,11 +2926,12 @@ export default function HostView() {
 
               <button
                 onClick={() => handleDealBonusCard(selectedBonusTeam)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase flex items-center gap-1.5 active:scale-95 transition-all"
+                className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase flex items-center gap-1 active:scale-95 transition-all shrink-0"
                 title="Repartir 1 carta bonus al finalizar una prueba"
               >
                 <Dices className="w-3.5 h-3.5" />
-                <span>Dar Bonus</span>
+                <span className="hidden sm:inline">Dar Bonus</span>
+                <span className="sm:hidden">Bonus</span>
               </button>
             </div>
 
@@ -2364,175 +2989,7 @@ export default function HostView() {
         </div>
 
         {/* LISTA DE EFECTOS ACTIVOS CON BOTONES DE RESOLUCIÓN */}
-        {powerCards.activeEffects.length > 0 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl space-y-2.5">
-            <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5" /> Efectos de Poder Activos en Esta Prueba:
-            </span>
-            <div className="flex flex-wrap gap-2.5">
-              {powerCards.activeEffects.map((eff) => {
-                const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
-                const targetTeam = eff.targetTeamId ? activeTeams.find((t) => t.id === eff.targetTeamId) : null;
-                return (
-                  <div
-                    key={eff.id}
-                    className="bg-slate-950/95 border-2 border-amber-400/50 px-3 py-2 rounded-xl text-xs flex flex-wrap items-center gap-2 shadow-lg"
-                  >
-                    <span>{eff.cardEmoji}</span>
-                    <strong className="text-white font-bold">{eff.cardName}</strong>
-                    <span className="text-slate-400 text-[11px]">de</span>
-                    <span className="text-amber-300 font-bold">{team?.name || eff.sourceTeamName}</span>
-                    {targetTeam && (
-                      <>
-                        <span className="text-slate-400 text-[11px]">➔ Rival:</span>
-                        <span className="text-red-300 font-bold">{targetTeam.name}</span>
-                      </>
-                    )}
-                    {eff.targetPlayerName && (
-                      <>
-                        <span className="text-slate-400 text-[11px]">➔ Jugador:</span>
-                        <span className="text-red-300 font-bold">{eff.targetPlayerName}</span>
-                      </>
-                    )}
-                    {eff.sensoryLimitation && (
-                      <span className="bg-purple-950/80 border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-[11px] font-bold">
-                        {eff.sensoryLimitation}
-                      </span>
-                    )}
-
-                    {/* BOTONES INTERACTIVOS SEGÚN LA CARTA */}
-                    {eff.cardId === 'bomba' && eff.targetTeamId && (
-                      <button
-                        onClick={() => {
-                          handleScoreChange(eff.targetTeamId!, -1);
-                          handleRemoveActiveEffect(eff.id);
-                        }}
-                        className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
-                      >
-                        💣 Detonar (-1 pt)
-                      </button>
-                    )}
-
-                    {eff.cardId === 'objetivo' && (
-                      <button
-                        onClick={() => {
-                          handleScoreChange(eff.sourceTeamId, 2);
-                          handleRemoveActiveEffect(eff.id);
-                        }}
-                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
-                      >
-                        🎯 Cobrar (+2 pts)
-                      </button>
-                    )}
-
-                    {eff.cardId === 'caza_lider' && (
-                      <button
-                        onClick={() => {
-                          handleScoreChange(eff.sourceTeamId, 3);
-                          handleRemoveActiveEffect(eff.id);
-                        }}
-                        className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[10px] shadow"
-                      >
-                        👑 Cobrar (+3 pts)
-                      </button>
-                    )}
-
-                    {eff.cardId === 'ruleta_rusa' && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            handleScoreChange(eff.sourceTeamId, 8);
-                            handleRemoveActiveEffect(eff.id);
-                          }}
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
-                        >
-                          +8 pts (1º-2º)
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleScoreChange(eff.sourceTeamId, -5);
-                            handleRemoveActiveEffect(eff.id);
-                          }}
-                          className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
-                        >
-                          -5 pts (3º-5º)
-                        </button>
-                      </div>
-                    )}
-
-                    {eff.cardId === 'la_sentencia' && eff.targetTeamId && (
-                      <button
-                        onClick={() => {
-                          handleScoreChange(eff.targetTeamId!, -5);
-                          handleRemoveActiveEffect(eff.id);
-                        }}
-                        className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold text-[10px] shadow"
-                      >
-                        💀 Ejecutar (-5 pts)
-                      </button>
-                    )}
-
-                    {eff.cardId === 'todo_o_nada' && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            handleScoreChange(eff.sourceTeamId, 10);
-                            handleRemoveActiveEffect(eff.id);
-                          }}
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
-                        >
-                          +10 pts (1.º)
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleScoreChange(eff.sourceTeamId, -5);
-                            handleRemoveActiveEffect(eff.id);
-                          }}
-                          className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
-                        >
-                          -5 pts (Otro)
-                        </button>
-                      </div>
-                    )}
-
-                    {eff.cardId === 'el_intercambio' && eff.targetTeamId && (
-                      <button
-                        onClick={() => {
-                          const sTeam = teams.find((t) => t.id === eff.sourceTeamId);
-                          const tTeam = teams.find((t) => t.id === eff.targetTeamId);
-                          if (sTeam && tTeam) {
-                            const sScore = sTeam.score;
-                            const tScore = tTeam.score;
-                            const updated = teams.map((t) => {
-                              if (t.id === sTeam.id) return { ...t, score: tScore };
-                              if (t.id === tTeam.id) return { ...t, score: sScore };
-                              return t;
-                            });
-                            setTeams(updated);
-                            roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
-                            handleRemoveActiveEffect(eff.id);
-                            alert(`🔄 Puntuaciones intercambiadas entre ${sTeam.name} y ${tTeam.name}`);
-                          }
-                        }}
-                        className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
-                      >
-                        🔄 Intercambiar Puntos
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => handleRemoveActiveEffect(eff.id)}
-                      className="ml-1 text-slate-500 hover:text-red-400 text-xs font-bold p-1 rounded"
-                      title="Quitar efecto"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {renderActiveEffects()}
 
         {/* INVENTARIO DE CARTAS POR EQUIPO */}
         <div>
@@ -2573,13 +3030,13 @@ export default function HostView() {
                             key={cardId}
                             className="bg-slate-900 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2"
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{card.emoji}</span>
-                              <div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-black text-white">{card.name}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-lg shrink-0">{card.emoji}</span>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs font-black text-white truncate">{card.name}</span>
                                   <span
-                                    className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${
+                                    className={`text-[8px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
                                       card.rarity === 'Legendaria'
                                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                         : card.rarity === 'Épica'
@@ -2592,36 +3049,46 @@ export default function HostView() {
                                     {card.rarity}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-slate-400 block">{card.tagline}</span>
+                                <span className="text-[10px] text-slate-400 truncate hidden sm:block">{card.tagline}</span>
                               </div>
                             </div>
 
-                            {card.id === 'la_maldicion' ? (
-                              <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1">
+                              {card.id === 'la_maldicion' ? (
+                                <>
+                                  <button
+                                    onClick={() => handleScoreChange(team.id, -1)}
+                                    className="px-2 py-1 rounded-lg bg-red-950/80 hover:bg-red-800 text-red-200 border border-red-500/40 text-[10px] font-black uppercase transition-all"
+                                    title="Penalizar 1 punto al equipo por conservar la maldición al terminar la prueba"
+                                  >
+                                    💀 -1 pt
+                                  </button>
+                                  <button
+                                    onClick={() => handlePlayCardDirectly(team.id, card.id)}
+                                    className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-[10px] font-black uppercase transition-all"
+                                    title="Descartar la maldición perdiendo 3 puntos"
+                                  >
+                                    ✕ Descartar (-3)
+                                  </button>
+                                </>
+                              ) : (
                                 <button
-                                  onClick={() => handleScoreChange(team.id, -1)}
-                                  className="px-2 py-1 rounded-lg bg-red-950/80 hover:bg-red-800 text-red-200 border border-red-500/40 text-[10px] font-black uppercase transition-all"
-                                  title="Penalizar 1 punto al equipo por conservar la maldición al terminar la prueba"
+                                  onClick={() => handleInitiatePlayCard(team.id, card)}
+                                  className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/30 text-[10px] font-black uppercase transition-all"
+                                  title="Activar carta"
                                 >
-                                  💀 -1 pt
+                                  Jugar
                                 </button>
-                                <button
-                                  onClick={() => handlePlayCardDirectly(team.id, card.id)}
-                                  className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-[10px] font-black uppercase transition-all"
-                                  title="Descartar la maldición perdiendo 3 puntos"
-                                >
-                                  ✕ Descartar (-3)
-                                </button>
-                              </div>
-                            ) : (
+                              )}
+
                               <button
-                                onClick={() => handleInitiatePlayCard(team.id, card)}
-                                className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/30 text-[10px] font-black uppercase transition-all"
-                                title="Activar carta"
+                                onClick={() => handleRevokeCardFromTeam(team.id, card.id)}
+                                className="p-1 rounded-lg bg-slate-800/80 hover:bg-red-950/60 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-500/40 text-[10px] active:scale-95 transition-all"
+                                title="Quitar carta de la mano y enviar al descarte"
                               >
-                                Jugar
+                                ✕
                               </button>
-                            )}
+                            </div>
                           </div>
                         );
                       })
@@ -2633,16 +3100,21 @@ export default function HostView() {
           </div>
         </div>
       </section>
+    </div>
+  )}
 
+  {/* PESTAÑA: CATÁLOGO DE JUEGOS */}
+  {activeTab === 'catalog' && (
+    <div className="space-y-6">
       {/* CATÁLOGO DE JUEGOS: SELECCIÓN AUTOMÁTICA DEL MOTOR */}
       <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
               <Gamepad2 className="w-5 h-5 text-indigo-400" />
-              Catálogo de Concursos y Minijuegos
+              Catálogo de Minijuegos
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
               Elige el juego y el motor (Pulsador, Retos o Duelos) se adaptará automáticamente con sus reglas.
             </p>
           </div>
@@ -2689,84 +3161,12 @@ export default function HostView() {
           })}
         </div>
       </section>
+    </div>
+  )}
 
-      {/* LISTA DE JUGADORES EN VIVO DETECTADOS */}
-      <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-              Jugadores Detectados en Sala ({players.length})
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setPlayers([]);
-                localStorage.removeItem(`party_players_${roomCode}`);
-                roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
-              }}
-              className="text-[11px] text-red-400 hover:text-red-300 border border-red-500/30 px-2 py-1 rounded-lg font-semibold transition-all active:scale-95"
-            >
-              Vaciar Lista
-            </button>
-            <button
-              onClick={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}
-              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 font-semibold"
-            >
-              <RefreshCw className="w-3 h-3" /> Re-escanear
-            </button>
-          </div>
-        </div>
-
-        {players.length === 0 ? (
-          <div className="text-center py-6 border border-dashed border-slate-800 rounded-2xl text-slate-500 text-xs">
-            Aún no ha entrado ningún jugador. Los nombres aparecerán aquí al instante en que introduzcan su alias.
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {players.map((p) => {
-              const assignedTeam = teams.find((t) => t.id === p.team_id || t.team_index === p.team_index);
-              const teamCatalog = assignedTeam ? TEAMS_CATALOG.find((c) => c.index === assignedTeam.team_index) : null;
-
-              return (
-                <div
-                  key={p.id}
-                  className={`border px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-sm transition-all ${
-                    p.is_captain
-                      ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
-                      : 'bg-slate-800/90 border-slate-700'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${teamCatalog ? teamCatalog.twBg : 'bg-slate-500 animate-pulse'}`} />
-                  <span className="text-xs font-bold text-white flex items-center gap-1">
-                    {p.nickname}
-                    {p.is_captain && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {teamCatalog ? `(${teamCatalog.name})` : '(Sin bando)'}
-                  </span>
-                  {assignedTeam && (
-                    <button
-                      onClick={() => handleSetCaptain(assignedTeam.id, p.id)}
-                      title={p.is_captain ? 'Capitán activo (Clic para desasignar o deshacer)' : 'Nombrar Capitán de su equipo'}
-                      className={`ml-1 px-2.5 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 transition-all active:scale-95 ${
-                        p.is_captain
-                          ? 'bg-amber-400 hover:bg-red-500 hover:text-white text-slate-950 shadow-sm'
-                          : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                      }`}
-                    >
-                      <Crown className={`w-3 h-3 ${p.is_captain ? 'fill-current' : ''}`} />
-                      <span>{p.is_captain ? 'Quitar Cap ✕' : 'Nombrar Cap'}</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
+  {/* PESTAÑA: EQUIPOS & JUGADORES */}
+  {activeTab === 'teams' && (
+    <div className="space-y-6">
       {/* CONFIGURACIÓN DINÁMICA DE EQUIPOS & MARCADOR GENERAL */}
       <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
@@ -2799,106 +3199,143 @@ export default function HostView() {
           </div>
         </div>
 
-        {/* MODIFICADOR MANUAL DE PUNTOS RÁPIDO (+1, -1, +5) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-slate-800">
-          {activeTeams.map((team) => {
-            const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
-            const teamMembers = players.filter((p) => p.team_id === team.id || p.team_index === team.team_index);
-
-            return (
-              <div
-                key={team.id}
-                className={`p-4 rounded-2xl border ${cat.twBorder} bg-slate-900/90 flex flex-col justify-between shadow-md`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Equipo {team.team_index}</span>
-                    <span className={`text-base font-black uppercase ${cat.twText}`}>{team.name}</span>
-                    <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
-                      {teamMembers.length} {teamMembers.length === 1 ? 'jugador' : 'jugadores'}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-3xl font-black font-mono text-white">{team.score}</span>
-                    <span className="text-[10px] text-slate-400 block font-bold">PTS</span>
-                  </div>
-                </div>
-
-                {/* Lista de Miembros con Selector de Capitán */}
-                {teamMembers.length > 0 && (
-                  <div className="my-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 flex flex-wrap gap-1.5 items-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 w-full">Miembros:</span>
-                    {teamMembers.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => handleSetCaptain(team.id, m.id)}
-                        title={m.is_captain ? 'Capitán activo (Clic para desasignar o deshacer capitanía)' : 'Nombrar Capitán a este jugador'}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 ${
-                          m.is_captain
-                            ? 'bg-amber-400 hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-sm'
-                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                        }`}
-                      >
-                        <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current' : 'text-slate-400'}`} />
-                        <span>{m.nickname} {m.is_captain ? '(✕ Quitar)' : ''}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex gap-1.5 pt-2 border-t border-slate-800">
-                  <button
-                    onClick={() => handleScoreChange(team.id, 5)}
-                    className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-black py-2 rounded-xl border border-amber-500/30 active:scale-95"
-                  >
-                    +5
-                  </button>
-                  <button
-                    onClick={() => handleScoreChange(team.id, 2)}
-                    className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-black py-2 rounded-xl border border-emerald-500/30 active:scale-95"
-                  >
-                    +2
-                  </button>
-                  <button
-                    onClick={() => handleScoreChange(team.id, 1)}
-                    className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-black py-2 rounded-xl border border-blue-500/30 active:scale-95"
-                  >
-                    +1
-                  </button>
-                  <button
-                    onClick={() => handleScoreChange(team.id, -1)}
-                    className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-black py-2 rounded-xl border border-red-500/30 active:scale-95"
-                  >
-                    -1
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        {/* MARCADOR DE EQUIPOS CON GESTIÓN DE CAPITANES */}
+        <div className="pt-3 border-t border-slate-800">
+          {renderTeamsScoreboard()}
         </div>
       </section>
 
-      {/* BANNER FLOTANTE: CARTA PROYECTADA EN TV (CONTROL HOST) */}
+      {/* LISTA DE JUGADORES EN VIVO DETECTADOS */}
+      <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-5">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 truncate">
+              <span className="hidden sm:inline">Jugadores Detectados</span>
+              <span className="sm:hidden">Jugadores</span> ({players.length})
+            </h2>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => {
+                setPlayers([]);
+                localStorage.removeItem(`party_players_${roomCode}`);
+                roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
+              }}
+              className="text-[11px] text-red-400 hover:text-red-300 border border-red-500/30 px-2 py-1 rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-1"
+              title="Vaciar lista de jugadores"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span className="hidden sm:inline">Vaciar</span>
+            </button>
+            <button
+              onClick={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}
+              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 font-semibold border border-slate-700 px-2 py-1 rounded-lg"
+              title="Re-escanear jugadores"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span className="hidden sm:inline">Re-escanear</span>
+            </button>
+          </div>
+        </div>
+
+        {players.length === 0 ? (
+          <div className="text-center py-6 border border-dashed border-slate-800 rounded-2xl text-slate-500 text-xs">
+            Aún no ha entrado ningún jugador. Los nombres aparecerán aquí al instante en que introduzcan su alias.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {players.map((p) => {
+              const assignedTeam = teams.find((t) => t.id === p.team_id || t.team_index === p.team_index);
+              const teamCatalog = assignedTeam ? TEAMS_CATALOG.find((c) => c.index === assignedTeam.team_index) : null;
+
+              return (
+                <div
+                  key={p.id}
+                  className={`border px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 shadow-sm transition-all ${
+                    p.is_captain
+                      ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
+                      : 'bg-slate-800/90 border-slate-700'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${teamCatalog ? teamCatalog.twBg : 'bg-slate-500 animate-pulse'}`} />
+                  <span className="text-xs font-bold text-white flex items-center gap-1 truncate max-w-[110px] sm:max-w-none">
+                    {p.nickname}
+                    {p.is_captain && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium truncate">
+                    {teamCatalog ? `(${teamCatalog.name})` : '(Sin bando)'}
+                  </span>
+                  {assignedTeam && (
+                    <button
+                      onClick={() => handleSetCaptain(assignedTeam.id, p.id)}
+                      title={p.is_captain ? 'Capitán activo (Clic para desasignar o deshacer)' : 'Nombrar Capitán de su equipo'}
+                      className={`ml-1 px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 transition-all active:scale-95 shrink-0 ${
+                        p.is_captain
+                          ? 'bg-amber-400 hover:bg-red-500 hover:text-white text-slate-950 shadow-sm'
+                          : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                      }`}
+                    >
+                      <Crown className={`w-3 h-3 ${p.is_captain ? 'fill-current' : ''}`} />
+                      <span className="hidden sm:inline">{p.is_captain ? 'Quitar Cap ✕' : 'Nombrar Cap'}</span>
+                      <span className="sm:hidden">{p.is_captain ? '✕' : 'Cap'}</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  )}
+
+  {/* PESTAÑA: MESA DE EFECTOS DE SONIDO COMPLETA */}
+  {activeTab === 'soundboard' && (
+    <div className="space-y-6">
+      {renderSoundboard()}
+    </div>
+  )}
+
+      {/* BANNER FLOTANTE: CARTA PROYECTADA EN TV (ADAPTADO A MÓVIL) */}
       {activeCardOnScreen && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border-2 border-amber-400 rounded-2xl px-6 py-3.5 shadow-2xl backdrop-blur-xl flex items-center gap-4 animate-bounce">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">{activeCardOnScreen.card.emoji}</span>
-            <div>
-              <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
-                Carta Proyectada en TV
+        <div className="fixed bottom-4 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md z-50 bg-slate-900/95 border-2 border-amber-400 rounded-2xl p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2 animate-bounce">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-2xl flex-shrink-0">{activeCardOnScreen.card.emoji}</span>
+            <div className="min-w-0">
+              <span className="text-[9px] text-amber-400 font-black uppercase tracking-wider block truncate">
+                En TV • {activeCardOnScreen.teamName}
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black text-white">{activeCardOnScreen.card.name}</span>
-                <span className="text-xs text-slate-300">({activeCardOnScreen.teamName})</span>
-              </div>
+              <span className="text-xs sm:text-sm font-black text-white block truncate">
+                {activeCardOnScreen.card.name}
+              </span>
             </div>
           </div>
-          <button
-            onClick={handleDismissCardOnScreen}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
-          >
-            <span>✕ Quitar de la TV</span>
-          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => {
+                const teamId = activeCardOnScreen.teamId || activeTeams.find((t) => t.name === activeCardOnScreen.teamName)?.id;
+                if (teamId) {
+                  handleReturnCardToTeam(teamId, activeCardOnScreen.card.id);
+                } else {
+                  handleDismissCardOnScreen();
+                }
+              }}
+              className="px-2.5 sm:px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-black uppercase rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
+              title="Anular jugada y devolver carta a su equipo"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Devolver</span>
+            </button>
+            <button
+              onClick={handleDismissCardOnScreen}
+              className="p-2 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-500 text-white text-[11px] sm:text-xs font-black uppercase rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
+              title="Quitar de la TV"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Quitar</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -3019,13 +3456,80 @@ export default function HostView() {
                   const card = getPowerCardById(cId);
                   if (!card) return null;
                   return (
-                    <div key={`${cId}_${idx}`} className="flex flex-col items-center p-2 bg-slate-950 rounded-xl border border-slate-800">
+                    <div key={`${cId}_${idx}`} className="flex flex-col items-center p-2.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                       <PowerCardView card={card} size="sm" />
+                      <button
+                        onClick={() => setReturnCardModal({ card })}
+                        className="w-full px-2 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-white border border-amber-500/40 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 active:scale-95 transition-all shadow"
+                        title="Devolver esta carta a la mano de un equipo"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>↩ Devolver a Equipo</span>
+                      </button>
                     </div>
                   );
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SELECCIONAR EQUIPO AL QUE DEVOLVER CARTA */}
+      {returnCardModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-3xl">{returnCardModal.card.emoji}</span>
+                <div>
+                  <h3 className="text-base font-black text-white uppercase">
+                    Devolver "{returnCardModal.card.name}"
+                  </h3>
+                  <p className="text-xs text-amber-300">
+                    Selecciona a qué equipo devolver esta carta a su mano
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReturnCardModal(null)}
+                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {activeTeams.map((team) => {
+                const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
+                const currentCards = powerCards.teamHands[team.id]?.length || 0;
+                return (
+                  <button
+                    key={team.id}
+                    onClick={() => {
+                      handleReturnCardToTeam(team.id, returnCardModal.card.id);
+                      setReturnCardModal(null);
+                    }}
+                    className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-98 ${cat?.twBorder || 'border-slate-700'} bg-slate-800/80 hover:bg-slate-700/80`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-3.5 h-3.5 rounded-full ${cat?.twBg || 'bg-amber-400'}`} />
+                      <div className="text-left">
+                        <span className={`text-xs font-black uppercase block ${cat?.twText || 'text-white'}`}>
+                          {team.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Tiene actualmente {currentCards} {currentCards === 1 ? 'carta' : 'cartas'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-amber-400 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                      Entregar ➔
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
