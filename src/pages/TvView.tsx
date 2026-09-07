@@ -29,7 +29,11 @@ import {
   Moon,
   Orbit,
   Sun,
-  Droplets
+  Droplets,
+  Music,
+  Disc,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
@@ -40,6 +44,7 @@ import { RoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
+import { SongTrack } from '../lib/musicData';
 import { PowerCardsState, PowerCard } from '../lib/powerCards';
 import UnoPowerCard from '../components/UnoPowerCard';
 import { RetroGridBackground } from '../components/RetroGridBackground';
@@ -167,6 +172,49 @@ export default function TvView() {
   const currentBabyPhoto: BabyPhotoItem =
     remoteBabyPhoto || DEV_MOCK_BABY_PHOTOS[babyPhotoIndex % DEV_MOCK_BABY_PHOTOS.length] || DEV_MOCK_BABY_PHOTOS[0];
 
+  // Estados de Adivina la Canción (100% Spotify)
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [musicRevealed, setMusicRevealed] = useState(false);
+  const [remoteMusicTrack, setRemoteMusicTrack] = useState<SongTrack | null>(null);
+  const musicAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  const currentSong: SongTrack | null = remoteMusicTrack;
+
+  // Reiniciar tiempo de audio a 0 solo cuando cambie efectivamente de canción
+  const prevSongIdRef = React.useRef<string | undefined>(currentSong?.id);
+  useEffect(() => {
+    if (currentSong && prevSongIdRef.current !== currentSong.id) {
+      prevSongIdRef.current = currentSong.id;
+      if (musicAudioRef.current) {
+        musicAudioRef.current.currentTime = 0;
+      }
+    }
+  }, [currentSong?.id]);
+
+  // Auto-pausa de la música si alguien pulsa el buzzer en el móvil (solo mientras la canción no esté resuelta)
+  useEffect(() => {
+    if (buzzerLocked && musicPlaying && !musicRevealed) {
+      setMusicPlaying(false);
+      if (musicAudioRef.current) {
+        musicAudioRef.current.pause();
+      }
+    }
+  }, [buzzerLocked, musicPlaying, musicRevealed]);
+
+  // Manejo del elemento de audio HTML5 según musicPlaying
+  useEffect(() => {
+    if (!musicAudioRef.current) return;
+    // Si la canción está revelada (acierto validado por el host), suena la música para celebrar
+    const shouldPlay = musicPlaying && (!buzzerLocked || musicRevealed);
+    if (shouldPlay) {
+      musicAudioRef.current.play().catch((err) => {
+        console.warn('Auto-play bloqueado o error en preview:', err);
+      });
+    } else {
+      musicAudioRef.current.pause();
+    }
+  }, [musicPlaying, currentSong, buzzerLocked, musicRevealed]);
+
   // Estados de Capitanes
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
   const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
@@ -240,6 +288,7 @@ export default function TvView() {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
         resetBuzzer();
         setTimerSeconds(null);
+        setMusicPlaying(false);
       } else if (event.type === 'SWITCH_GAME') {
         setRoom((prev) => ({
           ...prev,
@@ -249,10 +298,20 @@ export default function TvView() {
         }));
         resetBuzzer();
         setTimerSeconds(null);
+        setMusicPlaying(false);
       } else if (event.type === 'ROOM_UPDATE') {
         setRoom((prev) => ({ ...prev, ...event.payload }));
       } else if (event.type === 'TEAMS_UPDATE') {
         setTeams(event.payload);
+      } else if (event.type === 'MUSIC_STATE_UPDATE') {
+        setMusicPlaying(event.payload.isPlaying);
+        setMusicRevealed(event.payload.isRevealed);
+        if (event.payload.trackData !== undefined) {
+          setRemoteMusicTrack(event.payload.trackData || null);
+        }
+        if (event.payload.isRevealed) {
+          triggerVictoryConfetti();
+        }
       } else if (event.type === 'MOVIE_STATE_UPDATE') {
         setMovieIndex(event.payload.movieIndex);
         setMovieFrameLevel(event.payload.frameLevel);
@@ -965,6 +1024,254 @@ export default function TvView() {
                     )}
                   </AnimatePresence>
                 </div>
+              ) : activeGame.id === 'music' ? (
+                /* ESCENARIO ESPECIAL ADIVINA LA CANCIÓN */
+                currentSong ? (
+                  <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+                    <audio
+                      ref={musicAudioRef}
+                      src={currentSong.previewUrl}
+                      preload="auto"
+                      onEnded={() => setMusicPlaying(false)}
+                    />
+
+                  <div className="w-full bg-slate-900/90 border-2 border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                    {/* Glows ambientales */}
+                    <div className="absolute -top-24 left-1/4 w-96 h-48 bg-pink-500/20 blur-[100px] pointer-events-none" />
+                    <div className="absolute -bottom-24 right-1/4 w-96 h-48 bg-cyan-500/20 blur-[100px] pointer-events-none" />
+
+                    {/* Cabecera: Categoría, Ronda y Estado de Audio */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 z-20 relative">
+                      <div className="bg-slate-950/80 backdrop-blur-md border border-emerald-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-emerald-300 shadow-lg">
+                        <Disc className="w-4 h-4 text-emerald-400 animate-spin" style={{ animationDuration: '3s' }} />
+                        <span>ADIVINA EL TEMAZO</span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-white/90 font-bold">Spotify</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {musicPlaying && !buzzerLocked ? (
+                          <div className="bg-emerald-500/20 border border-emerald-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-emerald-300 shadow-lg">
+                            <Volume2 className="w-4 h-4 animate-pulse text-emerald-400" />
+                            <span>SONANDO PREVIEW (30s)</span>
+                          </div>
+                        ) : (
+                          <div className="bg-slate-800/80 border border-slate-700 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-slate-300 shadow-lg">
+                            <VolumeX className="w-4 h-4 text-slate-400" />
+                            <span>EN PAUSA</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ESCENARIO DEL DISCO DE VINILO Y CARÁTULA MISTERIOSA */}
+                    <div className="relative flex flex-col md:flex-row items-center justify-center gap-8 py-6 px-4 my-2 bg-slate-950/70 border-2 border-slate-800/80 rounded-3xl shadow-inner backdrop-blur-md min-h-[320px]">
+                      
+                      {/* DISCO DE VINILO 3D GIRATORIO */}
+                      <div className="relative shrink-0">
+                        <motion.div
+                          animate={{
+                            rotate: musicPlaying && !buzzerLocked ? 360 : 0,
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 2.5,
+                            ease: 'linear',
+                          }}
+                          className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-slate-950 via-slate-900 to-zinc-900 border-4 border-slate-700/80 shadow-[0_0_35px_rgba(0,0,0,0.8)] relative flex items-center justify-center"
+                        >
+                          {/* Ranuras concéntricas del vinilo */}
+                          <div className="absolute inset-2 rounded-full border border-slate-800/80" />
+                          <div className="absolute inset-5 rounded-full border border-slate-700/50" />
+                          <div className="absolute inset-9 rounded-full border border-slate-800/80" />
+                          <div className="absolute inset-14 rounded-full border border-slate-700/40" />
+
+                          {/* Reflejo de luz en el vinilo */}
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none" />
+
+                          {/* Galleta central del vinilo con logo/arte */}
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 border-2 border-white/20 flex items-center justify-center shadow-lg relative overflow-hidden">
+                            {musicRevealed && (currentSong.coverUrl || currentSong.albumArt) ? (
+                              <img
+                                src={currentSong.coverUrl || currentSong.albumArt}
+                                alt={currentSong.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Music className="w-7 h-7 text-white drop-shadow" />
+                            )}
+                            {/* Agujero central */}
+                            <div className="absolute w-4 h-4 rounded-full bg-black border border-white/20" />
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      {/* CARÁTULA MISTERIOSA O REVELADA */}
+                      <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left max-w-md">
+                        <AnimatePresence mode="wait">
+                          {!musicRevealed ? (
+                            <motion.div
+                              key="hidden-music"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9 }}
+                              className="w-full"
+                            >
+                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 text-pink-300 text-xs font-bold uppercase tracking-wider mb-2 border border-pink-500/30">
+                                🎧 PISTA DE AUDIO
+                              </div>
+                              <h3 className="text-2xl sm:text-3xl font-black font-arcade text-white tracking-wide">
+                                ¿QUÉ CANCIÓN ES?
+                              </h3>
+                              <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                                ¡El primer concursante en presionar el pulsador responderá con el Título, Artista o Ambos!
+                              </p>
+
+                              {/* BARRAS DE ECUALIZADOR DINÁMICAS */}
+                              <div className="flex items-end justify-center md:justify-start gap-1.5 h-12 mt-5">
+                                {[35, 60, 20, 85, 45, 95, 30, 75, 50, 90, 40, 65].map((height, i) => (
+                                  <motion.div
+                                    key={i}
+                                    animate={{
+                                      height:
+                                        musicPlaying && !buzzerLocked
+                                          ? [`${(height % 30) + 15}%`, `${height}%`, `${(height % 40) + 20}%`]
+                                          : '12%',
+                                    }}
+                                    transition={{
+                                      repeat: Infinity,
+                                      duration: 0.4 + (i % 4) * 0.1,
+                                      ease: 'easeInOut',
+                                    }}
+                                    className="w-2 sm:w-2.5 rounded-full bg-gradient-to-t from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_8px_rgba(236,72,153,0.5)]"
+                                  />
+                                ))}
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="revealed-music"
+                              initial={{ opacity: 0, scale: 0.85 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="w-full flex flex-col sm:flex-row items-center gap-4 bg-slate-900/90 border border-pink-500/40 p-4 rounded-2xl shadow-[0_0_30px_rgba(236,72,153,0.3)]"
+                            >
+                              {(currentSong.coverUrl || currentSong.albumArt) && (
+                                <img
+                                  src={currentSong.coverUrl || currentSong.albumArt}
+                                  alt={currentSong.title}
+                                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover shadow-2xl border-2 border-pink-400 shrink-0"
+                                />
+                              )}
+                              <div>
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-black uppercase tracking-wider mb-1 border border-pink-500/40">
+                                  🎉 ¡CANCIÓN REVELADA!
+                                </div>
+                                <h4 className="text-xl sm:text-2xl font-black text-white drop-shadow leading-tight">
+                                  {currentSong.title}
+                                </h4>
+                                <p className="text-base sm:text-lg font-bold text-amber-300 mt-0.5">
+                                  {currentSong.artist}
+                                </p>
+                                <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                                  {currentSong.year ? (
+                                    <span className="bg-slate-800 px-2 py-0.5 rounded-md font-mono text-slate-300">
+                                      Año {currentSong.year}
+                                    </span>
+                                  ) : null}
+                                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                                    🟢 Spotify Track
+                                  </span>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+
+                    {/* OVERLAY DEL BUZZER CUANDO ALGUIEN PULSA EN MODO MÚSICA */}
+                    <AnimatePresence>
+                      {buzzerLocked && buzzerWinner && (() => {
+                        const winnerPlayer = players.find((p) => p.id === buzzerWinner.playerId || p.nickname === buzzerWinner.playerName);
+                        const winnerSeed = buzzerWinner.avatarSeed || winnerPlayer?.avatar_seed || buzzerWinner.playerName;
+                        const winnerStyle = (buzzerWinner.avatarStyle || winnerPlayer?.avatar_style || 'avataaars') as DiceBearStyle;
+                        const winnerEmoji = buzzerWinner.badgeEmoji || winnerPlayer?.badge_emoji;
+
+                        return (
+                          <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 20, opacity: 0 }}
+                            className="mt-4 w-full bg-slate-900/95 border-2 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3"
+                            style={{ borderColor: buzzerWinner.teamColorHex }}
+                          >
+                            <div className="flex items-center gap-3 text-left">
+                              <div className="relative shrink-0">
+                                <div
+                                  className="w-14 h-14 rounded-2xl bg-slate-950 border-2 flex items-center justify-center overflow-hidden shadow-lg p-0.5"
+                                  style={{ borderColor: buzzerWinner.teamColorHex }}
+                                >
+                                  <img
+                                    src={generateAvatarDataUri(winnerSeed, winnerStyle)}
+                                    alt={buzzerWinner.playerName}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                {winnerEmoji && (
+                                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow">
+                                    <TwemojiText className="text-xs">{winnerEmoji}</TwemojiText>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
+                                  ¡HA PULSADO PRIMERO! (Música Pausada)
+                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-lg font-black text-white">
+                                    {buzzerWinner.playerName}{' '}
+                                    <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
+                                  </span>
+                                  {isWinnerCaptain && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black">
+                                      <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Indicador pasivo en la TV sin botones */}
+                            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs font-bold text-amber-300 w-full">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                              <span>Esperando veredicto del Anfitrión en su mando...</span>
+                            </div>
+                          </motion.div>
+                        );
+                      })()}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              ) : (
+                  <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
+                    <div className="w-full bg-slate-900/90 border-2 border-emerald-500/30 rounded-3xl p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl text-center">
+                      <div className="w-24 h-24 mx-auto rounded-3xl bg-emerald-500/10 border-2 border-emerald-400/40 flex items-center justify-center animate-pulse mb-5 shadow-[0_0_35px_rgba(16,185,129,0.3)]">
+                        <Music className="w-12 h-12 text-emerald-400" />
+                      </div>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider mb-3 border border-emerald-500/30">
+                        🟢 Catálogo Oficial de Spotify
+                      </div>
+                      <h2 className="text-3xl sm:text-4xl font-black font-arcade text-white tracking-wide">
+                        ESPERANDO TEMAZO DE SPOTIFY...
+                      </h2>
+                      <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+                        El anfitrión está seleccionando temazos o importando una playlist desde Spotify en su mando.
+                      </p>
+                    </div>
+                  </div>
+                )
               ) : (
                 /* VISTA CLÁSICA PARA ADIVINA LA CANCIÓN Y TRIVIAL */
                 <AnimatePresence mode="wait">

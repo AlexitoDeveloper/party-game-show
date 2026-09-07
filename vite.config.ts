@@ -11,6 +11,29 @@ function partyRelayPlugin(): Plugin {
         // Retransmitir el evento a todos los navegadores y móviles conectados
         server.ws.send('party-event', data);
       });
+
+      // Endpoint para extraer el preview oficial de Spotify CDN (p.scdn.co) sin bloqueos CORS del navegador
+      server.middlewares.use('/api/spotify-preview', async (req, res) => {
+        const url = new URL(req.url || '', 'http://localhost');
+        const trackId = url.pathname.replace(/^\//, '');
+        if (!trackId) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: 'Falta trackId' }));
+          return;
+        }
+        try {
+          const embedRes = await fetch(`https://open.spotify.com/embed/track/${trackId}`);
+          const text = await embedRes.text();
+          const jsonMatch = text.match(/"audioPreview":\{"url":"([^"]+)"\}/);
+          const cdnMatch = text.match(/https:\/\/p\.scdn\.co\/mp3-preview\/[a-zA-Z0-9]+/);
+          const previewUrl = jsonMatch && jsonMatch[1] ? jsonMatch[1].replace(/\\u0026/g, '&') : cdnMatch ? cdnMatch[0] : '';
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ previewUrl }));
+        } catch (err) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
     },
   };
 }

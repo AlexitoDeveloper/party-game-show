@@ -36,6 +36,15 @@ import {
   Star,
   ShieldAlert,
   Volume2,
+  VolumeX,
+  Music,
+  Disc,
+  Pause,
+  Search,
+  Loader2,
+  ListMusic,
+  Shuffle,
+  Trash2,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { soundFX } from '../lib/audio';
@@ -46,6 +55,8 @@ import { RoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition, ScoringOption } from '../lib/games';
 import { MOVIES_DATABASE, DEV_MOCK_MOVIES, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
+import { SongTrack } from '../lib/musicData';
+import { searchSpotifyTracks, fetchSpotifyPlaylistTracks } from '../lib/spotify';
 import {
   PowerCardsState,
   PowerCard,
@@ -343,6 +354,176 @@ export default function HostView() {
   };
 
   // ==========================================================================
+  // 🎵 ADIVINA LA CANCIÓN - 100% CONTROL SPOTIFY
+  // ==========================================================================
+  const [musicBank, setMusicBank] = useState<SongTrack[]>(() => {
+    const saved = localStorage.getItem(`party_music_bank_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return [];
+  });
+  const [currentSongTrack, setCurrentSongTrack] = useState<SongTrack | null>(() => {
+    const saved = localStorage.getItem(`party_current_song_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return null;
+  });
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [musicRevealed, setMusicRevealed] = useState(false);
+  const [musicSearchQuery, setMusicSearchQuery] = useState('');
+  const [musicSearchResults, setMusicSearchResults] = useState<SongTrack[]>([]);
+  const [isSearchingMusic, setIsSearchingMusic] = useState(false);
+  const [spotifyPlaylistInput, setSpotifyPlaylistInput] = useState('');
+  const [isImportingPlaylist, setIsImportingPlaylist] = useState(false);
+  const [musicSearchMode, setMusicSearchMode] = useState<'search' | 'playlist' | 'bank'>('search');
+
+  const syncMusicState = (
+    playing: boolean,
+    revealed: boolean,
+    trackData?: SongTrack | null
+  ) => {
+    const song = trackData !== undefined ? trackData : currentSongTrack;
+    roomSync.broadcast({
+      type: 'MUSIC_STATE_UPDATE',
+      payload: {
+        trackIndex: 0,
+        isPlaying: playing,
+        isRevealed: revealed,
+        trackData: song || undefined,
+      },
+    });
+  };
+
+  // Auto-pausar la música en el Host si alguien pulsa el buzzer en el móvil (solo si aún no está revelada)
+  useEffect(() => {
+    if (isLocked && musicPlaying && !musicRevealed) {
+      setMusicPlaying(false);
+      syncMusicState(false, musicRevealed);
+    }
+  }, [isLocked, musicRevealed]);
+
+  const handleTogglePlayMusic = () => {
+    const nextPlaying = !musicPlaying;
+    setMusicPlaying(nextPlaying);
+    syncMusicState(nextPlaying, musicRevealed);
+  };
+
+  const handleToggleRevealMusic = () => {
+    const nextRevealed = !musicRevealed;
+    setMusicRevealed(nextRevealed);
+    syncMusicState(musicPlaying, nextRevealed);
+  };
+
+  const handleSelectSong = (track: SongTrack, autoPlay: boolean = true) => {
+    setCurrentSongTrack(track);
+    localStorage.setItem(`party_current_song_${roomCode}`, JSON.stringify(track));
+    const exists = musicBank.some((s) => s.id === track.id);
+    if (!exists) {
+      const updatedBank = [track, ...musicBank];
+      setMusicBank(updatedBank);
+      localStorage.setItem(`party_music_bank_${roomCode}`, JSON.stringify(updatedBank));
+    }
+    setMusicPlaying(autoPlay);
+    setMusicRevealed(false);
+    resetBuzzer();
+    syncMusicState(autoPlay, false, track);
+  };
+
+  const handlePickRandomSong = () => {
+    if (musicBank.length === 0) return;
+    const candidates = musicBank.length > 1 && currentSongTrack
+      ? musicBank.filter((t) => t.id !== currentSongTrack.id)
+      : musicBank;
+    const randomTrack = candidates[Math.floor(Math.random() * candidates.length)];
+    handleSelectSong(randomTrack, true);
+  };
+
+  const handleRemoveTrackFromBank = (trackId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const updated = musicBank.filter((t) => t.id !== trackId);
+    setMusicBank(updated);
+    localStorage.setItem(`party_music_bank_${roomCode}`, JSON.stringify(updated));
+    if (currentSongTrack?.id === trackId) {
+      const nextSong = updated[0] || null;
+      setCurrentSongTrack(nextSong);
+      if (nextSong) {
+        localStorage.setItem(`party_current_song_${roomCode}`, JSON.stringify(nextSong));
+      } else {
+        localStorage.removeItem(`party_current_song_${roomCode}`);
+      }
+      setMusicPlaying(false);
+      setMusicRevealed(false);
+      resetBuzzer();
+      syncMusicState(false, false, nextSong);
+    }
+  };
+
+  const handleClearMusicBank = () => {
+    if (!confirm('¿Seguro que deseas vaciar las canciones cargadas?')) return;
+    setMusicBank([]);
+    setCurrentSongTrack(null);
+    localStorage.removeItem(`party_music_bank_${roomCode}`);
+    localStorage.removeItem(`party_current_song_${roomCode}`);
+    setMusicPlaying(false);
+    setMusicRevealed(false);
+    resetBuzzer();
+    syncMusicState(false, false, null);
+  };
+
+  const handleSearchMusicOnline = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!musicSearchQuery.trim()) return;
+    setIsSearchingMusic(true);
+    try {
+      const results = await searchSpotifyTracks(musicSearchQuery.trim());
+      setMusicSearchResults(results);
+    } catch (err) {
+      console.error('Error al buscar temas en Spotify:', err);
+    } finally {
+      setIsSearchingMusic(false);
+    }
+  };
+
+  const handleImportPlaylistFromSpotify = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!spotifyPlaylistInput.trim()) return;
+    setIsImportingPlaylist(true);
+    try {
+      const { tracks, playlistName } = await fetchSpotifyPlaylistTracks(spotifyPlaylistInput.trim(), 'Spotify');
+      if (tracks.length === 0) {
+        alert('No se encontraron canciones con preview disponible en esa playlist de Spotify.');
+        return;
+      }
+      const existingIds = new Set(musicBank.map((s) => s.id));
+      const newTracks = tracks.filter((t) => !existingIds.has(t.id));
+      const updatedBank = [...newTracks, ...musicBank];
+      setMusicBank(updatedBank);
+      localStorage.setItem(`party_music_bank_${roomCode}`, JSON.stringify(updatedBank));
+      
+      if (!currentSongTrack && updatedBank.length > 0) {
+        setCurrentSongTrack(updatedBank[0]);
+        localStorage.setItem(`party_current_song_${roomCode}`, JSON.stringify(updatedBank[0]));
+        syncMusicState(false, false, updatedBank[0]);
+      }
+      setSpotifyPlaylistInput('');
+      setMusicSearchMode('bank');
+      alert(`🎉 ¡Se han importado ${newTracks.length} canciones oficiales de Spotify de la playlist "${playlistName}"!`);
+    } catch (err: any) {
+      alert(`Error al importar playlist de Spotify: ${err.message || err}`);
+    } finally {
+      setIsImportingPlaylist(false);
+    }
+  };
+
+  const handleSelectSearchedTrack = (track: SongTrack) => {
+    handleSelectSong(track, true);
+    setMusicSearchResults([]);
+    setMusicSearchQuery('');
+  };
+
+  // ==========================================================================
   // 🃏 SISTEMA DE CARTAS DE PODER (ESTADO Y HANDLERS)
   // ==========================================================================
   const [powerCards, setPowerCards] = useState<PowerCardsState>(() => {
@@ -590,6 +771,9 @@ export default function HostView() {
         if (captainDuel) {
           roomSync.broadcast({ type: 'CAPTAIN_DUEL_STATE', payload: captainDuel });
         }
+        if (room.active_game_id === 'music') {
+          syncMusicState(musicPlaying, musicRevealed);
+        }
       } else if (event.type === 'PLAYER_UPDATED') {
         setPlayers((prev) => {
           const exists = prev.some((p) => p.id === event.payload.id);
@@ -766,9 +950,29 @@ export default function HostView() {
 
     handleScoreChange(targetTeamId, option.delta);
 
-    // Si había un buzzer activo, resetearlo tras emitir veredicto
-    if (isLocked) {
-      resetBuzzer();
+    // LÓGICA AUTOMÁTICA PARA ADIVINA LA CANCIÓN:
+    if (room.active_game_id === 'music') {
+      if (option.delta > 0) {
+        // 1. ACIERTO: Revelar la canción en la TV y reproducir el preview en celebración
+        setMusicRevealed(true);
+        setMusicPlaying(true);
+        if (isLocked) {
+          resetBuzzer();
+        }
+        syncMusicState(true, true);
+      } else {
+        // 2. FALLO (o pasa): Reanudar el preview desde donde se pausó para que sigan jugando
+        setMusicPlaying(true);
+        if (isLocked) {
+          resetBuzzer();
+        }
+        syncMusicState(true, false);
+      }
+    } else {
+      // Si había un buzzer activo en otros juegos, resetearlo tras emitir veredicto
+      if (isLocked) {
+        resetBuzzer();
+      }
     }
   };
 
@@ -1100,7 +1304,13 @@ export default function HostView() {
               </div>
 
               <button
-                onClick={resetBuzzer}
+                onClick={() => {
+                  resetBuzzer();
+                  if (room.active_game_id === 'music' && !musicRevealed) {
+                    setMusicPlaying(true);
+                    syncMusicState(true, false);
+                  }
+                }}
                 className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Desbloquear Pulsador
@@ -1148,6 +1358,366 @@ export default function HostView() {
               })}
             </div>
           </div>
+
+          {/* CONTROLES ESPECÍFICOS PARA ADIVINA LA CANCIÓN (100% SPOTIFY) */}
+          {room.active_game_id === 'music' && (
+            <div className="pt-4 border-t border-slate-800 space-y-4">
+              {/* BARRA SUPERIOR SPOTIFY CON BOTÓN ALEATORIO */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                    <Disc className="w-4 h-4 text-emerald-400 animate-spin" style={{ animationDuration: '4s' }} />
+                    Adivina la Canción — Spotify
+                  </span>
+                </div>
+
+                {musicBank.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePickRandomSong}
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                      title="Elegir una canción aleatoria de la lista cargada"
+                    >
+                      <Shuffle className="w-3.5 h-3.5" />
+                      <span>🎲 Temazo Aleatorio</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN CON SOLUCIÓN Y CONTROL DE AUDIO */}
+              {currentSongTrack ? (
+                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                  {/* Miniatura previa de la carátula */}
+                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-emerald-500/50 flex-shrink-0 flex items-center justify-center relative shadow-md">
+                    {(currentSongTrack.coverUrl || currentSongTrack.albumArt) ? (
+                      <img
+                        src={currentSongTrack.coverUrl || currentSongTrack.albumArt}
+                        alt={currentSongTrack.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Music className="w-8 h-8 text-emerald-400" />
+                    )}
+                    {musicPlaying && (
+                      <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center backdrop-blur-[1px]">
+                        <Volume2 className="w-7 h-7 text-white animate-bounce" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Información secreta para el presentador */}
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        🟢 Spotify Track {currentSongTrack.year ? `• Año ${currentSongTrack.year}` : ''}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                        Preview Oficial 30s
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                        SOLUCIÓN SECRETA (CANCIÓN & ARTISTA):
+                      </span>
+                      <h3 className="text-xl font-black text-white flex items-center gap-2">
+                        <span>{currentSongTrack.title}</span>
+                        <span className="text-emerald-400 text-base font-bold">— {currentSongTrack.artist}</span>
+                      </h3>
+                    </div>
+
+                    <p className="text-xs text-slate-400">
+                      💡 <span className="text-slate-300 font-medium">Instrucciones:</span> Dale a <strong>"Reproducir Preview"</strong> para que suene en la TV. Si alguien pulsa, se pausará automáticamente para responder.
+                    </p>
+                  </div>
+
+                  {/* Botones de acción principales: Reproducir/Pausar + Revelar */}
+                  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto">
+                    <button
+                      onClick={handleTogglePlayMusic}
+                      className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
+                        musicPlaying
+                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
+                          : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                      }`}
+                    >
+                      {musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+                      <span>{musicPlaying ? 'Pausar Audio en TV' : 'Reproducir Preview'}</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleRevealMusic}
+                      className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                        musicRevealed
+                          ? 'bg-purple-600 hover:bg-purple-500 text-white'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      }`}
+                    >
+                      {musicRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span>{musicRevealed ? 'Ocultar en TV' : '¡Revelar en TV!'}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-950/80 border border-emerald-500/20 border-dashed rounded-2xl p-6 text-center space-y-2">
+                  <Music className="w-10 h-10 text-emerald-400 mx-auto animate-pulse" />
+                  <h3 className="text-base font-black text-white">No hay ninguna canción de Spotify seleccionada</h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Busca un tema abajo en el catálogo de Spotify o introduce el enlace de una playlist pública para empezar la partida musical.
+                  </p>
+                </div>
+              )}
+
+              {/* INTEGRACIÓN OFICIAL SPOTIFY: BUSCADOR, PLAYLISTS Y BIBLIOTECA */}
+              <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                      🟢 Spotify Developer API Conectada
+                    </span>
+                  </div>
+
+                  {/* Selector de modo: Buscar canción vs Importar Playlist vs Biblioteca */}
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setMusicSearchMode('search')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        musicSearchMode === 'search'
+                          ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Buscar Temazo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMusicSearchMode('playlist')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        musicSearchMode === 'playlist'
+                          ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <ListMusic className="w-3.5 h-3.5" />
+                      <span>Importar Playlist</span>
+                    </button>
+                    {musicBank.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setMusicSearchMode('bank')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          musicSearchMode === 'bank'
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <Disc className="w-3.5 h-3.5" />
+                        <span>Cargadas ({musicBank.length})</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {musicSearchMode === 'search' ? (
+                  <>
+                    <form onSubmit={handleSearchMusicOnline} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={musicSearchQuery}
+                        onChange={(e) => setMusicSearchQuery(e.target.value)}
+                        placeholder="Buscar en catálogo Spotify (ej: Despacito, Queen, Rosalía, Shakira, Bon Jovi...)"
+                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSearchingMusic || !musicSearchQuery.trim()}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shrink-0"
+                      >
+                        {isSearchingMusic ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                        <span>Buscar</span>
+                      </button>
+                    </form>
+
+                    {/* RESULTADOS DE BÚSQUEDA DE SPOTIFY */}
+                    {musicSearchResults.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pt-2 border-t border-slate-800/80">
+                        {musicSearchResults.map((track) => (
+                          <div
+                            key={track.id}
+                            onClick={() => handleSelectSearchedTrack(track)}
+                            className="flex items-center gap-3 p-2 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/60 rounded-xl cursor-pointer transition-all group"
+                          >
+                            {(track.coverUrl || track.albumArt) ? (
+                              <img
+                                src={track.coverUrl || track.albumArt}
+                                alt={track.title}
+                                className="w-11 h-11 rounded-lg object-cover border border-slate-700 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-11 h-11 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+                                <Music className="w-5 h-5 text-emerald-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-white truncate group-hover:text-emerald-300">
+                                {track.title}
+                              </p>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {track.artist} {track.year ? `• ${track.year}` : ''}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 shrink-0 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
+                              ¡Poner en TV!
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : musicSearchMode === 'playlist' ? (
+                  /* IMPORTADOR DE PLAYLISTS DE SPOTIFY */
+                  <div className="space-y-3">
+                    <p className="text-xs text-slate-400">
+                      Pega el enlace de cualquier playlist pública de Spotify para importar sus canciones automáticamente:
+                    </p>
+                    <form onSubmit={handleImportPlaylistFromSpotify} className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={spotifyPlaylistInput}
+                        onChange={(e) => setSpotifyPlaylistInput(e.target.value)}
+                        placeholder="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M..."
+                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isImportingPlaylist || !spotifyPlaylistInput.trim()}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-md"
+                      >
+                        {isImportingPlaylist ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListMusic className="w-3.5 h-3.5" />}
+                        <span>{isImportingPlaylist ? 'Importando...' : 'Importar Playlist'}</span>
+                      </button>
+                    </form>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="font-semibold text-slate-300">💡 Playlists populares sugeridas:</span>
+                      <button
+                        type="button"
+                        onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M')}
+                        className="text-emerald-400 hover:underline bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700"
+                      >
+                        Hits 2000s
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva')}
+                        className="text-emerald-400 hover:underline bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700"
+                      >
+                        Pop Español
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd')}
+                        className="text-emerald-400 hover:underline bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700"
+                      >
+                        Rock Clásico
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* LISTA DE CANCIONES CARGADAS EN LA BIBLIOTECA */
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-800 text-xs">
+                      <span className="text-slate-400 font-bold">
+                        Canciones disponibles ({musicBank.length}):
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handlePickRandomSong}
+                          className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+                        >
+                          <Shuffle className="w-3 h-3" />
+                          <span>Aleatoria</span>
+                        </button>
+                        <span className="text-slate-600">•</span>
+                        <button
+                          type="button"
+                          onClick={handleClearMusicBank}
+                          className="text-red-400 hover:text-red-300 font-bold flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Vaciar lista</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pt-1">
+                      {musicBank.map((track) => {
+                        const isCurrent = currentSongTrack?.id === track.id;
+                        return (
+                          <div
+                            key={track.id}
+                            onClick={() => handleSelectSong(track, true)}
+                            className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-all border ${
+                              isCurrent
+                                ? 'bg-emerald-950/60 border-emerald-500 shadow-md ring-1 ring-emerald-500'
+                                : 'bg-slate-950 hover:bg-slate-800/80 border-slate-800'
+                            }`}
+                          >
+                            {(track.coverUrl || track.albumArt) ? (
+                              <img
+                                src={track.coverUrl || track.albumArt}
+                                alt={track.title}
+                                className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+                                <Music className="w-4 h-4 text-emerald-400" />
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-bold truncate ${isCurrent ? 'text-emerald-300' : 'text-white'}`}>
+                                {track.title}
+                              </p>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {track.artist} {track.year ? `• ${track.year}` : ''}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isCurrent ? (
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500 text-slate-950">
+                                  En TV
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 hover:bg-emerald-600 hover:text-white">
+                                  Poner
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => handleRemoveTrackFromBank(track.id, e)}
+                                className="p-1 text-slate-500 hover:text-red-400 rounded-md transition-colors"
+                                title="Eliminar de la lista"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* CONTROLES ESPECÍFICOS PARA ADIVINA LA PELÍCULA CON EMOJIS */}
           {room.active_game_id === 'movies' && (

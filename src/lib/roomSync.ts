@@ -3,6 +3,7 @@ import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, Capta
 import { MovieItem } from './moviesData';
 import { PowerCardsState, PowerCard } from './powerCards';
 import { BabyPhotoItem } from './babyPhotosData';
+import { SongTrack } from './musicData';
 
 export type RoomSyncEvent =
   | { type: 'ROOM_UPDATE'; payload: Partial<Room> }
@@ -17,6 +18,7 @@ export type RoomSyncEvent =
   | { type: 'BUZZER_PRESS'; payload: BuzzerPressPayload }
   | { type: 'BUZZER_LOCKED'; payload: BuzzerPressPayload }
   | { type: 'BUZZER_RESET' }
+  | { type: 'MUSIC_STATE_UPDATE'; payload: { trackIndex: number; isPlaying: boolean; isRevealed: boolean; category?: string; trackData?: SongTrack } }
   | { type: 'MOVIE_STATE_UPDATE'; payload: { movieIndex: number; frameLevel: 1 | 2 | 3 | 4; isRevealed: boolean; categoryFilter?: string; movieData?: MovieItem } }
   | { type: 'POWER_CARDS_STATE_UPDATE'; payload: PowerCardsState }
   | { type: 'POWER_CARD_PLAY_REQUEST'; payload: { sourceTeamId: string; sourceTeamName: string; cardId: string; targetTeamId?: string; targetTeamName?: string; targetPlayerName?: string } }
