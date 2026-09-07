@@ -17,6 +17,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.475.0",
+    "peerjs": "^1.5.5",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-countup": "^6.5.3",

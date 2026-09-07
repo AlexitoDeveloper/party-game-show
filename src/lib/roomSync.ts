@@ -91,6 +91,81 @@ export class RoomSync {
         console.warn('Error inicializando canal de Supabase:', err);
       }
     }
+
+    // 4. Canal WebRTC PeerJS (P2P directo en la nube para Vercel sin necesidad de configurar base de datos)
+    if (typeof window !== 'undefined' && !isSupabaseConfigured) {
+      this.initPeerRelay();
+    }
+  }
+
+  private peer: any = null;
+  private hubConn: any = null;
+  private clientConns: any[] = [];
+  private isHub = false;
+
+  private initPeerRelay() {
+    try {
+      import('peerjs').then(({ Peer }) => {
+        const hubId = `pgs-${this.roomCode.toLowerCase()}-hub`;
+
+        // Intentar registrarse como HUB central de la sala
+        const tryHub = new Peer(hubId);
+
+        tryHub.on('open', () => {
+          this.peer = tryHub;
+          this.isHub = true;
+
+          tryHub.on('connection', (conn: any) => {
+            this.clientConns.push(conn);
+            conn.on('data', (data: any) => {
+              if (data && data.eventId) {
+                const msg = data as RelayMessage;
+                if (msg.senderId !== this.instanceId) {
+                  this.handleIncoming(msg.eventId, msg.event);
+                  // El hub retransmite a los demás clientes conectados
+                  this.clientConns.forEach((c) => {
+                    if (c !== conn && c.open) {
+                      try { c.send(msg); } catch {}
+                    }
+                  });
+                }
+              }
+            });
+            conn.on('close', () => {
+              this.clientConns = this.clientConns.filter((c) => c !== conn);
+            });
+          });
+        });
+
+        tryHub.on('error', (err: any) => {
+          // Si el ID de HUB ya está ocupado (unavailable-id), conectarse como cliente al HUB
+          if (err.type === 'unavailable-id') {
+            tryHub.destroy();
+            const clientPeer = new Peer();
+            this.peer = clientPeer;
+            this.isHub = false;
+
+            clientPeer.on('open', () => {
+              const conn = clientPeer.connect(hubId, { reliable: true });
+              this.hubConn = conn;
+
+              conn.on('data', (data: any) => {
+                if (data && data.eventId) {
+                  const msg = data as RelayMessage;
+                  if (msg.senderId !== this.instanceId) {
+                    this.handleIncoming(msg.eventId, msg.event);
+                  }
+                }
+              });
+
+              conn.on('close', () => {
+                this.hubConn = null;
+              });
+            });
+          }
+        });
+      }).catch((e) => console.warn('PeerJS relay error:', e));
+    } catch {}
   }
 
   onEvent(callback: (event: RoomSyncEvent) => void) {
@@ -159,7 +234,18 @@ export class RoomSync {
       } catch {}
     }
 
-    // 4. Notificar a oyentes locales
+    // 4. Enviar por PeerJS WebRTC P2P si está activo
+    if (this.isHub) {
+      this.clientConns.forEach((c) => {
+        if (c.open) {
+          try { c.send(message); } catch {}
+        }
+      });
+    } else if (this.hubConn && this.hubConn.open) {
+      try { this.hubConn.send(message); } catch {}
+    }
+
+    // 5. Notificar a oyentes locales
     this.notifyListeners(event);
   }
 
@@ -171,6 +257,10 @@ export class RoomSync {
     if (this.supabaseChannel) {
       supabase.removeChannel(this.supabaseChannel);
       this.supabaseChannel = null;
+    }
+    if (this.peer) {
+      try { this.peer.destroy(); } catch {}
+      this.peer = null;
     }
     this.listeners = [];
   }
