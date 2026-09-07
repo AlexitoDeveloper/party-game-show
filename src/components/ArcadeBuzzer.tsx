@@ -85,21 +85,22 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
         <div className="w-full h-full rounded-full bg-slate-950/80 p-2.5 border-2 border-white/10 shadow-inner flex items-center justify-center">
           {/* 3. Botón físico pulsable 3D */}
           <motion.button
+            key={isLocked ? 'buzzer-locked' : 'buzzer-ready'}
             type="button"
-            disabled={isDisabledState}
+            aria-disabled={isDisabledState}
             onPointerDown={handlePointerDown}
             animate={{ y: 0, scale: 1 }}
-            whileTap={!isDisabledState ? { y: 12, scale: 0.95 } : undefined}
-            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-            className={`w-full h-full rounded-full relative overflow-hidden flex flex-col items-center justify-center p-6 border-4 transition-colors duration-200 select-none ${
+            whileTap={!isDisabledState ? { y: 8, scale: 0.96 } : undefined}
+            transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+            className={`w-full h-full rounded-full relative overflow-hidden flex flex-col items-center justify-center p-6 border-4 transition-colors duration-150 select-none ${
               isDisabledState
                 ? 'bg-slate-800 border-slate-700 opacity-60 cursor-not-allowed shadow-none'
-                : `${theme.twBg} border-white/40 cursor-pointer`
+                : `${theme.twBg} border-white/40 cursor-pointer active:translate-y-1`
             }`}
             style={{
               boxShadow: isDisabledState
                 ? 'none'
-                : `0 14px 0 rgba(0, 0, 0, 0.55), 0 20px 25px rgba(0, 0, 0, 0.5), inset 0 2px 6px rgba(255, 255, 255, 0.45)`,
+                : `0 12px 0 rgba(0, 0, 0, 0.55), 0 18px 24px rgba(0, 0, 0, 0.5), inset 0 2px 6px rgba(255, 255, 255, 0.45)`,
             }}
           >
             {/* 4. Reflejo especular cúpula (Dome Specular highlight) */}

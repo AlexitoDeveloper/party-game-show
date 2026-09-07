@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Users,
@@ -51,7 +51,7 @@ import { soundFX } from '../lib/audio';
 import { TEAMS_CATALOG } from '../lib/constants';
 import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
-import { RoomSync } from '../lib/roomSync';
+import { RoomSync, getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition, ScoringOption } from '../lib/games';
 import { MOVIES_DATABASE, DEV_MOCK_MOVIES, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
@@ -145,10 +145,10 @@ export default function HostView() {
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
   const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
 
-  const { resetBuzzer, isLocked, winner } = useBuzzerRace({ roomCode, isHostOrTv: true });
+  // Instancia de sincronización multi-pantalla como anfitrión
+  const roomSync = useMemo(() => getRoomSync(roomCode, 'host'), [roomCode]);
 
-  // Instancia de sincronización multi-pantalla
-  const roomSync = useMemo(() => new RoomSync(roomCode), [roomCode]);
+  const { resetBuzzer, isLocked, winner } = useBuzzerRace({ roomCode, isHostOrTv: true, roomSync });
 
   // Juego activo según el ID seleccionado
   const activeGame: GameDefinition = useMemo(() => {
@@ -776,6 +776,18 @@ export default function HostView() {
     }
   }, [isLocked, winner, teams]);
 
+  // Referencias para que los callbacks de eventos siempre lean el estado actual
+  const roomRef = useRef(room);
+  useEffect(() => { roomRef.current = room; }, [room]);
+  const teamsRef = useRef(teams);
+  useEffect(() => { teamsRef.current = teams; }, [teams]);
+  const playersRef = useRef(players);
+  useEffect(() => { playersRef.current = players; }, [players]);
+  const powerCardsRef = useRef(powerCards);
+  useEffect(() => { powerCardsRef.current = powerCards; }, [powerCards]);
+  const captainDuelRef = useRef(captainDuel);
+  useEffect(() => { captainDuelRef.current = captainDuel; }, [captainDuel]);
+
   // Escuchar eventos de sincronización entrantes
   useEffect(() => {
     roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
@@ -787,6 +799,10 @@ export default function HostView() {
           const updated = exists
             ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
             : [...prev, event.payload];
+          localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
+          setTimeout(() => {
+            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: updated });
+          }, 30);
           return updated;
         });
 
@@ -794,31 +810,32 @@ export default function HostView() {
         roomSync.broadcast({
           type: 'ROOM_UPDATE',
           payload: {
-            status: room.status,
-            current_game: room.current_game,
-            active_game_id: room.active_game_id,
-            active_teams_count: room.active_teams_count,
+            status: roomRef.current.status,
+            current_game: roomRef.current.current_game,
+            active_game_id: roomRef.current.active_game_id,
+            active_teams_count: roomRef.current.active_teams_count,
           },
         });
-        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teams });
+        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
         roomSync.broadcast({
           type: 'ROOM_UPDATE',
           payload: {
-            status: room.status,
-            current_game: room.current_game,
-            active_game_id: room.active_game_id,
-            active_teams_count: room.active_teams_count,
+            status: roomRef.current.status,
+            current_game: roomRef.current.current_game,
+            active_game_id: roomRef.current.active_game_id,
+            active_teams_count: roomRef.current.active_teams_count,
           },
         });
-        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teams });
-        if (powerCards) {
-          roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCards });
+        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+        roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
+        if (powerCardsRef.current) {
+          roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCardsRef.current });
         }
-        if (captainDuel) {
-          roomSync.broadcast({ type: 'CAPTAIN_DUEL_STATE', payload: captainDuel });
+        if (captainDuelRef.current) {
+          roomSync.broadcast({ type: 'CAPTAIN_DUEL_STATE', payload: captainDuelRef.current });
         }
-        if (room.active_game_id === 'music') {
+        if (roomRef.current.active_game_id === 'music') {
           syncMusicState(musicPlaying, musicRevealed);
         }
       } else if (event.type === 'PLAYER_UPDATED') {
@@ -827,6 +844,10 @@ export default function HostView() {
           const updated = exists
             ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
             : [...prev, event.payload];
+          localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
+          setTimeout(() => {
+            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: updated });
+          }, 30);
           return updated;
         });
       } else if (event.type === 'PLAYERS_UPDATE') {
@@ -878,13 +899,14 @@ export default function HostView() {
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
-        roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCards });
+        if (powerCardsRef.current) {
+          roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCardsRef.current });
+        }
       }
     });
 
     return () => {
       unsubscribe();
-      roomSync.destroy();
     };
   }, [roomSync]);
 

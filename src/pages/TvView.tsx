@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,7 +40,7 @@ import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
 import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState } from '../lib/types';
 import { soundFX } from '../lib/audio';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
-import { RoomSync } from '../lib/roomSync';
+import { RoomSync, getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
@@ -129,10 +129,14 @@ export default function TvView() {
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
 
+  // Instancia de sincronización multi-pantalla como pantalla de TV
+  const roomSync = useMemo(() => getRoomSync(roomCode, 'tv'), [roomCode]);
+
   // Hook del motor de carreras con arbitraje en TV
   const { winner: buzzerWinner, isLocked: buzzerLocked, resetBuzzer } = useBuzzerRace({
     roomCode,
     isHostOrTv: true,
+    roomSync,
   });
 
   // Estados de Cartas de Poder
@@ -219,9 +223,6 @@ export default function TvView() {
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
   const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
 
-  // Instancia de sincronización multi-pantalla
-  const roomSync = useMemo(() => new RoomSync(roomCode), [roomCode]);
-
   // Juego activo según ID
   const activeGame: GameDefinition = useMemo(() => {
     const found = GAMES_CATALOG.find((g) => g.id === room.active_game_id);
@@ -248,6 +249,11 @@ export default function TvView() {
   useEffect(() => {
     localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(teams));
   }, [teams, roomCode]);
+
+  const roomRef = useRef(room);
+  useEffect(() => { roomRef.current = room; }, [room]);
+  const teamsRef = useRef(teams);
+  useEffect(() => { teamsRef.current = teams; }, [teams]);
 
   // Sincronización en tiempo real
   useEffect(() => {
@@ -277,13 +283,13 @@ export default function TvView() {
         roomSync.broadcast({
           type: 'ROOM_UPDATE',
           payload: {
-            status: room.status,
-            current_game: room.current_game,
-            active_game_id: room.active_game_id,
-            active_teams_count: room.active_teams_count,
+            status: roomRef.current.status,
+            current_game: roomRef.current.current_game,
+            active_game_id: roomRef.current.active_game_id,
+            active_teams_count: roomRef.current.active_teams_count,
           },
         });
-        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teams });
+        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
         resetBuzzer();
@@ -385,7 +391,6 @@ export default function TvView() {
 
     return () => {
       unsubscribe();
-      roomSync.destroy();
     };
   }, [roomSync, resetBuzzer]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Flame, Zap, Star, Sparkles, Orbit, Sun, Moon, Eye, EyeOff, Radio, Swords, X, Crown, ShieldAlert, Award, UserCheck, Droplets } from 'lucide-react';
@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, TeamCatalogItem } from '../lib/constants';
 import { Team, Player, Room, CaptainGamble, CaptainDuelState, TeamRepresentative } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
-import { RoomSync } from '../lib/roomSync';
+import { RoomSync, getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards';
 import UnoPowerCard, { PowerCardView } from '../components/UnoPowerCard';
@@ -87,14 +87,15 @@ export default function PlayerView() {
   const [isDoubleModalOpen, setIsDoubleModalOpen] = useState(false);
   const [isRepModalOpen, setIsRepModalOpen] = useState(false);
 
+  // Instancia de sincronización multi-pantalla como jugador móvil
+  const roomSync = useMemo(() => getRoomSync(roomCode, 'player'), [roomCode]);
+
   // Hook del motor de carreras para enviar pulsaciones
   const { winner, isLocked, pressBuzzer } = useBuzzerRace({
     roomCode,
     isHostOrTv: false,
+    roomSync,
   });
-
-  // Instancia de sincronización multi-pantalla
-  const roomSync = useMemo(() => new RoomSync(roomCode), [roomCode]);
 
   // Juego activo según catálogo
   const activeGame: GameDefinition = useMemo(() => {
@@ -152,6 +153,12 @@ export default function PlayerView() {
     }
   }, [roomCode, roomSync]);
 
+  // Mantener referencia síncrona del jugador para responder a peticiones de sincronización sin reiniciar listeners
+  const playerRef = useRef<Player | null>(player);
+  useEffect(() => {
+    playerRef.current = player;
+  }, [player]);
+
   // Escuchar eventos de sincronización entrantes
   useEffect(() => {
     const unsubscribe = roomSync.onEvent((event) => {
@@ -186,16 +193,17 @@ export default function PlayerView() {
         setPowerCards(event.payload);
       } else if (event.type === 'PLAYERS_UPDATE') {
         setAllPlayers(event.payload);
-        if (player) {
-          const me = event.payload.find((p) => p.id === player.id);
+        if (playerRef.current) {
+          const me = event.payload.find((p) => p.id === playerRef.current!.id);
           if (me) {
             setPlayer((prev) => (prev ? { ...prev, ...me } : prev));
           }
         }
       } else if (event.type === 'SET_CAPTAIN') {
-        const myTeamId = player?.team_id || (player?.team_index !== undefined && player?.team_index !== null ? `team_${player.team_index}` : null);
-        if (player && (event.payload.teamId === myTeamId || event.payload.teamId === player.team_id)) {
-          const isNowCap = player.id === event.payload.playerId;
+        const curPlayer = playerRef.current;
+        const myTeamId = curPlayer?.team_id || (curPlayer?.team_index !== undefined && curPlayer?.team_index !== null ? `team_${curPlayer.team_index}` : null);
+        if (curPlayer && (event.payload.teamId === myTeamId || event.payload.teamId === curPlayer.team_id)) {
+          const isNowCap = curPlayer.id === event.payload.playerId;
           setPlayer((prev) => (prev ? { ...prev, is_captain: isNowCap } : prev));
         }
         setAllPlayers((prev) =>
@@ -225,17 +233,16 @@ export default function PlayerView() {
         setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
         // La TV o el Host han pedido sincronizar la lista de jugadores
-        if (player) {
-          roomSync.broadcast({ type: 'PLAYER_JOINED', payload: player });
+        if (playerRef.current) {
+          roomSync.broadcast({ type: 'PLAYER_JOINED', payload: playerRef.current });
         }
       }
     });
 
     return () => {
       unsubscribe();
-      roomSync.destroy();
     };
-  }, [roomSync, player]);
+  }, [roomSync]);
 
   // Persistir estado de sala localmente
   useEffect(() => {
@@ -744,8 +751,8 @@ export default function PlayerView() {
                 />
               )}
 
-              {/* ESTADO EN TIEMPO REAL CON ALTURA ESTABLE */}
-              <div className="mt-4 min-h-[2.5rem] flex items-center justify-center text-center px-2">
+              {/* ESTADO EN TIEMPO REAL CON ALTURA FIJA PARA EVITAR DESPLAZAMIENTOS */}
+              <div className="mt-4 h-14 flex items-center justify-center text-center px-2">
                 {isLocked ? (
                   isMeWinner ? (
                     <span className="text-sm font-black text-emerald-400 uppercase tracking-wider block">

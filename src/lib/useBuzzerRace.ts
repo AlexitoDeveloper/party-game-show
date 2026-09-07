@@ -1,20 +1,24 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { RoomSync } from './roomSync';
+import { RoomSync, getRoomSync } from './roomSync';
 import { soundFX } from './audio';
 import { BuzzerPressPayload } from './types';
 
 interface UseBuzzerRaceProps {
   roomCode: string;
   isHostOrTv?: boolean;
+  roomSync?: RoomSync;
 }
 
-export function useBuzzerRace({ roomCode, isHostOrTv = false }: UseBuzzerRaceProps) {
+export function useBuzzerRace({ roomCode, isHostOrTv = false, roomSync: propRoomSync }: UseBuzzerRaceProps) {
   const [winner, setWinner] = useState<BuzzerPressPayload | null>(null);
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const lockRef = useRef<boolean>(false);
 
-  // Instancia de sincronización multi-transporte
-  const roomSync = useMemo(() => new RoomSync(roomCode), [roomCode]);
+  // Instancia de sincronización multi-transporte compartida
+  const roomSync = useMemo(() => {
+    if (propRoomSync) return propRoomSync;
+    return getRoomSync(roomCode, isHostOrTv ? 'host' : 'player');
+  }, [propRoomSync, roomCode, isHostOrTv]);
 
   // Mantener referencia síncrona para resolver condiciones de carrera a nivel de milisegundo
   useEffect(() => {
@@ -63,7 +67,6 @@ export function useBuzzerRace({ roomCode, isHostOrTv = false }: UseBuzzerRacePro
 
     return () => {
       unsubscribe();
-      roomSync.destroy();
     };
   }, [roomSync, isHostOrTv, roomCode]);
 

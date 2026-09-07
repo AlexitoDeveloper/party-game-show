@@ -58,7 +58,7 @@ export const RARITY_WEIGHTS: Record<CardRarity, number> = {
   'Legendaria': 5,  // 5%
 };
 
-// Configuración de estilo visual y metadatos de rareza tipo Everdell
+// Configuración de estilo visual y metadatos de rareza de las cartas
 export const RARITY_METADATA: Record<CardRarity, {
   label: string;
   gemEmoji: string;
