@@ -1,0 +1,13 @@
+# 👶 CARPETA PARA FOTOS DE BEBÉS - JUEGO "FOTOS PROYECTOR"
+
+Puedes colocar aquí los archivos de fotos de los bebés (famosos y participantes):
+Ejemplos de nombres:
+- foto1.jpg
+- foto2.jpg
+- bebe_messi.jpg
+- bebe_alex.jpg
+
+Luego puedes referenciarlas en `src/lib/babyPhotosData.ts` con la ruta:
+`/photos/bebes/foto1.jpg`
+
+O cargarlas interactivamente desde el panel del Anfitrión (Host) durante la partida.

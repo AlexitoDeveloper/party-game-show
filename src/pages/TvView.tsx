@@ -1,0 +1,1316 @@
+import React, { useEffect, useState, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
+import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
+import {
+  Tv2,
+  Users,
+  Sparkles,
+  Trophy,
+  Flame,
+  Timer,
+  RefreshCw,
+  ExternalLink,
+  ArrowLeft,
+  Swords,
+  Layers,
+  Play,
+  Palette,
+  Award,
+  Film,
+  Clapperboard,
+  Zap,
+  Camera,
+  Image as ImageIcon,
+  Crown,
+  Star,
+  ShieldAlert,
+  Moon,
+  Orbit,
+  Sun,
+  Droplets
+} from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
+import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState } from '../lib/types';
+import { soundFX } from '../lib/audio';
+import { useBuzzerRace } from '../lib/useBuzzerRace';
+import { RoomSync } from '../lib/roomSync';
+import { GAMES_CATALOG, GameDefinition } from '../lib/games';
+import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
+import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
+import { PowerCardsState, PowerCard } from '../lib/powerCards';
+import UnoPowerCard from '../components/UnoPowerCard';
+
+export default function TvView() {
+  const { code } = useParams<{ code: string }>();
+  const roomCode = (code || '').toUpperCase();
+
+  const [room, setRoom] = useState<Room>(() => {
+    const saved = localStorage.getItem(`party_room_${roomCode}`);
+    const savedTitle = localStorage.getItem(`party_room_title_${roomCode}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (savedTitle && !parsed.title) parsed.title = savedTitle;
+        return parsed;
+      } catch {}
+    }
+    return {
+      id: 'local_room_' + roomCode,
+      code: roomCode,
+      host_token: 'demo',
+      status: 'lobby',
+      active_teams_count: 5,
+      current_game: 'buzzer',
+      active_game_id: 'music',
+      title: savedTitle || 'GAME SHOW ARENA',
+    };
+  });
+
+  const [teams, setTeams] = useState<Team[]>(() => {
+    const saved = localStorage.getItem(`party_teams_${roomCode}`);
+    if (saved) {
+      try {
+        const parsed: Team[] = JSON.parse(saved);
+        return TEAMS_CATALOG.map((c) => {
+          const existing = parsed.find((p) => p.team_index === c.index);
+          return {
+            id: existing ? existing.id : `team_${c.index}`,
+            room_id: 'local_room_' + roomCode,
+            team_index: c.index,
+            name: c.name,
+            theme: c.theme,
+            color_hex: c.colorHex,
+            color_tw: c.twBg,
+            score: existing ? existing.score : 0,
+            is_active: existing !== undefined ? existing.is_active : c.index <= 5,
+          };
+        });
+      } catch {}
+    }
+    return TEAMS_CATALOG.map((c) => ({
+      id: `team_${c.index}`,
+      room_id: 'local_room_' + roomCode,
+      team_index: c.index,
+      name: c.name,
+      theme: c.theme,
+      color_hex: c.colorHex,
+      color_tw: c.twBg,
+      score: 0,
+      is_active: c.index <= 5,
+    }));
+  });
+
+  const [players, setPlayers] = useState<Player[]>(() => {
+    const saved = localStorage.getItem(`party_players_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return [];
+  });
+
+  const [joinUrl, setJoinUrl] = useState<string>('');
+  const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
+  const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
+
+  // Hook del motor de carreras con arbitraje en TV
+  const { winner: buzzerWinner, isLocked: buzzerLocked, resetBuzzer } = useBuzzerRace({
+    roomCode,
+    isHostOrTv: true,
+  });
+
+  // Estados de Cartas de Poder
+  const [powerCards, setPowerCards] = useState<PowerCardsState | null>(() => {
+    const saved = localStorage.getItem(`party_power_cards_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return null;
+  });
+  const [activeCardAnimation, setActiveCardAnimation] = useState<{
+    type: 'deal' | 'play';
+    teamName: string;
+    card: PowerCard;
+    targetName?: string;
+  } | null>(null);
+
+  // Estados del minijuego de adivinar películas
+  const [movieIndex, setMovieIndex] = useState(0);
+  const [movieFrameLevel, setMovieFrameLevel] = useState<1 | 2 | 3 | 4>(1);
+  const [movieRevealed, setMovieRevealed] = useState(false);
+  const [remoteMovie, setRemoteMovie] = useState<MovieItem | null>(null);
+  const [movieCategoryFilter, setMovieCategoryFilter] = useState<'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror'>('Todos');
+
+  const filteredMovies = useMemo(() => {
+    if (movieCategoryFilter === 'Todos') return MOVIES_DATABASE;
+    return MOVIES_DATABASE.filter((m) => m.category === movieCategoryFilter);
+  }, [movieCategoryFilter]);
+
+  const currentMovie: MovieItem = remoteMovie || filteredMovies[movieIndex % filteredMovies.length] || MOVIES_DATABASE[0];
+
+  // Estados del minijuego de Fotos Proyector (Bebés)
+  const [babyPhotoIndex, setBabyPhotoIndex] = useState(0);
+  const [babyPhotoRevealed, setBabyPhotoRevealed] = useState(false);
+  const [remoteBabyPhoto, setRemoteBabyPhoto] = useState<BabyPhotoItem | null>(null);
+
+  const currentBabyPhoto: BabyPhotoItem =
+    remoteBabyPhoto || DEV_MOCK_BABY_PHOTOS[babyPhotoIndex % DEV_MOCK_BABY_PHOTOS.length] || DEV_MOCK_BABY_PHOTOS[0];
+
+  // Estados de Capitanes
+  const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
+  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
+
+  // Instancia de sincronización multi-pantalla
+  const roomSync = useMemo(() => new RoomSync(roomCode), [roomCode]);
+
+  // Juego activo según ID
+  const activeGame: GameDefinition = useMemo(() => {
+    const found = GAMES_CATALOG.find((g) => g.id === room.active_game_id);
+    return found || GAMES_CATALOG[0];
+  }, [room.active_game_id]);
+
+  // Generar URL completa para el QR
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.origin}/room/${roomCode}/play`;
+      setJoinUrl(url);
+    }
+  }, [roomCode]);
+
+  // Guardar jugadores y estado en localStorage
+  useEffect(() => {
+    localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(players));
+  }, [players, roomCode]);
+
+  useEffect(() => {
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(room));
+  }, [room, roomCode]);
+
+  useEffect(() => {
+    localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(teams));
+  }, [teams, roomCode]);
+
+  // Sincronización en tiempo real
+  useEffect(() => {
+    roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+
+    const unsubscribe = roomSync.onEvent((event) => {
+      if (event.type === 'PLAYER_JOINED') {
+        soundFX.playJoin();
+        setPlayers((prev) => {
+          const exists = prev.some((p) => p.id === event.payload.id);
+          const updated = exists
+            ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
+            : [...prev, event.payload];
+          return updated;
+        });
+      } else if (event.type === 'PLAYER_UPDATED') {
+        setPlayers((prev) => {
+          const exists = prev.some((p) => p.id === event.payload.id);
+          const updated = exists
+            ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
+            : [...prev, event.payload];
+          return updated;
+        });
+      } else if (event.type === 'PLAYERS_UPDATE') {
+        setPlayers(event.payload);
+      } else if (event.type === 'RETURN_TO_LOBBY') {
+        setRoom((prev) => ({ ...prev, status: 'lobby' }));
+        resetBuzzer();
+        setTimerSeconds(null);
+      } else if (event.type === 'SWITCH_GAME') {
+        setRoom((prev) => ({
+          ...prev,
+          status: event.payload.status,
+          current_game: event.payload.current_game,
+          active_game_id: event.payload.game_id || prev.active_game_id,
+        }));
+        resetBuzzer();
+        setTimerSeconds(null);
+      } else if (event.type === 'ROOM_UPDATE') {
+        setRoom((prev) => ({ ...prev, ...event.payload }));
+      } else if (event.type === 'TEAMS_UPDATE') {
+        setTeams(event.payload);
+      } else if (event.type === 'MOVIE_STATE_UPDATE') {
+        setMovieIndex(event.payload.movieIndex);
+        setMovieFrameLevel(event.payload.frameLevel);
+        setMovieRevealed(event.payload.isRevealed);
+        if (event.payload.categoryFilter) {
+          setMovieCategoryFilter(event.payload.categoryFilter as any);
+        }
+        if (event.payload.movieData) {
+          setRemoteMovie(event.payload.movieData);
+        }
+        if (event.payload.isRevealed) {
+          triggerVictoryConfetti();
+        }
+      } else if (event.type === 'POWER_CARDS_STATE_UPDATE') {
+        setPowerCards(event.payload);
+      } else if (event.type === 'POWER_CARD_ANIMATION') {
+        soundFX.playPowerCard();
+        setActiveCardAnimation(event.payload);
+        if (event.payload.type === 'deal') {
+          confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
+        }
+        setTimeout(() => {
+          setActiveCardAnimation((curr) => (curr === event.payload ? null : curr));
+        }, 5500);
+      } else if (event.type === 'BABY_PHOTO_UPDATE') {
+        setBabyPhotoIndex(event.payload.photoIndex);
+        setBabyPhotoRevealed(event.payload.isRevealed);
+        if (event.payload.photoData) {
+          setRemoteBabyPhoto(event.payload.photoData);
+        }
+        if (event.payload.isRevealed) {
+          triggerVictoryConfetti();
+        }
+      } else if (event.type === 'SET_CAPTAIN') {
+        setPlayers((prev) =>
+          prev.map((p) => {
+            if (p.team_id === event.payload.teamId) {
+              return { ...p, is_captain: p.id === event.payload.playerId };
+            }
+            return p;
+          })
+        );
+      } else if (event.type === 'CAPTAIN_DOUBLE_OR_NOTHING') {
+        setCaptainGambles((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
+        soundFX.playPowerCard();
+        confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
+      } else if (event.type === 'CAPTAIN_DUEL_STATE') {
+        setCaptainDuel(event.payload);
+        if (event.payload.isActive) {
+          soundFX.playBuzzer();
+        }
+      } else if (event.type === 'PLAY_SOUND') {
+        soundFX.playSound(event.payload.sound);
+      } else if (event.type === 'LAUNCH_TIMER') {
+        setTimerSeconds(event.payload.seconds);
+      } else if (event.type === 'TRIGGER_CONFETTI') {
+        triggerVictoryConfetti();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      roomSync.destroy();
+    };
+  }, [roomSync, resetBuzzer]);
+
+  const getTvTeamIcon = (teamIndex: number, className = 'w-5 h-5') => {
+    switch (teamIndex) {
+      case 1:
+        // Azul: Agua
+        return <Droplets className={`${className} text-cyan-400 fill-cyan-400/20`} />;
+      case 2:
+        // Rojo: Fuego
+        return <Flame className={`${className} text-red-400 fill-red-400/20`} />;
+      case 3:
+        // Amarillo: Electricidad
+        return <Zap className={`${className} text-yellow-400 fill-yellow-400/20`} />;
+      case 4:
+        // Blanco: Luz
+        return <Sparkles className={`${className} text-slate-100 fill-white/20`} />;
+      case 5:
+        // Negro: Sombra
+        return <Moon className={`${className} text-zinc-300 fill-zinc-300/20`} />;
+      case 6:
+        // Verde: Ácido
+        return <Sparkles className={`${className} text-green-400 fill-green-400/20`} />;
+      case 7:
+        // Morado: Galaxia
+        return <Orbit className={`${className} text-purple-400 fill-purple-400/20`} />;
+      case 8:
+        // Naranja: Magma
+        return <Sun className={`${className} text-orange-400 fill-orange-400/20`} />;
+      default:
+        return <Sparkles className={`${className} text-amber-400`} />;
+    }
+  };
+
+  const getTeamThemeBorderClass = (teamIndex: number) => {
+    switch (teamIndex) {
+      case 1:
+        return 'lobby-border-agua';
+      case 2:
+        return 'lobby-border-fuego';
+      case 3:
+        return 'lobby-border-electricidad';
+      case 4:
+        return 'lobby-border-luz';
+      case 5:
+        return 'lobby-border-sombra';
+      case 6:
+        return 'lobby-border-acido';
+      case 7:
+        return 'lobby-border-galaxia';
+      case 8:
+        return 'lobby-border-magma';
+      default:
+        return 'lobby-border-fuego';
+    }
+  };
+
+  const getTeamThemeBadge = (teamIndex: number) => {
+    switch (teamIndex) {
+      case 1:
+        return { emoji: '💧', label: 'AGUA', color: 'text-cyan-300', bg: 'bg-cyan-950/70 border-cyan-400/40' };
+      case 2:
+        return { emoji: '🔥', label: 'FUEGO', color: 'text-red-300', bg: 'bg-red-950/70 border-red-400/40' };
+      case 3:
+        return { emoji: '⚡', label: 'ELECTRICIDAD', color: 'text-yellow-200', bg: 'bg-yellow-950/70 border-yellow-400/40' };
+      case 4:
+        return { emoji: '✨', label: 'LUZ', color: 'text-slate-100', bg: 'bg-slate-800/80 border-white/50' };
+      case 5:
+        return { emoji: '🌑', label: 'SOMBRA', color: 'text-zinc-200', bg: 'bg-zinc-900/90 border-zinc-500/40' };
+      case 6:
+        return { emoji: '🧪', label: 'ÁCIDO', color: 'text-green-300', bg: 'bg-green-950/70 border-green-400/40' };
+      case 7:
+        return { emoji: '🌌', label: 'GALAXIA', color: 'text-purple-300', bg: 'bg-purple-950/70 border-purple-400/40' };
+      case 8:
+        return { emoji: '🌋', label: 'MAGMA', color: 'text-orange-300', bg: 'bg-orange-950/70 border-orange-400/40' };
+      default:
+        return { emoji: '⭐', label: 'ELEMENTO', color: 'text-amber-300', bg: 'bg-amber-950/70 border-amber-400/40' };
+    }
+  };
+
+  // Temporizador interactivo
+  useEffect(() => {
+    if (timerSeconds === null || timerSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          soundFX.playFail();
+          return 0;
+        }
+        soundFX.playTick(prev <= 5);
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerSeconds]);
+
+  const launchTimer = (seconds: number) => {
+    setTimerSeconds(seconds);
+  };
+
+  const nextChallenge = () => {
+    setCurrentChallengeIndex((prev) => (prev + 1) % SAMPLE_CHALLENGES.length);
+    setTimerSeconds(null);
+  };
+
+  const triggerVictoryConfetti = () => {
+    soundFX.playSuccess();
+    confetti({
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 },
+    });
+  };
+
+  const handleReturnToLobby = () => {
+    setRoom((prev) => ({ ...prev, status: 'lobby' }));
+    roomSync.broadcast({ type: 'RETURN_TO_LOBBY' });
+    if (isSupabaseConfigured) {
+      supabase.from('rooms').update({ status: 'lobby' }).eq('code', roomCode);
+    }
+  };
+
+  // Modificar puntuación desde la TV
+  const handleScoreChange = (teamId: string, delta: number) => {
+    const updated = teams.map((t) =>
+      t.id === teamId ? { ...t, score: Math.max(0, t.score + delta) } : t
+    );
+    setTeams(updated);
+    roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
+    triggerVictoryConfetti();
+    resetBuzzer();
+  };
+
+  const activeTeams = teams.filter((t) => t.is_active);
+  const unassignedPlayers = players.filter(
+    (p) => !p.team_id && (p.team_index === undefined || p.team_index === null)
+  );
+  const winningTeamCatalog = buzzerWinner
+    ? TEAMS_CATALOG.find((c) => c.index === buzzerWinner.teamIndex)
+    : null;
+  const isWinnerCaptain = buzzerWinner
+    ? players.some(
+        (p) =>
+          (p.id === buzzerWinner.playerId || p.nickname === buzzerWinner.playerName) &&
+          p.is_captain
+      )
+    : false;
+  const currentChallenge = SAMPLE_CHALLENGES[currentChallengeIndex];
+
+  return (
+    <main className="min-h-screen w-full bg-slate-950 text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
+      {/* FLASH NEÓN PERIMETRAL A PANTALLA COMPLETA CUANDO SUENA EL BUZZER */}
+      <AnimatePresence>
+        {buzzerLocked && winningTeamCatalog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 pointer-events-none z-50 border-[16px] animate-pulse"
+            style={{
+              borderColor: winningTeamCatalog.colorHex,
+              boxShadow: `inset 0 0 100px ${winningTeamCatalog.colorHex}, 0 0 100px ${winningTeamCatalog.colorHex}`,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* HEADER TV / PROYECTOR */}
+      <header className="flex items-center justify-between border-b border-slate-800/80 pb-4 z-20">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-purple-500/30">
+            <Tv2 className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black font-arcade uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-pink-500 to-purple-400">
+              {room.title || 'GAME SHOW ARENA'}
+            </h1>
+            <p className="text-slate-400 text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              {room.status === 'lobby' ? (
+                <span>Lobby de Convocatoria • Esperando Jugadores</span>
+              ) : (
+                <span className="text-white font-bold flex items-center gap-1.5">
+                  <span>{activeGame.emoji}</span>
+                  <span className="uppercase">{activeGame.title}</span>
+                  <span className="text-xs text-amber-400 font-normal">({activeGame.category})</span>
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* CABECERA PASIVA DE LA TV (SIN BOTONES CLICABLES) */}
+        <div className="flex items-center gap-3">
+          {/* MINI QR EN LA ESQUINA DURANTE LAS PRUEBAS/SHOW */}
+          {room.status !== 'lobby' && joinUrl && (
+            <div className="flex items-center gap-2.5 bg-slate-900/95 border border-slate-700/80 rounded-2xl px-3 py-1.5 shadow-xl backdrop-blur-md">
+              <div className="p-1 bg-white rounded-lg shadow-sm">
+                <QRCodeSVG value={joinUrl} size={42} level="L" />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="text-[9px] uppercase font-black text-amber-400 tracking-wider block">
+                  ¿Reconectar?
+                </span>
+                <span className="text-[11px] font-bold text-slate-200 block">
+                  Escanea el QR
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl px-5 py-2 shadow-2xl backdrop-blur-md">
+            <div className="text-right">
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">SALA</span>
+              <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 justify-end font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> EN VIVO
+              </span>
+            </div>
+            <div className="text-4xl font-black font-mono tracking-widest text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]">
+              {roomCode}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL */}
+      {room.status === 'lobby' ? (
+        /* ================= VISTA LOBBY ================= */
+        <section className="flex-1 grid grid-cols-12 gap-6 my-6 z-10">
+          {/* PANEL QR LATERAL */}
+          <div className="col-span-3 bg-slate-900/60 border border-slate-800 rounded-3xl p-6 flex flex-col items-center justify-between backdrop-blur-xl shadow-2xl">
+            <div className="text-center w-full">
+              <h2 className="text-base font-bold uppercase tracking-wider text-slate-200">Únete con tu Móvil</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Sin apps ni descargas. Solo escanea.</p>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.12)] my-2">
+              {joinUrl ? (
+                <QRCodeSVG value={joinUrl} size={170} level="H" />
+              ) : (
+                <div className="w-[170px] h-[170px] bg-slate-800 animate-pulse rounded-lg" />
+              )}
+            </div>
+
+            {/* CONTADOR DE JUGADORES */}
+            <div className="w-full bg-slate-800/90 rounded-2xl p-3.5 border border-slate-700/60 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Users className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Jugadores</span>
+                  <span className="text-base font-black text-white">{players.length} conectados</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 block uppercase font-bold">Equipos</span>
+                <span className="text-base font-black text-amber-400">{activeTeams.length} / {TEAMS_CATALOG.length}</span>
+              </div>
+            </div>
+
+            {/* JUGADORES ENTRADOS QUE ESTÁN ELIGIENDO BANDO */}
+            {unassignedPlayers.length > 0 && (
+              <div className="w-full bg-amber-500/10 border-2 border-amber-400/30 rounded-2xl p-3 my-2 text-left animate-pulse">
+                <span className="text-[10px] uppercase font-bold text-amber-400 block mb-1">
+                  ⚡ Recién entrados ({unassignedPlayers.length}):
+                </span>
+                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                  {unassignedPlayers.map((p) => (
+                    <span
+                      key={p.id}
+                      className="bg-amber-400/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded-lg text-xs font-bold"
+                    >
+                      {p.nickname}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* COLUMNAS DE EQUIPOS DINÁMICAS (2 A 6) */}
+          <div
+            className="col-span-9 grid gap-4 h-full"
+            style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
+          >
+            {activeTeams.map((team) => {
+              const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+              const themeBorderClass = getTeamThemeBorderClass(team.team_index);
+              const themeBadge = getTeamThemeBadge(team.team_index);
+              const teamMembers = players.filter(
+                (p) =>
+                  (p.team_index !== undefined && p.team_index !== null && p.team_index === team.team_index) ||
+                  p.team_id === team.id ||
+                  p.team_id === `team_${team.team_index}`
+              );
+
+              return (
+                <motion.div
+                  key={team.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`rounded-3xl p-[3.5px] shadow-2xl relative overflow-hidden flex flex-col justify-between transition-all duration-300 ${themeBorderClass}`}
+                >
+                  <div className="bg-slate-950/90 rounded-[21px] p-4 flex flex-col justify-between h-full backdrop-blur-xl relative z-10">
+                    <div>
+                      {/* CABECERA CON ICONO Y NOMBRE COMPLETO DEL EQUIPO (SIN TAG PARA NO RECORTAR TEXTO) */}
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-10 h-10 rounded-2xl bg-slate-900/90 border border-slate-700/60 flex items-center justify-center shadow-md shrink-0`}>
+                            {getTvTeamIcon(team.team_index, 'w-5 h-5')}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider block">
+                              Equipo {team.team_index}
+                            </span>
+                            <h3 className={`text-lg font-black uppercase ${catalog.twText} truncate leading-tight`}>
+                              {team.name}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {/* INDICADOR DISCRETO DEL COLOR */}
+                        <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} ${catalog.index === 5 ? 'border border-zinc-400' : ''} shrink-0`} />
+                      </div>
+
+                      {/* MARCADOR EN GRANDE Y ELEMENTO EN EL LOBBY */}
+                      <div className="my-3 py-2.5 px-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between shadow-inner">
+                        <div>
+                          <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">
+                            PUNTUACIÓN
+                          </span>
+                          <div className="flex items-baseline gap-1.5 mt-0.5">
+                            <span className="text-4xl font-black font-mono text-white leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                              {team.score}
+                            </span>
+                            <span className="text-[11px] font-black text-amber-400 font-arcade">PTS</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] uppercase font-bold text-slate-400 block">Elemento</span>
+                          <span className={`text-xs font-black block truncate max-w-[110px] ${themeBadge.color}`}>
+                            {catalog.emoji} {catalog.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CANTIDAD DE CARTAS DE PODER EN LOBBY (SIN REVELAR CUÁLES SON, MÁXIMO 3) */}
+                      <div className="mb-2 py-1.5 px-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                          <span>🃏 Cartas de Poder:</span>
+                        </span>
+                        <span className="text-xs font-black font-mono text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-lg">
+                          {(powerCards?.teamHands[team.id] || []).length} / 3
+                        </span>
+                      </div>
+
+                      {/* Miembros */}
+                      <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[290px] pr-1">
+                        {teamMembers.map((m) => (
+                          <div
+                            key={m.id}
+                            className={`rounded-xl px-3 py-1.5 text-xs font-bold flex items-center justify-between transition-all ${
+                              m.is_captain
+                                ? 'bg-amber-500/20 border-2 border-amber-400 text-amber-200 shadow-md'
+                                : 'bg-slate-800/90 border border-slate-700/60 text-slate-100'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              {m.is_captain && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 flex-shrink-0" />}
+                              <span className="truncate">{m.nickname}</span>
+                            </div>
+                            {m.is_captain ? (
+                              <span className="text-[9px] font-black uppercase text-amber-300 bg-black/50 px-1.5 py-0.5 rounded border border-amber-400/30">
+                                CAPITÁN
+                              </span>
+                            ) : (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            )}
+                          </div>
+                        ))}
+                        {teamMembers.length === 0 && (
+                          <div className="text-center py-8 text-slate-500 text-xs italic">
+                            Esperando reclutas...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2.5 border-t border-slate-800/80 text-center">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        {teamMembers.length} {teamMembers.length === 1 ? 'jugador' : 'jugadores'}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        /* ================= VISTA ESCENARIO DE JUEGO ================= */
+        <section className="flex-1 flex flex-col justify-center items-center my-4 z-10 w-full max-w-6xl mx-auto">
+          {/* BANNER SUPERIOR CON REGLAS Y PUNTUACIONES DEL JUEGO SELECCIONADO */}
+          <div className="mb-5 flex flex-col md:flex-row items-center justify-between bg-slate-900/90 border border-slate-800 px-6 py-3 rounded-2xl w-full max-w-4xl gap-3 shadow-xl backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{activeGame.emoji}</span>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">
+                  {activeGame.category}
+                </span>
+                <h3 className="text-lg font-black text-white">{activeGame.title}</h3>
+              </div>
+            </div>
+
+            {/* Puntuaciones de este juego proyectadas en TV */}
+            <div className="flex flex-wrap items-center gap-1.5 justify-center md:justify-end">
+              {activeGame.scoringOptions.map((opt) => (
+                <span
+                  key={opt.id}
+                  className="bg-slate-800/90 text-slate-200 text-[11px] font-bold px-2.5 py-1 rounded-xl border border-slate-700 flex items-center gap-1.5"
+                >
+                  <span>{opt.label}</span>
+                  <span className="text-amber-400 font-mono font-black">{opt.badge}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* BANNER MINIDUELO DE CAPITANES (SI ESTÁ ACTIVO) */}
+          {captainDuel?.isActive && (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="mb-4 w-full max-w-4xl bg-gradient-to-r from-red-600 via-amber-600 to-red-600 border-2 border-amber-300 rounded-2xl px-6 py-3.5 text-center shadow-[0_0_35px_rgba(239,68,68,0.5)] flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <Crown className="w-8 h-8 text-amber-300 animate-bounce shrink-0 drop-shadow-md" />
+                <div className="text-left">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-amber-200 block">
+                    ⚔️ DESAFÍO DIRECTO ENTRE LÍDERES
+                  </span>
+                  <h4 className="text-xl font-black text-white uppercase tracking-wider font-arcade drop-shadow-sm">
+                    {captainDuel.title || 'MINIDUELO DE CAPITANES'}
+                  </h4>
+                </div>
+              </div>
+              <div className="bg-slate-950/70 border border-amber-300/40 rounded-xl px-4 py-2 text-right">
+                <span className="text-[10px] text-amber-300 uppercase font-black block">REGLA EXCLUSIVA</span>
+                <span className="text-xs text-white font-bold">Solo pueden pulsar los Capitanes 👑</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* BANNER APUESTAS DOBLE O NADA DE CAPITANES */}
+          {Object.values(captainGambles).length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
+              {Object.values(captainGambles).map((gamble) => (
+                <div
+                  key={gamble.teamId}
+                  className="bg-amber-500/20 border-2 border-amber-400/80 text-amber-200 px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg backdrop-blur-md animate-pulse"
+                >
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span>
+                    ¡Capitán de <strong className="text-white uppercase">{gamble.teamName}</strong> arriesga: DOBLE O NADA (x2 PUNTOS)!
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TIRA DE EFECTOS DE CARTAS DE PODER ACTIVOS */}
+          {powerCards && powerCards.activeEffects.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
+              <span className="text-[10px] uppercase font-black tracking-wider text-amber-400 bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                <Zap className="w-3 h-3" /> Poderes en Juego:
+              </span>
+              {powerCards.activeEffects.map((eff) => {
+                const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
+                const targetTeam = eff.targetTeamId ? activeTeams.find((t) => t.id === eff.targetTeamId) : null;
+                return (
+                  <span
+                    key={eff.id}
+                    className="bg-slate-900/90 border border-amber-400/40 text-xs px-3 py-1 rounded-xl text-slate-200 font-bold flex items-center gap-1.5 shadow-md backdrop-blur-md"
+                  >
+                    <span>{eff.cardEmoji}</span>
+                    <strong className="text-white">{eff.cardName}</strong>
+                    <span className="text-slate-400">({team?.name || eff.sourceTeamName})</span>
+                    {targetTeam && <span className="text-red-400 font-extrabold">➔ {targetTeam.name}</span>}
+                    {eff.targetPlayerName && <span className="text-red-400 font-extrabold">➔ {eff.targetPlayerName}</span>}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* MOTOR A: PULSADOR RÁPIDO (Adivina la Canción & Trivial & Adivina la Película) */}
+          {activeGame.engine === 'buzzer' && (
+            <div className="w-full text-center">
+              {/* VISTA ESPECIAL CINEMATOGRÁFICA PARA ADIVINA LA PELÍCULA CON EMOJIS */}
+              {activeGame.id === 'movies' ? (
+                <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+                  {/* ESCENARIO DE ADIVINANZA CON EMOJIS */}
+                  <div className="relative w-full rounded-3xl overflow-hidden border-4 border-slate-800 shadow-[0_0_60px_rgba(0,0,0,0.9)] bg-gradient-to-b from-slate-900 via-slate-950 to-black p-6 md:p-10 text-center">
+                    {/* Viñeta e iluminación decorativa */}
+                    <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-indigo-500/20 blur-[90px] pointer-events-none" />
+
+                    {/* Cabecera del misterio: Género, Año y Nivel de Pista */}
+                    <div className="flex items-center justify-between mb-8 z-20 relative">
+                      <div className="bg-slate-950/80 backdrop-blur-md border border-amber-400/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-amber-300 shadow-lg">
+                        <Clapperboard className="w-4 h-4 text-amber-400" />
+                        <span>{currentMovie.genreEmoji} {currentMovie.category}</span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-white font-mono">Año {currentMovie.year}</span>
+                      </div>
+
+                      <div className="bg-slate-950/80 backdrop-blur-md border border-indigo-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-slate-200 shadow-lg">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                        <span className="font-mono">
+                          {movieFrameLevel === 1 && '🎯 Pista 1: 2 Emojis (+5 pts)'}
+                          {movieFrameLevel === 2 && '🔍 Pista 2: 4 Emojis (+3 pts)'}
+                          {movieFrameLevel === 3 && '⭐ Pista 3: Todos los Emojis (+1 pt)'}
+                          {movieFrameLevel >= 4 && '💡 Pista 4: + Pista de Texto (+1 pt)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* CONTENEDOR CENTRAL DE EMOJIS GIGANTES */}
+                    <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8 py-8 px-4 my-2 bg-slate-950/70 border-2 border-slate-800/80 rounded-3xl shadow-inner backdrop-blur-md min-h-[160px]">
+                      {(movieFrameLevel === 1
+                        ? currentMovie.emojisStage1
+                        : movieFrameLevel === 2
+                        ? currentMovie.emojisStage2
+                        : currentMovie.emojisFull
+                      ).map((em, idx) => (
+                        <motion.span
+                          key={`${currentMovie.id}_${movieFrameLevel}_${idx}_${em}`}
+                          initial={{ scale: 0, y: 30 }}
+                          animate={{ scale: 1, y: 0 }}
+                          transition={{ delay: idx * 0.08, type: 'spring', stiffness: 280 }}
+                          className="text-6xl sm:text-7xl md:text-8xl select-none filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)] hover:scale-110 transition-transform"
+                        >
+                          {em}
+                        </motion.span>
+                      ))}
+                    </div>
+
+                    {/* PISTA ADICIONAL DE TEXTO (SI SE ACTIVA NIVEL 4) */}
+                    {movieFrameLevel >= 4 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-5 bg-amber-500/10 border border-amber-400/30 rounded-2xl px-5 py-3 text-amber-200 text-xs md:text-sm font-semibold max-w-2xl mx-auto shadow-md"
+                      >
+                        <span className="font-black uppercase tracking-wider text-amber-400 mr-2">Pista Secreta:</span>
+                        "{currentMovie.textHint}"
+                      </motion.div>
+                    )}
+
+                    {/* OVERLAY: REVELADO FINAL DEL TÍTULO DE LA PELÍCULA CON EXPLICACIÓN */}
+                    <AnimatePresence>
+                      {movieRevealed && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center"
+                        >
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-3 border border-amber-500/40">
+                            🎉 ¡PELÍCULA RESUELTA!
+                          </div>
+                          <h2 className="text-4xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-[0_0_35px_rgba(251,191,36,0.6)]">
+                            {currentMovie.title}
+                          </h2>
+                          {currentMovie.originalTitle && currentMovie.originalTitle !== currentMovie.title && (
+                            <p className="text-base text-slate-400 mt-1 italic font-medium">
+                              "{currentMovie.originalTitle}"
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-3 mt-4 text-xs md:text-sm text-slate-300">
+                            <span className="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 font-bold">
+                              Año {currentMovie.year}
+                            </span>
+                            {currentMovie.director && (
+                              <span className="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 font-medium">
+                                Dir: <strong className="text-white">{currentMovie.director}</strong>
+                              </span>
+                            )}
+                            <span className="bg-amber-500/20 text-amber-300 px-3 py-1 rounded-xl border border-amber-500/40 font-bold">
+                              {currentMovie.category}
+                            </span>
+                          </div>
+
+                          {/* Explicación de los emojis */}
+                          <div className="mt-6 bg-slate-900/90 border border-slate-800 px-5 py-3 rounded-2xl max-w-xl text-xs md:text-sm text-slate-300 text-left">
+                            <span className="text-[10px] uppercase font-bold text-amber-400 block mb-1">
+                              Descifrado del Acertijo:
+                            </span>
+                            {currentMovie.explanation}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* OVERLAY DEL BUZZER CUANDO ALGUIEN PULSA EN MODO PELÍCULA */}
+                  <AnimatePresence>
+                    {buzzerLocked && buzzerWinner && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 20, opacity: 0 }}
+                        className="mt-4 w-full bg-slate-900/95 border-2 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3"
+                        style={{ borderColor: buzzerWinner.teamColorHex }}
+                      >
+                        <div className="flex items-center gap-3 text-left">
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shadow-md"
+                            style={{ backgroundColor: buzzerWinner.teamColorHex }}
+                          >
+                            ⚡
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
+                              ¡HA PULSADO PRIMERO!
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-lg font-black text-white">
+                                {buzzerWinner.playerName}{' '}
+                                <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
+                              </span>
+                              {isWinnerCaptain && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black">
+                                  <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Indicador pasivo en la TV sin botones */}
+                        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs font-bold text-amber-300">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                          <span>Esperando veredicto del Anfitrión en su mando...</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : activeGame.id === 'fotos_proyector' ? (
+                /* VISTA CINEMATOGRÁFICA DE FOTOS PROYECTOR (BEBÉS) */
+                <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+                  <div className="w-full bg-slate-900/90 border-2 border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                    {/* Cabecera: Número de foto, categoría y regla anti-infracción */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 z-20 relative">
+                      <div className="bg-slate-950/80 backdrop-blur-md border border-amber-400/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-black text-amber-300 shadow-lg">
+                        <Camera className="w-4 h-4 text-amber-400" />
+                        <span>FOTO {babyPhotoIndex + 1} DE {DEV_MOCK_BABY_PHOTOS.length}</span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-white/80 font-medium">¿Famoso o Concursante? 🕵️</span>
+                      </div>
+
+                      <div className="bg-red-500/20 border border-red-500/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-red-200 shadow-lg">
+                        <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+                        <span>🚫 ¡Si es tu propia foto NO pulses! (−2 pts)</span>
+                      </div>
+                    </div>
+
+                    {/* MARCO DE LA FOTO PROYECTADA */}
+                    <div className="relative flex items-center justify-center min-h-[300px] max-h-[420px] rounded-2xl overflow-hidden bg-black/60 border-4 border-slate-800 shadow-inner p-3">
+                      <motion.img
+                        key={`${currentBabyPhoto.id}_${babyPhotoIndex}`}
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.35 }}
+                        src={currentBabyPhoto.imageUrl}
+                        alt="Foto de Bebé"
+                        className="max-h-[350px] md:max-h-[390px] w-auto max-w-full object-contain rounded-xl shadow-2xl"
+                      />
+
+                      {/* Luz sutil de proyector en la parte superior */}
+                      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-400/10 blur-3xl pointer-events-none" />
+                    </div>
+
+                    {/* OVERLAY: REVELADO DE IDENTIDAD CUANDO EL ANFITRIÓN LO ACTIVA */}
+                    <AnimatePresence>
+                      {babyPhotoRevealed && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center"
+                        >
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-3 border border-amber-500/40">
+                            🎉 ¡IDENTIDAD REVELADA!
+                          </div>
+                          <h2 className="text-4xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-[0_0_35px_rgba(251,191,36,0.6)]">
+                            {currentBabyPhoto.personName}
+                          </h2>
+                          {currentBabyPhoto.ownerPlayerName ? (
+                            <div className="mt-3 inline-block bg-red-500/20 border border-red-500/40 px-4 py-1.5 rounded-xl text-xs font-bold text-red-200">
+                              👤 ¡Foto de <strong className="text-white">{currentBabyPhoto.ownerPlayerName}</strong>! (¡No podía pulsar!)
+                            </div>
+                          ) : null}
+                          {currentBabyPhoto.hint && (
+                            <p className="mt-4 text-xs md:text-sm text-slate-300 italic max-w-md bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800">
+                              💡 Pista: "{currentBabyPhoto.hint}"
+                            </p>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* OVERLAY DEL BUZZER CUANDO ALGUIEN PULSA */}
+                  <AnimatePresence>
+                    {buzzerLocked && buzzerWinner && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 20, opacity: 0 }}
+                        className="mt-4 w-full bg-slate-900/95 border-2 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3"
+                        style={{ borderColor: buzzerWinner.teamColorHex }}
+                      >
+                        <div className="flex items-center gap-3 text-left">
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shadow-md"
+                            style={{ backgroundColor: buzzerWinner.teamColorHex }}
+                          >
+                            ⚡
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
+                              ¡HA PULSADO PRIMERO!
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-lg font-black text-white">
+                                {buzzerWinner.playerName}{' '}
+                                <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
+                              </span>
+                              {isWinnerCaptain && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black">
+                                  <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Indicador pasivo en TV */}
+                        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs font-bold text-amber-300">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                          <span>Esperando veredicto del Anfitrión en su mando...</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                /* VISTA CLÁSICA PARA ADIVINA LA CANCIÓN Y TRIVIAL */
+                <AnimatePresence mode="wait">
+                  {buzzerLocked && buzzerWinner ? (
+                    <motion.div
+                      key="winner"
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      className="p-8 md:p-10 rounded-3xl bg-slate-900/90 border-4 shadow-2xl max-w-2xl mx-auto backdrop-blur-2xl"
+                      style={{ borderColor: buzzerWinner.teamColorHex }}
+                    >
+                      <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-widest text-amber-300 mb-3">
+                        ⚡ ¡TURNO DE RESPUESTA!
+                      </div>
+                      <h2 className="text-5xl md:text-6xl font-black font-arcade uppercase text-white drop-shadow-md flex items-center justify-center gap-3">
+                        <span>{buzzerWinner.playerName}</span>
+                        {isWinnerCaptain && (
+                          <span title="¡Capitán del equipo!" className="inline-flex items-center text-amber-400">
+                            <Crown className="w-10 h-10 md:w-12 md:h-12 fill-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] animate-bounce" />
+                          </span>
+                        )}
+                      </h2>
+                      <p
+                        className="text-2xl md:text-3xl font-black uppercase mt-1"
+                        style={{ color: buzzerWinner.teamColorHex }}
+                      >
+                        {buzzerWinner.teamName}
+                      </p>
+
+                      {/* Indicador pasivo en TV */}
+                      <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                        <span>Esperando veredicto del Anfitrión en su mando...</span>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="waiting"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-12"
+                    >
+                      <div className="w-28 h-28 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-400/40 flex items-center justify-center animate-pulse mb-5">
+                        <Flame className="w-14 h-14 text-amber-400" />
+                      </div>
+                      <h2 className="text-4xl md:text-5xl font-black font-arcade tracking-wider uppercase text-white">
+                        ¡ATENTOS AL PULSADOR!
+                      </h2>
+                      <p className="text-slate-400 text-base mt-2">
+                        El primer equipo en presionar el botón de su móvil responderá.
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
+          )}
+
+          {/* MOTOR B: CADENA / DIBUJAR / RETOS */}
+          {activeGame.engine === 'challenges' && (
+            <div className="w-full text-center max-w-3xl bg-slate-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
+              <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-3">
+                <Palette className="w-4 h-4" /> Cadena de 5 Pasos
+              </div>
+              <h2 className="text-3xl font-black text-white mb-2">
+                Teléfono Descalabrado de Dibujo
+              </h2>
+              <p className="text-xs text-slate-400 max-w-lg mx-auto mb-6">
+                J1 ve palabra y dibuja ➔ J2 adivina ➔ J3 dibuja ➔ J4 adivina ➔ J5 dibuja la obra final.
+              </p>
+
+              {/* Temporizador gigante */}
+              <div className="my-4">
+                <div className={`text-7xl font-black font-mono ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-amber-400'}`}>
+                  {timerSeconds !== null ? `${timerSeconds}s` : '--'}
+                </div>
+              </div>
+
+              <div className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                ⏱️ Tiempo y puntuación controlados en directo por el Anfitrión
+              </div>
+            </div>
+          )}
+
+          {/* MOTOR C: DUELOS & JUEGOS DE MESA (Blackjack, Dominó, Parchís, UNO) */}
+          {activeGame.engine === 'duel' && (
+            <div className="w-full max-w-4xl bg-slate-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider mb-3">
+                <Swords className="w-4 h-4" /> Torneo de Mesa: {activeGame.title}
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black font-arcade uppercase text-white mb-2">
+                CLASIFICACIÓN FINAL
+              </h2>
+              <p className="text-slate-400 text-xs md:text-sm mb-6 max-w-xl mx-auto">
+                {activeGame.description}
+              </p>
+
+              {/* PODIO DE PUNTOS */}
+              <div
+                className="grid gap-3 mb-6"
+                style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
+              >
+                {activeTeams.map((team) => {
+                  const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+                  return (
+                    <div
+                      key={team.id}
+                      className={`p-4 rounded-2xl border-2 ${catalog.twBorder} bg-slate-950/80 flex flex-col justify-between shadow-lg`}
+                    >
+                      <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} mx-auto mb-2`} />
+                      <span className={`text-base font-black uppercase ${catalog.twText}`}>{team.name}</span>
+                      <span className="text-3xl font-black font-mono text-white mt-2">{team.score}</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">puntos</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-400/90 flex items-center justify-center gap-1.5">
+                <Trophy className="w-4 h-4" /> Clasificación y puntos gestionados en directo por el Anfitrión
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* MARCADOR INFERIOR PERMANENTE EN TV (DURANTE LAS PRUEBAS / JUEGOS) */}
+      {room.status !== 'lobby' && (
+        <footer className="border-t border-slate-800/80 pt-4 z-10">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs uppercase font-bold tracking-wider text-slate-400">
+              Marcador General:
+            </span>
+            <div
+              className="flex-1 grid gap-3"
+              style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
+            >
+              {activeTeams.map((team) => {
+                const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+                const teamHand = powerCards?.teamHands[team.id] || [];
+                const hasDouble = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'doble'
+                );
+                const hasBomb = powerCards?.activeEffects.some(
+                  (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
+                );
+
+                const teamCaptain = players.find(
+                  (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
+                );
+                const hasCaptainGamble = !!captainGambles[team.id];
+
+                return (
+                  <div
+                    key={team.id}
+                    className={`bg-slate-900/80 border ${catalog.twBorder} rounded-xl px-3 py-2 flex items-center justify-between gap-2`}
+                  >
+                    <div className="flex flex-col truncate min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        {getTvTeamIcon(team.team_index, 'w-4 h-4 shrink-0')}
+                        <span className={`text-xs font-black uppercase truncate ${catalog.twText}`}>
+                          {team.name}
+                        </span>
+                        {teamHand.length > 0 && (
+                          <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-1.5 py-0.5 rounded-md font-bold font-mono">
+                            🃏{teamHand.length}
+                          </span>
+                        )}
+                        {hasDouble && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-md font-black animate-pulse">
+                            x2
+                          </span>
+                        )}
+                        {hasCaptainGamble && (
+                          <span className="text-[10px] bg-amber-500/25 text-amber-300 border border-amber-400/50 px-1.5 py-0.5 rounded-md font-black animate-bounce flex items-center gap-0.5">
+                            ⭐x2
+                          </span>
+                        )}
+                        {hasBomb && (
+                          <span className="text-[10px] bg-orange-500/20 text-orange-300 border border-orange-500/40 px-1.5 py-0.5 rounded-md font-black animate-bounce">
+                            💣
+                          </span>
+                        )}
+                      </div>
+                      {teamCaptain && (
+                        <span className="text-[10px] text-amber-300/90 font-bold truncate flex items-center gap-1 mt-0.5">
+                          <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />
+                          {teamCaptain.nickname}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm font-black font-mono text-white whitespace-nowrap">
+                      {team.score} pts
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </footer>
+      )}
+
+      {/* MODAL CINEMATOGRÁFICO DE CARTA DE PODER EN TV */}
+      <AnimatePresence>
+        {activeCardAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 select-none"
+          >
+            <div className="relative max-w-sm w-full text-center">
+              {/* Resplandor épico */}
+              <div
+                className="absolute -inset-6 rounded-3xl opacity-60 blur-3xl pointer-events-none transition-all"
+                style={{ backgroundColor: activeCardAnimation.card.glowColorHex }}
+              />
+
+              <div className="relative bg-slate-900/95 border-4 border-amber-400/80 rounded-3xl p-6 shadow-[0_0_80px_rgba(0,0,0,0.9)] space-y-4">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-widest border border-amber-500/40">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>
+                    {activeCardAnimation.type === 'deal' ? '🎁 NUEVA CARTA REPARTIDA' : '⚡ ¡CARTA ACTIVADA!'}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-black text-white font-arcade uppercase">
+                  {activeCardAnimation.teamName}
+                </h3>
+
+                {/* CARTA DE PODER ESTILO UNO EN ESPAÑOL */}
+                <div className="flex justify-center my-3">
+                  <UnoPowerCard card={activeCardAnimation.card} size="lg" />
+                </div>
+
+                {activeCardAnimation.targetName && (
+                  <div className="bg-red-500/20 border border-red-500/40 rounded-xl px-4 py-2 text-xs text-red-200 font-bold">
+                    🎯 Objetivo: <span className="text-white font-black">{activeCardAnimation.targetName}</span>
+                  </div>
+                )}
+
+                {/* Barra de progreso de auto-cierre */}
+                <div className="w-full bg-slate-800 rounded-full h-1 overflow-hidden mt-3">
+                  <motion.div
+                    initial={{ width: '100%' }}
+                    animate={{ width: '0%' }}
+                    transition={{ duration: 5.5, ease: 'linear' }}
+                    className="bg-amber-400 h-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </main>
+  );
+}
