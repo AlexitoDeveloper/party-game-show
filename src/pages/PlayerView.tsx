@@ -1174,11 +1174,11 @@ export default function PlayerView() {
                 <div className="mt-3 grid grid-cols-2 gap-2 text-left">
                   <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2 shadow-inner">
                     <div className="text-[10px] font-broadway uppercase text-amber-300">📏 Línea</div>
-                    <div className="text-xs font-vintage font-bold text-white">+5 puntos</div>
+                    <div className="text-xs font-vintage font-bold text-white">+2 puntos</div>
                   </div>
                   <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2 shadow-inner">
                     <div className="text-[10px] font-broadway uppercase text-gold-gradient">🎱 BINGO</div>
-                    <div className="text-xs font-vintage font-bold text-white">+15 puntos</div>
+                    <div className="text-xs font-vintage font-bold text-white">+6 puntos</div>
                   </div>
                 </div>
 
@@ -1196,12 +1196,12 @@ export default function PlayerView() {
                 </div>
                 <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">{activeGame.title}</h3>
                 <p className="text-xs font-vintage text-amber-100/80 mb-3">
-                  Atento a tu compañero que actúa en el centro de la sala. ¡No se puede hablar ni emitir sonidos!
+                  Atento a tus 2 compañeros que actúan en el centro de la sala. ¡No se puede hablar ni emitir sonidos!
                 </p>
 
                 <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-3 text-left">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-vintage font-bold text-amber-200">¿Eres el actor de tu equipo?</span>
+                    <span className="text-xs font-vintage font-bold text-amber-200">¿Eres actor de tu equipo?</span>
                     <button
                       onClick={() => setSecretCardVisible(!secretCardVisible)}
                       className="text-xs text-slate-950 font-broadway font-black flex items-center gap-1 bg-gold-gradient px-2.5 py-1 rounded-lg border border-[#f5eedb]/50 shadow-sm active:scale-95"

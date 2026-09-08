@@ -729,7 +729,7 @@ export default function HostView() {
   // ==========================================================================
   // 🎬 ADIVINA LA PELÍCULA - VALIDACIÓN AUTOMÁTICA SEGÚN PISTAS
   // ==========================================================================
-  const autoMoviePoints = movieFrameLevel === 1 ? 5 : movieFrameLevel === 2 ? 3 : 1;
+  const autoMoviePoints = movieFrameLevel === 1 ? 3 : movieFrameLevel === 2 ? 2 : 1;
 
   const handleValidateMovieHitAuto = () => {
     const targetTeam = winner?.teamId
@@ -3719,7 +3719,7 @@ export default function HostView() {
                     Puntuación Automática:
                   </span>
                   <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
-                    {movieFrameLevel === 1 ? 'Nivel 1 (2 Emojis) = +5 pts' : movieFrameLevel === 2 ? 'Nivel 2 (4 Emojis) = +3 pts' : 'Nivel 3/4 (Pistas) = +1 pt'}
+                    {movieFrameLevel === 1 ? 'Nivel 1 (2 Emojis) = +3 pts' : movieFrameLevel === 2 ? 'Nivel 2 (4 Emojis) = +2 pts' : 'Nivel 3/4 (Pistas) = +1 pt'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -4222,7 +4222,7 @@ export default function HostView() {
                       ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
                       : teams.find((t) => t.is_active);
                     if (targetTeam) {
-                      handleScoreChange(targetTeam.id, 5);
+                      handleScoreChange(targetTeam.id, 2);
                       soundFX.playVictory();
                     } else {
                       alert('Selecciona un equipo primero para cantar Línea');
@@ -4230,7 +4230,7 @@ export default function HostView() {
                   }}
                   className="flex-1 px-4 py-3 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/40 rounded-2xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 shadow-sm"
                 >
-                  <span>📏 Cantar Línea (+5 pts)</span>
+                  <span>📏 Cantar Línea (+2 pts)</span>
                 </button>
                 <button
                   onClick={() => {
@@ -4238,7 +4238,7 @@ export default function HostView() {
                       ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
                       : teams.find((t) => t.is_active);
                     if (targetTeam) {
-                      handleScoreChange(targetTeam.id, 15);
+                      handleScoreChange(targetTeam.id, 6);
                       soundFX.playVictory();
                     } else {
                       alert('Selecciona un equipo primero para cantar BINGO');
@@ -4246,7 +4246,7 @@ export default function HostView() {
                   }}
                   className="flex-1 px-4 py-3 bg-gold-gradient hover:brightness-110 text-slate-950 border border-[#f5eedb]/50 rounded-2xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 shadow-deco-gold"
                 >
-                  <span>🎱 ¡Cantar BINGO! (+15 pts)</span>
+                  <span>🎱 ¡Cantar BINGO! (+6 pts)</span>
                 </button>
               </div>
             </div>

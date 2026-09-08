@@ -1392,8 +1392,8 @@ export default function TvView() {
                       <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-200 shadow-lg">
                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                         <span className="font-vintage">
-                          {movieFrameLevel === 1 && '🎯 Pista 1: 2 Emojis (+5 pts)'}
-                          {movieFrameLevel === 2 && '🔍 Pista 2: 4 Emojis (+3 pts)'}
+                          {movieFrameLevel === 1 && '🎯 Pista 1: 2 Emojis (+3 pts)'}
+                          {movieFrameLevel === 2 && '🔍 Pista 2: 4 Emojis (+2 pts)'}
                           {movieFrameLevel === 3 && '⭐ Pista 3: Todos los Emojis (+1 pt)'}
                           {movieFrameLevel >= 4 && '💡 Pista 4: + Pista de Texto (+1 pt)'}
                         </span>
@@ -2120,10 +2120,10 @@ export default function TvView() {
                     </div>
                     <div className="flex items-center gap-2.5 text-xs font-broadway">
                       <span className="px-3.5 py-1 rounded-full bg-[#14141e] text-amber-200 border border-[#d4af37]/40 shadow-sm">
-                        📏 Línea: +5 pts
+                        📏 Línea: +2 pts
                       </span>
                       <span className="px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 border border-[#f5eedb]/50 shadow-deco-gold font-black">
-                        🎱 BINGO: +15 pts
+                        🎱 BINGO: +6 pts
                       </span>
                     </div>
                   </div>
