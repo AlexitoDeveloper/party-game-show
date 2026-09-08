@@ -21,7 +21,7 @@ export const TvUnDosTresGame: React.FC<TvUnDosTresGameProps> = ({
   udtActiveTeamId,
 }) => {
   return (
-    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/50 shadow-md">
           <span>⚡</span> 1, 2, 3 ¿YA? — {currentUdtChallenge.level} (Nivel {currentUdtChallenge.levelNumber})

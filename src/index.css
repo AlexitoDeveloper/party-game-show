@@ -372,3 +372,104 @@ body {
   animation: shieldGlowPulse 2.5s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   1930s DARK RUBBER HOSE & "HELL OF A DEAL" CASINO CLANDESTINO DESIGN SYSTEM
+   ========================================================================== */
+
+/* Fondo Negro Azabache Profundo con Vidriera Art Decó y Resplandor Carmesí */
+.hell-casino-bg {
+  background-color: #000000;
+  background-image:
+    /* Resplandor carmesí central de casino clandestino */
+    radial-gradient(circle at 50% 30%, rgba(139, 0, 0, 0.22) 0%, rgba(92, 6, 18, 0.12) 40%, transparent 75%),
+    /* Halo dorado de vidriera */
+    radial-gradient(circle at 50% 15%, rgba(212, 175, 55, 0.14) 0%, transparent 55%),
+    /* Rayos Art Decó concéntricos de vidriera (Stained Glass) */
+    repeating-conic-gradient(
+      from 0deg at 50% 20%,
+      rgba(212, 175, 55, 0.035) 0deg 5deg,
+      transparent 5deg 10deg,
+      rgba(139, 0, 0, 0.04) 10deg 15deg,
+      transparent 15deg 20deg
+    ),
+    /* Filigranas lineales de cuadrícula de casino */
+    radial-gradient(ellipse at 50% 100%, rgba(92, 6, 18, 0.15) 0%, transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Marco de Naipe de Casino "Hell of a Deal" (Doble orla dorada con ribete carmesí interior) */
+.hell-card-frame {
+  position: relative;
+  background: linear-gradient(170deg, #0d0a0d 0%, #050406 60%, #0a0507 100%);
+  border: 2px solid rgba(212, 175, 55, 0.65);
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.95),
+    0 0 0 1px #000000,
+    0 0 20px rgba(139, 0, 0, 0.3),
+    inset 0 0 0 2px #0a0709,
+    inset 0 0 0 4px rgba(185, 28, 28, 0.5),
+    inset 0 0 0 6px #0a0709,
+    inset 0 0 0 7px rgba(212, 175, 55, 0.35);
+}
+
+/* Marco de Naipe con Acento Carmesí Elevado */
+.hell-card-frame-crimson {
+  position: relative;
+  background: linear-gradient(160deg, #150608 0%, #070203 50%, #120406 100%);
+  border: 2px solid #d4af37;
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.95),
+    0 0 30px rgba(185, 28, 28, 0.45),
+    inset 0 0 0 2px #000000,
+    inset 0 0 0 4px rgba(212, 175, 55, 0.7),
+    inset 0 0 0 6px #070203,
+    inset 0 0 0 8px rgba(185, 28, 28, 0.4);
+}
+
+/* Acabado Oro Antiguo Repujado */
+.text-gold-emboss {
+  color: #f3e5ab;
+  text-shadow:
+    0 1px 0 #d4af37,
+    0 2px 0 #aa7c11,
+    0 3px 0 #6d4e07,
+    0 4px 10px rgba(0, 0, 0, 0.95);
+}
+
+/* Acabado Rojo Carmesí Iluminado */
+.text-crimson-glow {
+  color: #ff3344;
+  text-shadow:
+    0 0 12px rgba(239, 68, 68, 0.6),
+    0 0 25px rgba(185, 28, 28, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Separador Ornamental con los 4 Palos de la Baraja */
+.poker-suits-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.poker-suits-divider::before,
+.poker-suits-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+}
+
+/* Viñeta Oscura Rubber Hose de 1930s */
+.rubber-hose-vignette {
+  box-shadow: inset 0 0 120px 40px rgba(0, 0, 0, 0.92);
+}
+
+/* Grano sutil de celuloide */
+.film-grain-overlay {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
+  background-size: 3px 3px;
+}
+

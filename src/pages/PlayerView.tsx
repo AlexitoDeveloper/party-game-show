@@ -23,6 +23,7 @@ import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
 import { TwemojiText } from '../components/TwemojiText';
 import { DiceBearStyle, generateAvatarDataUri, generateRandomSeed } from '../lib/dicebear';
 import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
+import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
 
 export default function PlayerView() {
   const { code } = useParams<{ code: string }>();
@@ -675,14 +676,12 @@ export default function PlayerView() {
   const isMeWinner = winner?.playerId === (player?.id || sessionToken);
 
   return (
-    <main
-      className={`min-h-[100dvh] w-full bg-[#08080c] text-white font-sans flex flex-col justify-between p-5 transition-all duration-500 relative overflow-hidden select-none ${
-        isCursed ? 'cursed-screen-glow' : hasTeamShield ? 'shield-screen-glow' : ''
-      }`}
-      style={{
-        backgroundColor: selectedTeam ? '#090910' : '#07070a',
-      }}
-    >
+    <HellCasinoBackground intensity="medium" showPokerSuits={true}>
+      <main
+        className={`min-h-[100dvh] w-full text-white font-sans flex flex-col justify-between p-5 transition-all duration-500 relative overflow-hidden select-none ${
+          isCursed ? 'cursed-screen-glow' : hasTeamShield ? 'shield-screen-glow' : ''
+        }`}
+      >
       {/* Resplandor cálido de latón / color de equipo adaptativo */}
       {selectedTeam ? (
         <div
@@ -1206,5 +1205,6 @@ export default function PlayerView() {
         Mando Táctil • Sincronía Instantánea • Web Haptics
       </footer>
     </main>
+    </HellCasinoBackground>
   );
 }

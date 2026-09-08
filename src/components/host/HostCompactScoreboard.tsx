@@ -25,27 +25,27 @@ export const HostCompactScoreboard: React.FC<HostCompactScoreboardProps> = ({
         return (
           <div
             key={team.id}
-            className={`p-4 rounded-2xl border ${cat.twBorder} bg-slate-900/90 flex flex-col justify-between shadow-md`}
+            className={`p-4 rounded-3xl border-2 ${cat.twBorder} bg-[#0c0c14]/95 flex flex-col justify-between shadow-deco-gold hell-card-frame`}
           >
             <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Equipo {team.team_index}</span>
-                <span className={`text-base font-black uppercase ${cat.twText}`}>{team.name}</span>
-                <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
+                <span className="text-[10px] uppercase font-vintage font-bold text-amber-300/80 block">Equipo {team.team_index}</span>
+                <span className={`text-base font-broadway uppercase tracking-wide ${cat.twText}`}>{team.name}</span>
+                <span className="text-[11px] text-amber-100/70 font-vintage block mt-0.5">
                   {teamMembers.length} {teamMembers.length === 1 ? 'jugador' : 'jugadores'}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-3xl font-black font-mono text-white">{team.score}</span>
-                <span className="text-[10px] text-slate-400 block font-bold">PTS</span>
+                <span className="text-3xl font-broadway text-gold-gradient drop-shadow-sm">{team.score}</span>
+                <span className="text-[10px] text-amber-300/70 block font-vintage font-bold">PTS</span>
               </div>
             </div>
 
             {/* Lista de Miembros con Selector de Capitán */}
             {teamMembers.length > 0 && (
-              <div className="my-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 flex flex-wrap gap-1.5 items-center">
-                <span className="text-[10px] uppercase font-bold text-slate-500 w-full flex items-center gap-1">
-                  <Users className="w-3 h-3 text-slate-400" />
+              <div className="my-2 p-2 bg-[#07070a]/90 rounded-2xl border border-[#d4af37]/30 flex flex-wrap gap-1.5 items-center">
+                <span className="text-[10px] uppercase font-vintage font-bold text-amber-300/70 w-full flex items-center gap-1">
+                  <Users className="w-3 h-3 text-[#d4af37]" />
                   <span>Miembros:</span>
                 </span>
                 {teamMembers.map((m) => (
@@ -57,13 +57,13 @@ export const HostCompactScoreboard: React.FC<HostCompactScoreboardProps> = ({
                         ? 'Capitán activo (Clic para desasignar o deshacer capitanía)'
                         : 'Nombrar Capitán a este jugador'
                     }
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 ${
+                    className={`px-2 py-1 rounded-xl text-[10px] font-vintage font-bold flex items-center gap-1 transition-all active:scale-95 ${
                       m.is_captain
-                        ? 'bg-amber-400 hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-sm'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                        ? 'bg-gold-gradient hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-md border border-[#f5eedb]/40'
+                        : 'bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 border border-[#d4af37]/30'
                     }`}
                   >
-                    <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current' : 'text-slate-400'}`} />
+                    <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current text-slate-950' : 'text-amber-400'}`} />
                     <span>{m.nickname}</span>
                     {m.is_captain && <span className="text-[9px] opacity-80 ml-0.5">✕</span>}
                   </button>
@@ -71,28 +71,28 @@ export const HostCompactScoreboard: React.FC<HostCompactScoreboardProps> = ({
               </div>
             )}
 
-            <div className="flex gap-1.5 pt-2 border-t border-slate-800">
+            <div className="flex gap-1.5 pt-2 border-t border-[#d4af37]/30">
               <button
                 onClick={() => onScoreChange(team.id, 5)}
-                className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-black py-2 rounded-xl border border-amber-500/30 active:scale-95"
+                className="flex-1 bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 text-xs font-broadway font-black py-2 rounded-xl border border-amber-500/40 active:scale-95 shadow-sm"
               >
                 +5
               </button>
               <button
                 onClick={() => onScoreChange(team.id, 2)}
-                className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-black py-2 rounded-xl border border-emerald-500/30 active:scale-95"
+                className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-300 text-xs font-broadway font-black py-2 rounded-xl border border-emerald-500/40 active:scale-95 shadow-sm"
               >
                 +2
               </button>
               <button
                 onClick={() => onScoreChange(team.id, 1)}
-                className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-black py-2 rounded-xl border border-blue-500/30 active:scale-95"
+                className="flex-1 bg-blue-600/20 hover:bg-blue-600/35 text-blue-300 text-xs font-broadway font-black py-2 rounded-xl border border-blue-500/40 active:scale-95 shadow-sm"
               >
                 +1
               </button>
               <button
                 onClick={() => onScoreChange(team.id, -1)}
-                className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-black py-2 rounded-xl border border-red-500/30 active:scale-95"
+                className="flex-1 bg-red-600/20 hover:bg-red-600/35 text-red-300 text-xs font-broadway font-black py-2 rounded-xl border border-red-500/40 active:scale-95 shadow-sm"
               >
                 -1
               </button>

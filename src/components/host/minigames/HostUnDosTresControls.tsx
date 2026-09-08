@@ -25,7 +25,7 @@ export const HostUnDosTresControls: React.FC<HostUnDosTresControlsProps> = ({
   onEliminateUdtTeam,
 }) => {
   return (
-    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 hell-card-frame">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
         <div className="flex items-center gap-2">
           <Zap className="w-5 h-5 text-[#d4af37]" />

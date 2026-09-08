@@ -50,40 +50,40 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
   onReturnToLobby,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto deco-card-frame">
+    <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+      <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-deco-gold space-y-4 max-h-[90vh] overflow-y-auto hell-card-frame">
         {/* CABECERA */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3.5">
           <div className="flex items-center gap-3">
             <span className="text-3xl animate-bounce">🏁</span>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-white uppercase flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-broadway uppercase tracking-wide text-gold-gradient flex items-center gap-2">
                 <span>Veredicto de la Prueba</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#14141e] text-amber-300 border border-[#d4af37]/40 text-[10px] font-vintage font-bold">
                   {testFinishedModal.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
                 </span>
               </h3>
-              <p className="text-xs text-amber-300 font-bold">
+              <p className="text-xs text-amber-200/90 font-vintage font-bold">
                 {testFinishedModal.gameTitle}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+            className="p-1.5 bg-[#14141e] rounded-full text-amber-300 hover:text-white border border-[#d4af37]/40 shadow-sm"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* TABLA DE CLASIFICACIÓN Y PUNTOS AUTOMÁTICOS */}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-[11px] font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-[#d4af37]" />
               Clasificación y Puntuaciones Calculadas:
             </span>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-amber-200/60 font-vintage">
               Aciertos en vivo • Podio editable
             </span>
           </div>
@@ -95,10 +95,10 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
               return (
                 <div
                   key={res.teamId}
-                  className={`p-3 rounded-2xl border transition-all ${
+                  className={`p-3.5 rounded-2xl border transition-all ${
                     res.rank === 1
-                      ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                      : 'bg-slate-950/80 border-slate-800'
+                      ? 'bg-amber-500/15 border-[#d4af37] shadow-deco-gold'
+                      : 'bg-[#07070a]/90 border-[#d4af37]/30'
                   } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
                 >
                   {/* POSICIÓN Y EQUIPO */}
@@ -111,7 +111,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                           const newRank = parseInt(e.target.value, 10);
                           onSetManualPodiumRanks((prev) => ({ ...prev, [res.teamId]: newRank }));
                         }}
-                        className="bg-slate-900 border border-slate-700 text-amber-300 text-xs font-black rounded-lg px-1.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
+                        className="bg-[#14141e] border border-[#d4af37]/40 text-amber-300 text-xs font-broadway rounded-lg px-1.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
                         title="Cambiar posición en el podio manualmente"
                       >
                         <option value={1}>1.º</option>
@@ -125,11 +125,11 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg} shrink-0`} />
-                        <span className={`text-xs font-black uppercase truncate ${cat.twText}`}>
+                        <span className={`text-xs font-broadway uppercase truncate ${cat.twText}`}>
                           {res.teamName}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-400 font-mono">
+                      <div className="text-[10px] text-amber-200/60 font-vintage">
                         Marcador actual: {teams.find((t) => t.id === res.teamId)?.score || 0} pts
                       </div>
                     </div>
@@ -137,8 +137,8 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
 
                   {/* CONTADOR DE ACIERTOS (CON + Y -) */}
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-400 font-bold mr-1">Aciertos:</span>
+                    <div className="flex items-center gap-1 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/35 shadow-sm">
+                      <span className="text-[10px] text-amber-200/70 font-vintage font-bold mr-1">Aciertos:</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -147,12 +147,12 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                             [res.teamId]: Math.max(0, (prev[res.teamId] || 0) - 1),
                           }));
                         }}
-                        className="w-5 h-5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black flex items-center justify-center active:scale-95"
+                        className="w-5 h-5 rounded-md bg-[#07070a] hover:bg-[#22172a] text-amber-200 text-xs font-broadway flex items-center justify-center active:scale-95 border border-[#d4af37]/30"
                         title="Restar 1 acierto"
                       >
                         -
                       </button>
-                      <span className="text-xs font-black text-white font-mono w-5 text-center">
+                      <span className="text-xs font-broadway font-black text-white font-mono w-5 text-center">
                         {res.hits}
                       </span>
                       <button
@@ -163,7 +163,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                             [res.teamId]: (prev[res.teamId] || 0) + 1,
                           }));
                         }}
-                        className="w-5 h-5 rounded-md bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 text-xs font-black flex items-center justify-center active:scale-95"
+                        className="w-5 h-5 rounded-md bg-emerald-600/40 hover:bg-emerald-600/60 text-emerald-300 text-xs font-broadway flex items-center justify-center active:scale-95 border border-emerald-500/40"
                         title="Sumar 1 acierto"
                       >
                         +
@@ -173,12 +173,12 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                     {/* DESGLOSE: PUNTOS BASE + CARTAS = TOTAL */}
                     <div className="flex items-center gap-2">
                       <div className="text-right">
-                        <span className="text-[10px] text-slate-400 block font-mono">
+                        <span className="text-[10px] text-amber-200/70 block font-vintage">
                           Base: +{res.basePoints}
                         </span>
                         {res.totalCardDelta !== 0 && (
                           <span
-                            className={`text-[10px] font-black font-mono block ${
+                            className={`text-[10px] font-broadway block ${
                               res.totalCardDelta > 0 ? 'text-emerald-400' : 'text-red-400'
                             }`}
                           >
@@ -188,12 +188,12 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                       </div>
 
                       <div
-                        className={`px-3 py-1.5 rounded-xl font-mono font-black text-sm border flex items-center justify-center ${
+                        className={`px-3 py-1.5 rounded-xl font-broadway text-sm border flex items-center justify-center ${
                           res.finalPoints > 0
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
                             : res.finalPoints < 0
                             ? 'bg-red-500/20 text-red-300 border-red-500/40'
-                            : 'bg-slate-800 text-slate-300 border-slate-700'
+                            : 'bg-[#14141e] text-amber-100/70 border-[#d4af37]/30'
                         }`}
                       >
                         {res.finalPoints > 0 ? `+${res.finalPoints}` : res.finalPoints} pts
@@ -203,15 +203,15 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
 
                   {/* BADGES DE CARTAS ACTIVAS QUE IMPACTAN A ESTE EQUIPO */}
                   {res.cardImpacts.length > 0 && (
-                    <div className="w-full pt-1.5 border-t border-slate-800/80 flex flex-wrap gap-1.5">
+                    <div className="w-full pt-2 border-t border-[#d4af37]/25 flex flex-wrap gap-1.5">
                       {res.cardImpacts.map((impact, impIdx) => (
                         <span
                           key={impIdx}
                           title={impact.explanation}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 cursor-help ${
+                          className={`text-[10px] font-vintage font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 cursor-help ${
                             impact.delta >= 0
-                              ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                              : 'bg-red-500/15 text-red-300 border-red-500/30'
+                              ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                              : 'bg-red-500/15 text-red-300 border-red-500/40'
                           }`}
                         >
                           <span>{impact.cardEmoji}</span>
@@ -232,7 +232,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
         {/* BOTÓN PRINCIPAL: APLICAR VEREDICTO */}
         <button
           onClick={onApplyVerdict}
-          className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
+          className="w-full p-4 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/50"
         >
           <Trophy className="w-5 h-5 fill-slate-950" />
           <span>
@@ -242,20 +242,20 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
         </button>
 
         {/* RECURSOS ADICIONALES: DAR CARTA BONUS O TRANSFERIR MALDICIÓN */}
-        <div className="pt-2 border-t border-slate-800 space-y-2">
+        <div className="pt-2.5 border-t border-[#d4af37]/30 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase text-slate-400">
+            <span className="text-[10px] font-broadway uppercase text-amber-300/80">
               Opciones complementarias:
             </span>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 flex-1">
+            <div className="flex items-center gap-1.5 bg-[#07070a] p-1.5 rounded-xl border border-[#d4af37]/35 flex-1">
               <span className="text-xs">🎁</span>
               <select
                 value={selectedBonusTeam}
                 onChange={(e) => onSetSelectedBonusTeam(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-purple-300 text-xs rounded-lg px-2 py-1 flex-1 min-w-0"
+                className="bg-[#14141e] border border-[#d4af37]/30 text-amber-200 text-xs font-vintage rounded-lg px-2 py-1 flex-1 min-w-0 outline-none"
               >
                 <option value="random">Equipo al azar</option>
                 {activeTeams.map((t) => (
@@ -266,7 +266,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
               </select>
               <button
                 onClick={() => onDealBonusCard(selectedBonusTeam)}
-                className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-lg active:scale-95 transition-all shrink-0"
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-broadway font-black text-xs rounded-lg active:scale-95 transition-all shrink-0 shadow-sm"
               >
                 Dar Carta
               </button>
@@ -275,7 +275,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
             {powerCards.activeEffects.length > 0 && (
               <button
                 onClick={onClearAllActiveEffects}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 active:scale-95"
+                className="px-3 py-1.5 bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 font-vintage font-bold text-xs rounded-xl border border-[#d4af37]/30 active:scale-95 shadow-sm"
                 title="Archivar efectos restantes"
               >
                 Archivar Efectos ({powerCards.activeEffects.length})
@@ -343,14 +343,14 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                 onClose();
                 onReturnToLobby();
               }}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-black uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              className="p-3 rounded-2xl bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 border border-[#d4af37]/35 text-xs font-broadway uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
               <span>Ir al Lobby</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-black uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              className="p-3 rounded-2xl bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 border border-[#d4af37]/35 text-xs font-broadway uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md"
             >
               <span>Cerrar Modal</span>
             </button>

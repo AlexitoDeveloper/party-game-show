@@ -17,7 +17,7 @@ export const TvMoviesGame: React.FC<TvMoviesGameProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       {/* ESCENARIO DE ADIVINANZA CON EMOJIS (MARCO TEATRAL SILENT FILM) */}
-      <div className="relative w-full rounded-3xl overflow-hidden border-4 border-[#d4af37]/60 shadow-deco-gold bg-gradient-to-b from-[#0c0c14] via-[#090910] to-black p-6 md:p-10 text-center deco-card-frame">
+      <div className="relative w-full rounded-3xl overflow-hidden border-4 border-[#d4af37]/60 shadow-deco-gold bg-gradient-to-b from-[#0c0c14] via-[#090910] to-black p-6 md:p-10 text-center hell-card-frame">
         {/* Viñeta e iluminación decorativa */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-amber-500/15 blur-[90px] pointer-events-none" />
 
@@ -80,7 +80,7 @@ export const TvMoviesGame: React.FC<TvMoviesGameProps> = ({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center deco-card-frame"
+              className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center hell-card-frame-crimson"
             >
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-[#f5eedb]/50 shadow-deco-gold">
                 🎉 ¡PELÍCULA RESUELTA!

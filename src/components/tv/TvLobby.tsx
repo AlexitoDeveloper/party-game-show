@@ -27,7 +27,7 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
   return (
     <section className="flex-1 grid grid-cols-12 gap-6 my-6 z-10">
       {/* PANEL QR LATERAL CON MARCO ART DÉCO */}
-      <div className="col-span-3 bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 rounded-3xl p-6 flex flex-col items-center justify-between backdrop-blur-xl shadow-deco-gold deco-card-frame">
+      <div className="col-span-3 bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 rounded-3xl p-6 flex flex-col items-center justify-between backdrop-blur-xl shadow-deco-gold hell-card-frame">
         <div className="text-center w-full">
           <h2 className="text-lg font-broadway uppercase tracking-wider text-gold-gradient">Pase de Espectador</h2>
           <p className="text-xs font-vintage text-amber-100/70 mt-0.5">Escanea con tu cámara móvil para ingresar</p>
@@ -37,7 +37,7 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
           {joinUrl ? (
             <QRCodeSVG value={joinUrl} size={170} level="H" />
           ) : (
-            <div className="w-[170px] h-[170px] bg-slate-800 animate-pulse rounded-lg" />
+            <div className="w-[170px] h-[170px] bg-[#14141e] border-2 border-[#d4af37]/30 animate-pulse rounded-lg" />
           )}
         </div>
 
@@ -69,7 +69,7 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
                   key={p.id}
                   className="bg-[#0c0c14]/95 border border-[#d4af37]/40 px-2 py-1 rounded-xl text-xs font-bold text-amber-200 flex items-center gap-1.5 shadow-sm"
                 >
-                  <div className="w-4 h-4 rounded-md bg-slate-950 overflow-hidden shrink-0">
+                  <div className="w-4 h-4 rounded-md bg-black/90 border border-[#d4af37]/30 overflow-hidden shrink-0">
                     <img
                       src={generateAvatarDataUri(p.avatar_seed || p.nickname, (p.avatar_style as any) || 'avataaars')}
                       alt={p.nickname}

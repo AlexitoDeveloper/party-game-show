@@ -14,7 +14,7 @@ export const TvBingoGame: React.FC<TvBingoGameProps> = ({
   bingoIsSpinning,
 }) => {
   return (
-    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-4 sm:p-6 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-4 sm:p-6 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
       {/* CABECERA COMPACTA */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm">

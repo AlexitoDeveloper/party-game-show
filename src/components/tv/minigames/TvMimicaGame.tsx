@@ -10,7 +10,7 @@ export const TvMimicaGame: React.FC<TvMimicaGameProps> = ({
   mimicaHitsCount,
 }) => {
   return (
-    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
       <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-4 border border-[#f5eedb]/40 shadow-sm">
         <span>🎭</span> TEATRO DE CINE MUDO Y MÍMICA
       </div>

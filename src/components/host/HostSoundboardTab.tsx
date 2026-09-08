@@ -23,25 +23,25 @@ export const HostSoundboardTab: React.FC<HostSoundboardTabProps> = ({
         onCommand={onJukeboxCommand}
       />
 
-      <section className="bg-slate-900/90 border-2 border-slate-800 hover:border-amber-400/50 transition-all rounded-3xl p-5 shadow-2xl space-y-3 backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
+      <section className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 shadow-deco-gold space-y-4 backdrop-blur-xl hell-card-frame">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#d4af37]/30 pb-3.5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-[#d4af37] to-[#8a6a1a] text-slate-950 rounded-2xl shadow-md">
               <Volume2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                Efectos de Sonido en Vivo (Soundboard)
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
+              <h3 className="text-base font-broadway text-gold-gradient uppercase tracking-wider flex items-center gap-2">
+                Fonoteca & Caja de Ruidos (Soundboard)
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40 font-bold font-vintage">
                   Sincronizado con TV
                 </span>
               </h3>
-              <p className="text-xs text-slate-400">
-                Dispara sonidos al instante para ambientar respuestas, fallos, suspense o victorias.
+              <p className="text-xs text-amber-100/70 font-vintage">
+                Dispara efectos orquestales y de casino en directo para ambientar respuestas, fallos, suspense o victorias.
               </p>
             </div>
           </div>
-          <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
+          <span className="text-[10px] text-amber-200/60 font-mono hidden sm:inline">
             Audio WebAPI • Suena en Host y TV
           </span>
         </div>

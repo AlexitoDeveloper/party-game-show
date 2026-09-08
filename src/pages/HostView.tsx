@@ -11,6 +11,8 @@ import { GAMES_CATALOG, GameDefinition, ScoringOption } from '../lib/games';
 import { PowerCardsState } from '../lib/powerCards';
 import { CoinBurstCelebration } from '../components/particles/CoinBurstCelebration';
 import { calculateTestVerdict, TestVerdictCalculation } from '../lib/testVerdict';
+import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
+import { HellCasinoSuitsDivider } from '../components/deco/HellCasinoSuitsDivider';
 
 // Custom Hooks para estado de minijuegos y cartas
 import { useHostMoviesState } from '../hooks/host/useHostMoviesState';
@@ -139,6 +141,14 @@ export default function HostView() {
   const powerCardsRef = useRef<PowerCardsState | null>(null);
   const captainDuelRef = useRef(captainDuel);
   useEffect(() => { captainDuelRef.current = captainDuel; }, [captainDuel]);
+  const roundHitsRef = useRef(roundHits);
+  useEffect(() => {
+    roundHitsRef.current = roundHits;
+    roomSync.broadcast({
+      type: 'ROUND_HITS_UPDATE',
+      payload: { roundHits, gameId: room.active_game_id || room.current_game },
+    });
+  }, [roundHits, room.active_game_id, room.current_game, roomSync]);
 
   // Modificar puntuación con celebración y sincronización a TV
   const handleScoreChange = async (teamId: string, delta: number, silent?: boolean) => {
@@ -405,6 +415,13 @@ export default function HostView() {
         if (roomRef.current.active_game_id === 'music') {
           musicState.syncMusicState(musicState.musicPlaying, musicState.musicRevealed);
         }
+        roomSync.broadcast({
+          type: 'ROUND_HITS_UPDATE',
+          payload: {
+            roundHits: roundHitsRef.current,
+            gameId: roomRef.current.active_game_id || roomRef.current.current_game,
+          },
+        });
       } else if (event.type === 'PLAYER_UPDATED') {
         setPlayers((prev) => {
           const exists = prev.some((p) => p.id === event.payload.id);
@@ -747,8 +764,9 @@ export default function HostView() {
   };
 
   return (
-    <main className="min-h-screen bg-[#08080c] text-white font-sans p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none relative">
-      <CoinBurstCelebration active={showCoinBurst} onComplete={() => setShowCoinBurst(false)} />
+    <HellCasinoBackground intensity="medium">
+      <main className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none relative text-white font-sans">
+        <CoinBurstCelebration active={showCoinBurst} onComplete={() => setShowCoinBurst(false)} />
 
       <HostHeaderControls
         room={room}
@@ -893,7 +911,7 @@ export default function HostView() {
 
           {/* FINALIZAR PRUEBA EN CURSO */}
           {room.status === 'playing' && (
-            <div className="flex items-center justify-between bg-slate-900/95 border border-red-500/40 p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-lg gap-2.5">
+            <div className="flex items-center justify-between hell-card-frame-crimson p-3 sm:p-4 rounded-2xl sm:rounded-3xl gap-2.5">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="text-2xl p-1.5 bg-red-950/60 rounded-xl border border-red-500/30 shrink-0">🏁</span>
                 <div className="min-w-0">
@@ -933,19 +951,19 @@ export default function HostView() {
           />
 
           {/* MARCADOR EN VIVO Y PUNTUACIÓN RÁPIDA */}
-          <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-3.5 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 gap-2">
+          <section className="hell-card-frame rounded-3xl p-3.5 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-2.5 gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                 <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-white truncate">
+                <h3 className="text-xs font-black uppercase tracking-wider text-gold-emboss truncate">
                   Marcador <span className="hidden sm:inline">en Vivo (+5, +2, +1, -1)</span>
                 </h3>
               </div>
               <button
                 onClick={() => setActiveTab('teams')}
-                className="text-[11px] text-slate-400 hover:text-emerald-400 font-bold transition-colors flex items-center gap-1 shrink-0"
+                className="text-[11px] text-amber-300 hover:text-amber-200 font-bold transition-colors flex items-center gap-1 shrink-0"
               >
-                <Users className="w-3.5 h-3.5 text-slate-400" />
+                <Users className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden sm:inline">Gestionar Equipos</span>
                 <span>→</span>
               </button>
@@ -1094,6 +1112,7 @@ export default function HostView() {
           }}
         />
       )}
-    </main>
+      </main>
+    </HellCasinoBackground>
   );
 }

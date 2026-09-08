@@ -30,6 +30,7 @@ export type RoomSyncEvent =
   | { type: 'UN_DOS_TRES_STATE'; payload: { promptIndex: number; activeTeamId?: string; eliminatedTeamIds: string[]; countdownSeconds: number | null; isTimerRunning: boolean; challengeData?: UnDosTresChallenge } }
   | { type: 'BINGO_STATE_UPDATE'; payload: { currentBall: number | null; drawnBalls: number[]; isSpinning?: boolean } }
   | { type: 'MIMICA_STATE_UPDATE'; payload: { activeTeamId?: string; hitsCount: number; timerSeconds: number | null; isRunning: boolean } }
+  | { type: 'ROUND_HITS_UPDATE'; payload: { roundHits: Record<string, number>; gameId?: string | null } }
   | { type: 'POWER_CARDS_STATE_UPDATE'; payload: PowerCardsState }
   | { type: 'POWER_CARD_ANIMATION'; payload: { type: 'deal' | 'play'; teamName: string; card: PowerCard; targetName?: string; teamId?: string; teamColorHex?: string; teamThemeIndex?: number; sensoryLimitation?: string; recoveredCard?: PowerCard } }
   | { type: 'DISMISS_POWER_CARD_ANIMATION' }

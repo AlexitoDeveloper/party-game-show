@@ -32,7 +32,7 @@ export const HostMimicaControls: React.FC<HostMimicaControlsProps> = ({
   onNextMimicaCard,
 }) => {
   return (
-    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
+    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 hell-card-frame">
       <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🎭</span>
@@ -106,7 +106,7 @@ export const HostMimicaControls: React.FC<HostMimicaControlsProps> = ({
           {mimicaHitsCount > 0 && (
             <button
               onClick={onSubtractMimicaHit}
-              className="px-2.5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-red-300 font-black text-xs border border-slate-700 active:scale-95 transition-all"
+              className="px-2.5 py-3.5 rounded-2xl bg-[#14141e] hover:bg-red-950/80 text-red-300 font-broadway font-black text-xs border border-red-500/40 active:scale-95 transition-all shadow-sm"
               title="Restar 1 acierto (corrección)"
             >
               -1
@@ -116,7 +116,7 @@ export const HostMimicaControls: React.FC<HostMimicaControlsProps> = ({
 
         <button
           onClick={onResetMimicaRound}
-          className="p-3.5 rounded-2xl bg-slate-800/90 hover:bg-red-950/80 text-slate-300 hover:text-red-200 border border-slate-700 hover:border-red-500/50 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+          className="p-3.5 rounded-2xl bg-[#14141e] hover:bg-red-950/80 text-amber-200 hover:text-red-200 border border-[#d4af37]/30 hover:border-red-500/50 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
           title="Poner a 0 los aciertos y reiniciar el cronómetro a 90s para el siguiente equipo"
         >
           <RotateCcw className="w-3.5 h-3.5" />

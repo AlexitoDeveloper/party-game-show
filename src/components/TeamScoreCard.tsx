@@ -44,6 +44,9 @@ interface TeamScoreCardProps {
   isLeader?: boolean;
   className?: string;
   maxRoomScore?: number;
+  customScore?: number;
+  scoreSuffix?: string;
+  subtitleScore?: string;
 }
 
 /**
@@ -60,6 +63,9 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
   isLeader = false,
   className = '',
   maxRoomScore = 0,
+  customScore,
+  scoreSuffix,
+  subtitleScore,
 }) => {
   const IconComponent = theme.icon;
 
@@ -151,15 +157,27 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               </span>
             )}
           </div>
-          {teamCaptain && (
-            <span className="text-[10px] text-[#f3e5ab]/80 font-vintage font-bold truncate flex items-center gap-1 mt-0.5">
-              <Crown className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37] shrink-0" />
-              {teamCaptain.nickname}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            {teamCaptain && (
+              <span className="text-[10px] text-[#f3e5ab]/80 font-vintage font-bold truncate flex items-center gap-1">
+                <Crown className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37] shrink-0" />
+                {teamCaptain.nickname}
+              </span>
+            )}
+            {subtitleScore && (
+              <span className="text-[9px] text-[#d4af37]/70 font-vintage font-bold truncate">
+                • {subtitleScore}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right whitespace-nowrap pl-2 font-broadway text-base text-gold-gradient">
-          <CountUp end={team.score} duration={0.9} preserveValue suffix=" PTS" />
+          <CountUp
+            end={customScore !== undefined ? customScore : team.score}
+            duration={0.6}
+            preserveValue
+            suffix={scoreSuffix !== undefined ? scoreSuffix : ' PTS'}
+          />
         </div>
       </div>
     );

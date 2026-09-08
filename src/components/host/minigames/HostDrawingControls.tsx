@@ -2,7 +2,7 @@ import React from 'react';
 
 export const HostDrawingControls: React.FC = () => {
   return (
-    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-4 deco-card-frame">
+    <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-4 hell-card-frame">
       <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🎨</span>

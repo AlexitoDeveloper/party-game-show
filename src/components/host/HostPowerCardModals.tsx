@@ -77,14 +77,14 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
     <>
       {/* BANNER FLOTANTE: CARTA PROYECTADA EN TV (ADAPTADO A MÓVIL) */}
       {activeCardOnScreen && (
-        <div className="fixed bottom-4 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md z-50 bg-slate-900/95 border-2 border-amber-400 rounded-2xl p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2 animate-bounce">
+        <div className="fixed bottom-4 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md z-50 bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-2xl p-2.5 sm:p-3.5 shadow-deco-gold backdrop-blur-xl flex items-center justify-between gap-2 animate-bounce">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-2xl flex-shrink-0">{activeCardOnScreen.card.emoji}</span>
             <div className="min-w-0">
-              <span className="text-[9px] text-amber-400 font-black uppercase tracking-wider block truncate">
+              <span className="text-[9px] text-amber-300 font-broadway uppercase tracking-wider block truncate">
                 En TV • {activeCardOnScreen.teamName}
               </span>
-              <span className="text-xs sm:text-sm font-black text-white block truncate">
+              <span className="text-xs sm:text-sm font-broadway uppercase text-white block truncate">
                 {activeCardOnScreen.card.name}
               </span>
             </div>
@@ -101,7 +101,7 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                   onDismissCardOnScreen();
                 }
               }}
-              className="px-2.5 sm:px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-black uppercase rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
+              className="px-2.5 sm:px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-broadway font-black uppercase rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
               title="Anular jugada y devolver carta a su equipo"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -109,7 +109,7 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
             </button>
             <button
               onClick={onDismissCardOnScreen}
-              className="p-2 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-500 text-white text-[11px] sm:text-xs font-black uppercase rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
+              className="p-2 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-500 text-white text-[11px] sm:text-xs font-broadway font-black uppercase rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
               title="Quitar de la TV"
             >
               <X className="w-3.5 h-3.5" />
@@ -121,13 +121,13 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
 
       {/* MODAL: BANCO DE CARTAS (ELEGIR 1 DE LAS 2 ROBADAS) */}
       {bankChoiceState && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-indigo-500 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 text-center">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-xl w-full p-6 shadow-deco-gold space-y-5 text-center hell-card-frame">
             <div>
               <span className="text-3xl">🏛️</span>
-              <h3 className="text-xl font-black text-white uppercase mt-1">Banco de Cartas</h3>
-              <p className="text-xs text-indigo-300 font-medium">
-                Equipo: <strong className="text-white">{bankChoiceState.teamName}</strong>. Elige 1 carta para su mano. La otra volverá al mazo.
+              <h3 className="text-xl font-broadway text-gold-gradient uppercase mt-1">Banco de Cartas Clandestino</h3>
+              <p className="text-xs text-amber-200/80 font-vintage">
+                Equipo: <strong className="text-white font-broadway">{bankChoiceState.teamName}</strong>. Elige 1 carta para su mano. La otra volverá al mazo.
               </p>
             </div>
 
@@ -137,12 +137,12 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                 return (
                   <div
                     key={c.id}
-                    className="flex flex-col items-center gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 w-full"
+                    className="flex flex-col items-center gap-3 bg-[#07070a]/90 p-4 rounded-2xl border border-[#d4af37]/35 w-full shadow-inner"
                   >
                     <PowerCardView card={c} size="md" />
                     <button
                       onClick={() => onSelectBankChoice(c.id, otherCard.id)}
-                      className="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase rounded-xl shadow-md active:scale-95 transition-all"
+                      className="w-full px-4 py-2.5 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase rounded-xl shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
                     >
                       ✓ Quedarse con esta
                     </button>
@@ -156,28 +156,28 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
 
       {/* MODAL: VIAJE EN EL TIEMPO (RECUPERAR DEL DESCARTE) */}
       {timeTravelModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-deco-gold space-y-4 hell-card-frame">
+            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">⏳</span>
                 <div>
-                  <h3 className="text-lg font-black text-white uppercase">Viaje en el Tiempo</h3>
-                  <p className="text-xs text-amber-300">
-                    Equipo: <strong className="text-white">{timeTravelModal.teamName}</strong>. Elige una carta descartada para recuperarla.
+                  <h3 className="text-lg font-broadway uppercase text-gold-gradient">Viaje en el Tiempo</h3>
+                  <p className="text-xs text-amber-200/80 font-vintage">
+                    Equipo: <strong className="text-white font-broadway">{timeTravelModal.teamName}</strong>. Elige una carta descartada para recuperarla.
                   </p>
                 </div>
               </div>
               <button
                 onClick={onCloseTimeTravelModal}
-                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                className="p-1.5 bg-[#14141e] rounded-full text-amber-300 hover:text-white border border-[#d4af37]/30"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {discardPile.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm">
+              <div className="text-center py-8 text-amber-200/40 text-sm font-vintage">
                 No hay cartas en la pila de descartes.
               </div>
             ) : (
@@ -192,10 +192,10 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                         onPlayTimeTravelCard(timeTravelModal.teamId, 'viaje_tiempo', cId);
                         onCloseTimeTravelModal();
                       }}
-                      className="cursor-pointer hover:scale-105 transition-transform flex flex-col items-center p-2 bg-slate-950 rounded-xl border border-slate-800 hover:border-amber-400"
+                      className="cursor-pointer hover:scale-105 transition-transform flex flex-col items-center p-2.5 bg-[#07070a] rounded-2xl border border-[#d4af37]/30 hover:border-[#d4af37] shadow-inner"
                     >
                       <PowerCardView card={card} size="sm" />
-                      <span className="text-[10px] font-bold text-amber-300 uppercase mt-2">
+                      <span className="text-[10px] font-broadway font-bold text-amber-300 uppercase mt-2">
                         Recuperar ➔
                       </span>
                     </div>
@@ -209,28 +209,28 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
 
       {/* MODAL: PILA DE DESCARTES (VISUALIZADOR GENERAL) */}
       {isDiscardModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-deco-gold space-y-4 hell-card-frame">
+            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🪦</span>
                 <div>
-                  <h3 className="text-lg font-black text-white uppercase">Pila de Descartes</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-lg font-broadway uppercase text-gold-gradient">Pila de Descartes Clandestina</h3>
+                  <p className="text-xs text-amber-200/80 font-vintage">
                     Total: {discardPile.length} cartas jugadas hasta ahora
                   </p>
                 </div>
               </div>
               <button
                 onClick={onCloseDiscardModal}
-                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                className="p-1.5 bg-[#14141e] rounded-full text-amber-300 hover:text-white border border-[#d4af37]/30"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {discardPile.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 text-sm">
+              <div className="text-center py-10 text-amber-200/40 text-sm font-vintage">
                 No se ha descartado ninguna carta todavía.
               </div>
             ) : (
@@ -241,12 +241,12 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                   return (
                     <div
                       key={`${cId}_${idx}`}
-                      className="flex flex-col items-center p-2.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2"
+                      className="flex flex-col items-center p-2.5 bg-[#07070a] rounded-2xl border border-[#d4af37]/30 space-y-2 shadow-inner"
                     >
                       <PowerCardView card={card} size="sm" />
                       <button
                         onClick={() => onSetReturnCardModal({ card })}
-                        className="w-full px-2 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-white border border-amber-500/40 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 active:scale-95 transition-all shadow"
+                        className="w-full px-2 py-1.5 bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 hover:text-white border border-[#d4af37]/40 rounded-xl text-[10px] font-broadway uppercase flex items-center justify-center gap-1 active:scale-95 transition-all shadow"
                         title="Devolver esta carta a la mano de un equipo"
                       >
                         <RotateCcw className="w-3 h-3" />
@@ -263,23 +263,23 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
 
       {/* MODAL: SELECCIONAR EQUIPO AL QUE DEVOLVER CARTA */}
       {returnCardModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-md w-full p-6 shadow-deco-gold space-y-4 hell-card-frame">
+            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="text-3xl">{returnCardModal.card.emoji}</span>
                 <div>
-                  <h3 className="text-base font-black text-white uppercase">
+                  <h3 className="text-base font-broadway uppercase text-gold-gradient">
                     Devolver "{returnCardModal.card.name}"
                   </h3>
-                  <p className="text-xs text-amber-300">
+                  <p className="text-xs text-amber-200/80 font-vintage">
                     Selecciona a qué equipo devolver esta carta a su mano
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => onSetReturnCardModal(null)}
-                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                className="p-1.5 bg-[#14141e] rounded-full text-amber-300 hover:text-white border border-[#d4af37]/30"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -296,24 +296,24 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                       onReturnCardToTeam(team.id, returnCardModal.card.id);
                       onSetReturnCardModal(null);
                     }}
-                    className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-98 ${
-                      cat?.twBorder || 'border-slate-700'
-                    } bg-slate-800/80 hover:bg-slate-700/80`}
+                    className={`w-full p-3.5 rounded-2xl border-2 flex items-center justify-between transition-all active:scale-98 ${
+                      cat?.twBorder || 'border-[#d4af37]/30'
+                    } bg-[#07070a] hover:bg-[#14141e] shadow-sm`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`w-3.5 h-3.5 rounded-full ${cat?.twBg || 'bg-amber-400'}`} />
                       <div className="text-left">
                         <span
-                          className={`text-xs font-black uppercase block ${cat?.twText || 'text-white'}`}
+                          className={`text-xs font-broadway uppercase block ${cat?.twText || 'text-white'}`}
                         >
                           {team.name}
                         </span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-amber-200/60 font-vintage">
                           Tiene actualmente {currentCards} {currentCards === 1 ? 'carta' : 'cartas'}
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-amber-400 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                    <span className="text-xs font-broadway text-amber-300 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-xl">
                       Entregar ➔
                     </span>
                   </button>
@@ -326,18 +326,18 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
 
       {/* MODAL: SELECCIONAR EQUIPO O JUGADOR RIVAL OBJETIVO */}
       {targetModalState && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-xl w-full p-6 shadow-deco-gold space-y-4 hell-card-frame">
+            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{targetModalState.card.emoji}</span>
                 <div>
-                  <h3 className="text-base font-black text-white uppercase">
+                  <h3 className="text-base font-broadway uppercase text-gold-gradient">
                     Objetivo para "{targetModalState.card.name}"
                   </h3>
-                  <p className="text-xs text-amber-300">
+                  <p className="text-xs text-amber-200/80 font-vintage">
                     Equipo emisor:{' '}
-                    <strong>
+                    <strong className="text-white font-broadway">
                       {activeTeams.find((t) => t.id === targetModalState.teamId)?.name}
                     </strong>
                   </p>
@@ -345,7 +345,7 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
               </div>
               <button
                 onClick={onCloseTargetModal}
-                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                className="p-1.5 bg-[#14141e] rounded-full text-amber-300 hover:text-white border border-[#d4af37]/30"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -354,7 +354,7 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
             {/* SI REQUIERE EQUIPO */}
             {targetModalState.card.requiresTarget === 'team' && (
               <div className="space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+                <span className="text-xs font-broadway uppercase tracking-wider text-amber-200/80 block">
                   Haz clic en el equipo rival objetivo:
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -372,26 +372,26 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                             onPlayTargetCard(targetModalState.teamId, targetModalState.card.id, rival.id);
                             onCloseTargetModal();
                           }}
-                          className={`p-3.5 rounded-2xl border ${
-                            rivalCat?.twBorder || 'border-slate-700'
-                          } bg-slate-950/80 hover:scale-102 hover:shadow-lg transition-all text-left flex items-center justify-between group`}
+                          className={`p-3.5 rounded-2xl border-2 ${
+                            rivalCat?.twBorder || 'border-[#d4af37]/30'
+                          } bg-[#07070a] hover:bg-[#14141e] hover:scale-102 hover:shadow-lg transition-all text-left flex items-center justify-between group shadow-sm`}
                         >
                           <div className="flex items-center gap-2.5">
                             <span className={`w-3.5 h-3.5 rounded-full ${rivalCat?.twBg}`} />
                             <div>
                               <span
-                                className={`text-sm font-black uppercase ${
+                                className={`text-sm font-broadway uppercase ${
                                   rivalCat?.twText || 'text-white'
                                 }`}
                               >
                                 {rival.name}
                               </span>
-                              <span className="text-[10px] text-slate-400 block font-medium">
+                              <span className="text-[10px] text-amber-200/60 block font-vintage">
                                 {rivalMembers.length} miembros • {rival.score} pts
                               </span>
                             </div>
                           </div>
-                          <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform uppercase">
+                          <span className="text-xs font-broadway text-amber-300 group-hover:translate-x-0.5 transition-transform uppercase">
                             Elegir ➔
                           </span>
                         </button>
@@ -416,14 +416,14 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                   );
                   if (rivalPlayersList.length === 0) {
                     return (
-                      <div className="p-4 bg-slate-950/70 rounded-2xl border border-slate-800 text-center space-y-2">
-                        <p className="text-xs text-slate-400">
+                      <div className="p-4 bg-[#0c0c14]/80 rounded-2xl border border-[#d4af37]/30 text-center space-y-2">
+                        <p className="text-xs font-vintage text-amber-200/70">
                           No hay jugadores rivales conectados actualmente.
                         </p>
                         <input
                           type="text"
                           placeholder="Escribe el nombre del jugador rival y pulsa Enter..."
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-400"
+                          className="w-full bg-[#14141e] border border-[#d4af37]/40 rounded-xl px-3 py-2 text-xs text-amber-100 placeholder-amber-200/40 outline-none focus:border-amber-400 font-vintage"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                               onPlayTargetCard(
@@ -470,8 +470,8 @@ export const HostPowerCardModals: React.FC<HostPowerCardModalsProps> = ({
                             }}
                             className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
                               isDisabled
-                                ? 'border-red-900/40 bg-slate-950/40 opacity-40 cursor-not-allowed'
-                                : 'border-slate-800 bg-slate-950/90 hover:border-amber-400 hover:scale-102 cursor-pointer'
+                                ? 'border-red-900/40 bg-[#07070a]/60 opacity-40 cursor-not-allowed'
+                                : 'border-[#d4af37]/30 bg-[#0c0c14] hover:border-amber-400 hover:scale-102 cursor-pointer shadow-sm'
                             }`}
                           >
                             <div className="flex items-center gap-2">

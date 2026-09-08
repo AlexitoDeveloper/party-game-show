@@ -6,7 +6,7 @@ import { ThreeCardViewer } from './3d/ThreeCardViewer';
 
 interface PowerCardViewProps {
   card: PowerCard;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'presentation';
   isClickable?: boolean;
   onClick?: () => void;
   showRule?: boolean;
@@ -39,6 +39,8 @@ export default function PowerCardView({
   const sizeClasses =
     size === 'sm'
       ? 'w-28 h-[168px] sm:w-32 sm:h-[192px] rounded-xl'
+      : size === 'presentation'
+      ? 'w-44 sm:w-52 md:w-56 h-[264px] sm:h-[312px] md:h-[336px] rounded-2xl'
       : size === 'lg'
       ? 'w-72 sm:w-88 h-[440px] sm:h-[530px] rounded-3xl'
       : 'w-48 sm:w-60 h-[300px] sm:h-[370px] rounded-2xl';

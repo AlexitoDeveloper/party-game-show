@@ -48,6 +48,7 @@ import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
 import { BingoRoulette } from '../components/BingoRoulette';
 import { getBingoBallTheme } from '../lib/bingoUtils';
 import { soundFX } from '../lib/audio';
+import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
 import { RoomSync, getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
@@ -362,6 +363,9 @@ export default function TvView() {
   const [mimicaTimerSeconds, setMimicaTimerSeconds] = useState<number | null>(null);
   const [mimicaIsRunning, setMimicaIsRunning] = useState(false);
 
+  // Puntuación de partida / ronda en curso (adivinar canción, trivial, etc.)
+  const [roundHits, setRoundHits] = useState<Record<string, number>>({});
+
   // Juego activo según ID
   const activeGame: GameDefinition = useMemo(() => {
     const found = GAMES_CATALOG.find((g) => g.id === room.active_game_id);
@@ -465,6 +469,7 @@ export default function TvView() {
           current_game: event.payload.current_game,
           active_game_id: event.payload.game_id || prev.active_game_id,
         }));
+        setRoundHits({});
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
@@ -589,6 +594,8 @@ export default function TvView() {
         else if (action === 'mute') speakeasyJukebox.toggleMute();
       } else if (event.type === 'PODIUM_PAGE_CHANGE') {
         setPodiumPage(event.payload.page);
+      } else if (event.type === 'ROUND_HITS_UPDATE') {
+        setRoundHits(event.payload.roundHits || {});
       }
     });
 
@@ -720,7 +727,8 @@ export default function TvView() {
   const currentSlide = room.presentation_slide || 0;
 
   return (
-    <main className="min-h-screen w-full bg-slate-950 text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
+    <HellCasinoBackground intensity="high" showPokerSuits={true}>
+      <main className="min-h-screen w-full text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
       {/* Reproductor de Audio HTML5 persistente en la TV para todas las pantallas y fases */}
       <audio
         ref={musicAudioRef}
@@ -905,11 +913,7 @@ export default function TvView() {
         />
       ) : room.status === 'presentation' ? (
         /* ================= VISTA PRESENTACIÓN DEL SHOW ================= */
-        <TvPresentationView
-          currentSlide={currentSlide}
-          selectedPresentationCard={selectedPresentationCard}
-          onSelectPresentationCard={setSelectedPresentationCard}
-        />
+        <TvPresentationView currentSlide={currentSlide} />
       ) : room.status === 'podium' || room.status === 'ended' ? (
         /* ================= VISTA CLAUSURA / THE SPEAKEASY GAZETTE ================= */
         <SpeakeasyGazettePodium
@@ -928,9 +932,9 @@ export default function TvView() {
         />
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ================= */
-        <section className="flex-1 flex flex-col justify-center items-center my-4 z-10 w-full max-w-6xl mx-auto">
+        <section className="flex-1 flex flex-col justify-center items-center my-2 z-10 w-full max-w-6xl mx-auto min-h-0">
           {/* MARQUESINA DE TEATRO SUPERIOR CON REGLAS Y PUNTUACIONES */}
-          <div className="mb-5 flex flex-col md:flex-row items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 px-6 py-3.5 rounded-2xl w-full max-w-4xl gap-3 shadow-deco-gold backdrop-blur-md">
+          <div className="mb-3.5 flex flex-col md:flex-row items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 px-5 py-2.5 rounded-2xl w-full max-w-4xl gap-2.5 shadow-deco-gold backdrop-blur-md">
             <div className="flex items-center gap-3">
               <span className="text-3xl">{activeGame.emoji}</span>
               <div>
@@ -1077,7 +1081,7 @@ export default function TvView() {
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
-                        className="p-8 md:p-10 rounded-3xl bg-[#0c0c14]/95 border-4 shadow-deco-gold max-w-2xl mx-auto backdrop-blur-2xl text-center deco-card-frame"
+                        className="p-8 md:p-10 rounded-3xl bg-[#0c0c14]/95 border-4 shadow-deco-gold max-w-2xl mx-auto backdrop-blur-2xl text-center hell-card-frame"
                         style={{ borderColor: buzzerWinner.teamColorHex }}
                       >
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-4 border border-[#f5eedb]/50 shadow-md">
@@ -1187,7 +1191,7 @@ export default function TvView() {
                 />
               ) : activeGame.id === 'beer_pong' ? (
                 /* ESCENARIO BEER PONG */
-                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-4 border border-[#f5eedb]/40 shadow-sm">
                     <span>🍺</span> TABERNA CLANDESTINA & TORNEO DE VASOS
                   </div>
@@ -1212,7 +1216,7 @@ export default function TvView() {
                 </div>
               ) : (
                 /* TELÉFONO DIBUJADO */
-                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl deco-card-frame">
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
                     <Palette className="w-4 h-4" /> Teléfono Dibujado en Papel Real
                   </div>
@@ -1237,7 +1241,7 @@ export default function TvView() {
 
           {/* MOTOR C: DUELOS & JUEGOS DE MESA (Blackjack, Dominó, Parchís, UNO) */}
           {activeGame.engine === 'duel' && (
-            <div className="w-full max-w-4xl bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-8 backdrop-blur-xl shadow-deco-gold text-center deco-card-frame">
+            <div className="w-full max-w-4xl bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-8 backdrop-blur-xl shadow-deco-gold text-center hell-card-frame">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
                 <Swords className="w-4 h-4" /> Gran Salón de Juegos Clandestinos: {activeGame.title}
               </div>
@@ -1278,70 +1282,99 @@ export default function TvView() {
       )}
 
       {/* MARCADOR INFERIOR PERMANENTE EN TV (DURANTE LAS PRUEBAS / JUEGOS) */}
-      {room.status !== 'lobby' && room.status !== 'presentation' && room.status !== 'podium' && room.status !== 'ended' && (
-        <footer className="border-t border-slate-800/80 pt-4 z-10">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs uppercase font-bold tracking-wider text-slate-400">
-              Marcador General:
-            </span>
-            <div
-              className="flex-1 grid gap-3"
-              style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
-            >
-              {activeTeams.map((team) => {
-                const theme = getTeamTheme(team.team_index);
-                const teamHand = powerCards?.teamHands[team.id] || [];
-                const hasDouble = powerCards?.activeEffects.some(
-                  (e) => e.sourceTeamId === team.id && e.cardId === 'doble'
-                );
-                const hasBomb = powerCards?.activeEffects.some(
-                  (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
-                );
-                const hasShield = powerCards?.activeEffects.some(
-                  (e) => e.sourceTeamId === team.id && e.cardId === 'escudo'
-                );
-                const hasSentence = powerCards?.activeEffects.some(
-                  (e) => e.targetTeamId === team.id && e.cardId === 'la_sentencia'
-                );
-                const hasRussianRoulette = powerCards?.activeEffects.some(
-                  (e) => e.sourceTeamId === team.id && e.cardId === 'ruleta_rusa'
-                );
-                const hasPhoenix = powerCards?.activeEffects.some(
-                  (e) => e.sourceTeamId === team.id && e.cardId === 'ave_fenix'
-                );
-                const hasCurse = teamHand.includes('la_maldicion');
-                const hasCaptainGamble = !!captainGambles[team.id];
-                const teamCaptain = players.find(
-                  (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
-                );
-                const members = teamCaptain ? [teamCaptain] : [];
+      {room.status !== 'lobby' && room.status !== 'presentation' && room.status !== 'podium' && room.status !== 'ended' && (() => {
+        const isRoundScoreGame = Boolean(
+          activeGame &&
+          ['music', 'trivial', 'movies', 'mimica', 'un_dos_tres', 'fotos_proyector', 'baby_photos', 'drawing', 'beer_pong'].includes(activeGame.id)
+        );
 
-                return (
-                  <TeamScoreCard
-                    key={team.id}
-                    team={team}
-                    theme={theme}
-                    members={members}
-                    powerCardsCount={teamHand.length}
-                    variant="scoreboard"
-                    maxRoomScore={Math.max(...activeTeams.map((t) => t.score || 0), 0)}
-                    activeEffects={{
-                      hasDouble,
-                      hasBomb,
-                      hasShield,
-                      hasSentence,
-                      hasRussianRoulette,
-                      hasPhoenix,
-                      hasCurse,
-                      hasGamble: hasCaptainGamble,
-                    }}
-                  />
-                );
-              })}
+        return (
+          <footer className="border-t border-[#d4af37]/35 bg-black/85 backdrop-blur-md pt-3 pb-2 px-4 z-10">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs uppercase font-bold tracking-wider text-amber-200 flex items-center gap-1.5">
+                  {isRoundScoreGame ? (
+                    <>
+                      <span className="text-amber-400 text-sm">🎯</span>
+                      <span>Puntuación de la Partida:</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-amber-400 text-sm">🏆</span>
+                      <span>Marcador General:</span>
+                    </>
+                  )}
+                </span>
+              </div>
+              <div
+                className="flex-1 grid gap-2.5 w-full"
+                style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
+              >
+                {activeTeams.map((team) => {
+                  const theme = getTeamTheme(team.team_index);
+                  const teamHand = powerCards?.teamHands[team.id] || [];
+                  const hasDouble = powerCards?.activeEffects.some(
+                    (e) => e.sourceTeamId === team.id && e.cardId === 'doble'
+                  );
+                  const hasBomb = powerCards?.activeEffects.some(
+                    (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
+                  );
+                  const hasShield = powerCards?.activeEffects.some(
+                    (e) => e.sourceTeamId === team.id && e.cardId === 'escudo'
+                  );
+                  const hasSentence = powerCards?.activeEffects.some(
+                    (e) => e.targetTeamId === team.id && e.cardId === 'la_sentencia'
+                  );
+                  const hasRussianRoulette = powerCards?.activeEffects.some(
+                    (e) => e.sourceTeamId === team.id && e.cardId === 'ruleta_rusa'
+                  );
+                  const hasPhoenix = powerCards?.activeEffects.some(
+                    (e) => e.sourceTeamId === team.id && e.cardId === 'ave_fenix'
+                  );
+                  const hasCurse = teamHand.includes('la_maldicion');
+                  const hasCaptainGamble = !!captainGambles[team.id];
+                  const teamCaptain = players.find(
+                    (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
+                  );
+                  const members = teamCaptain ? [teamCaptain] : [];
+
+                  const roundScore = roundHits[team.id] || 0;
+                  const scoreSuffix = isRoundScoreGame
+                    ? (activeGame.id === 'music' || activeGame.id === 'trivial' || activeGame.id === 'mimica'
+                        ? (roundScore === 1 ? ' ACIERTO' : ' ACIERTOS')
+                        : ' PTS')
+                    : ' PTS';
+
+                  return (
+                    <TeamScoreCard
+                      key={team.id}
+                      team={team}
+                      theme={theme}
+                      members={members}
+                      powerCardsCount={teamHand.length}
+                      variant="scoreboard"
+                      customScore={isRoundScoreGame ? roundScore : team.score}
+                      scoreSuffix={scoreSuffix}
+                      subtitleScore={isRoundScoreGame ? `General: ${team.score} pts` : undefined}
+                      maxRoomScore={Math.max(...activeTeams.map((t) => (isRoundScoreGame ? (roundHits[t.id] || 0) : t.score || 0)), 0)}
+                      activeEffects={{
+                        hasDouble,
+                        hasBomb,
+                        hasShield,
+                        hasSentence,
+                        hasRussianRoulette,
+                        hasPhoenix,
+                        hasCurse,
+                        hasGamble: hasCaptainGamble,
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </footer>
-      )}
+          </footer>
+        );
+      })()}
 
       {/* MODAL CINEMATOGRÁFICO DE CARTA DE PODER EN TV CON ENTRADA DE IMPACTO Y ONDA EXPANSIVA */}
       <CinematicCardPlayReveal
@@ -1434,7 +1467,7 @@ export default function TvView() {
                                     ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50'
                                     : res.finalPoints < 0
                                     ? 'bg-red-500/30 text-red-300 border-red-500/50'
-                                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                                    : 'bg-[#14141e] text-amber-100/70 border-[#d4af37]/30'
                                 }`}
                               >
                                 {res.finalPoints > 0 ? `+${res.finalPoints}` : res.finalPoints} pts
@@ -1467,6 +1500,7 @@ export default function TvView() {
           </motion.div>
         )}
       </AnimatePresence>
-    </main>
+      </main>
+    </HellCasinoBackground>
   );
 }
