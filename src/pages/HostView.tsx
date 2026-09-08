@@ -88,6 +88,11 @@ import {
   getPowerCardById,
 } from '../lib/powerCards';
 import { SpeakeasyJukeboxWidget } from '../components/audio/SpeakeasyJukeboxWidget';
+import {
+  calculateTestVerdict,
+  TestVerdictCalculation,
+  TeamVerdictResult,
+} from '../lib/testVerdict';
 
 export default function HostView() {
   const { code } = useParams<{ code: string }>();
@@ -450,6 +455,10 @@ export default function HostView() {
 
     if (targetTeam) {
       handleScoreChange(targetTeam.id, 2);
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
+      }));
     }
     setTriviaRevealed(true);
     setTriviaReboundActive(false);
@@ -483,6 +492,10 @@ export default function HostView() {
 
     if (targetTeam) {
       handleScoreChange(targetTeam.id, 1);
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
+      }));
     }
     setTriviaRevealed(true);
     setTriviaReboundActive(false);
@@ -558,7 +571,12 @@ export default function HostView() {
     const remaining = teams.filter((t) => t.is_active && !nextEliminated.includes(t.id));
     if (remaining.length === 1) {
       // ¡ÚLTIMO EQUIPO EN PIE GANA!
-      handleScoreChange(remaining[0].id, 5);
+      const winnerId = remaining[0].id;
+      setRoundHits((prev) => ({
+        ...prev,
+        [winnerId]: (prev[winnerId] || 0) + 1,
+      }));
+      handleScoreChange(winnerId, 5);
       soundFX.playVictory();
     }
 
@@ -710,12 +728,30 @@ export default function HostView() {
     soundFX.playSuccess();
     syncMimicaState(nextHits, mimicaTimerSeconds, mimicaIsRunning);
     handleNextMimicaCard();
+    const targetTeam = selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : activeTeams[0];
+    if (targetTeam) {
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
+      }));
+    }
   };
 
   const handleSubtractMimicaHit = () => {
     const nextHits = Math.max(0, mimicaHitsCount - 1);
     setMimicaHitsCount(nextHits);
     syncMimicaState(nextHits, mimicaTimerSeconds, mimicaIsRunning);
+    const targetTeam = selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : activeTeams[0];
+    if (targetTeam) {
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: Math.max(0, (prev[targetTeam.id] || 0) - 1),
+      }));
+    }
   };
 
   const handleResetMimicaRound = () => {
@@ -744,6 +780,10 @@ export default function HostView() {
     }
 
     handleScoreChange(targetTeam.id, autoMoviePoints);
+    setRoundHits((prev) => ({
+      ...prev,
+      [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
+    }));
     setMovieRevealed(true);
     if (isLocked) {
       resetBuzzer();
@@ -765,6 +805,77 @@ export default function HostView() {
     if (isLocked) {
       resetBuzzer();
     }
+    soundFX.playFail();
+  };
+
+  const handleValidateBabyPhotoHit = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, 2);
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
+      }));
+    }
+    setBabyPhotoRevealed(true);
+    if (isLocked) resetBuzzer();
+    syncBabyPhotoState(babyPhotoIndex, true);
+    soundFX.playVictory();
+  };
+
+  const handleValidateBabyPhotoMiss = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, -1);
+    }
+    if (isLocked) resetBuzzer();
+    soundFX.playFail();
+  };
+
+  const handleValidateMusicHit = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, 2);
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
+      }));
+    }
+    setMusicRevealed(true);
+    setMusicPlaying(true);
+    if (isLocked) resetBuzzer();
+    syncMusicState(true, true);
+    soundFX.playVictory();
+  };
+
+  const handleValidateMusicMiss = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam) {
+      handleScoreChange(targetTeam.id, -1);
+    }
+    setMusicPlaying(true);
+    if (isLocked) resetBuzzer();
+    syncMusicState(true, false);
     soundFX.playFail();
   };
 
@@ -827,6 +938,8 @@ export default function HostView() {
     gameId: string;
     suggestedNextGame?: GameDefinition;
   } | null>(null);
+  const [roundHits, setRoundHits] = useState<Record<string, number>>({});
+  const [manualPodiumRanks, setManualPodiumRanks] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<'live' | 'cards' | 'teams' | 'catalog' | 'soundboard'>('live');
 
   const syncMusicState = (
@@ -1732,6 +1845,8 @@ export default function HostView() {
 
   // Acción: Seleccionar Juego Específico (asigna automáticamente el motor y reglas)
   const handleSelectGame = async (game: GameDefinition) => {
+    setRoundHits({});
+    setManualPodiumRanks({});
     const updatedRoom: Room = {
       ...room,
       status: 'playing',
@@ -1967,6 +2082,12 @@ export default function HostView() {
     if (!targetTeamId) return;
 
     handleScoreChange(targetTeamId, option.delta);
+    if (option.delta > 0) {
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeamId]: (prev[targetTeamId] || 0) + 1,
+      }));
+    }
 
     // LÓGICA AUTOMÁTICA PARA ADIVINA LA CANCIÓN:
     if (room.active_game_id === 'music') {
@@ -2037,6 +2158,89 @@ export default function HostView() {
   const selectedTeamCatalog = selectedTeamObj
     ? TEAMS_CATALOG.find((c) => c.index === selectedTeamObj.team_index)
     : null;
+
+  const currentVerdict: TestVerdictCalculation = useMemo(() => {
+    if (!testFinishedModal) {
+      return {
+        gameId: '',
+        gameTitle: '',
+        results: [],
+        consumedEffectIds: [],
+      };
+    }
+    return calculateTestVerdict({
+      gameId: testFinishedModal.gameId,
+      gameTitle: testFinishedModal.gameTitle,
+      teams: activeTeams,
+      roundHits,
+      manualRanks: manualPodiumRanks,
+      activeEffects: powerCards.activeEffects,
+    });
+  }, [testFinishedModal, activeTeams, roundHits, manualPodiumRanks, powerCards.activeEffects]);
+
+  const handleApplyAutomatedVerdict = () => {
+    if (!testFinishedModal || currentVerdict.results.length === 0) return;
+
+    // 1. Sumar puntos finales calculados de la prueba a cada equipo
+    const updatedTeams = teams.map((t) => {
+      const res = currentVerdict.results.find((r) => r.teamId === t.id);
+      if (!res) return t;
+      return {
+        ...t,
+        score: Math.max(0, t.score + res.finalPoints),
+      };
+    });
+    setTeams(updatedTeams);
+    localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(updatedTeams));
+    roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updatedTeams });
+
+    // 2. Archivar y descartar los efectos de cartas resueltos en esta prueba
+    if (currentVerdict.consumedEffectIds.length > 0) {
+      const nextEffects = powerCards.activeEffects.filter(
+        (eff) => !currentVerdict.consumedEffectIds.includes(eff.id)
+      );
+      const consumedCardIds = powerCards.activeEffects
+        .filter((eff) => currentVerdict.consumedEffectIds.includes(eff.id))
+        .map((eff) => eff.cardId);
+      const nextDiscard = [...powerCards.discardPile, ...consumedCardIds];
+      const nextPowerCards: PowerCardsState = {
+        ...powerCards,
+        activeEffects: nextEffects,
+        discardPile: nextDiscard,
+      };
+      setPowerCards(nextPowerCards);
+      localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextPowerCards));
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextPowerCards });
+    }
+
+    // 3. Sincronizar veredicto a la TV y jugadores
+    roomSync.broadcast({
+      type: 'TEST_VERDICT_APPLIED',
+      payload: {
+        gameTitle: testFinishedModal.gameTitle,
+        results: currentVerdict.results,
+      },
+    });
+
+    // 4. Celebración con sonido y monedas
+    soundFX.playVictory();
+    setShowCoinBurst(true);
+    setTimeout(() => setShowCoinBurst(false), 2500);
+
+    if (isSupabaseConfigured) {
+      currentVerdict.results.forEach(async (res) => {
+        const tObj = updatedTeams.find((t) => t.id === res.teamId);
+        if (tObj) {
+          await supabase.from('teams').update({ score: tObj.score }).eq('id', tObj.id);
+        }
+      });
+    }
+
+    // 5. Resetear contadores de aciertos y puestos de la prueba
+    setRoundHits({});
+    setManualPodiumRanks({});
+    setTestFinishedModal(null);
+  };
 
   const renderTeamsScoreboard = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -3266,8 +3470,8 @@ export default function HostView() {
                     </p>
                   </div>
 
-                  {/* Botones de acción principales: Reproducir/Pausar + Revelar */}
-                  <div className="flex gap-2 w-full md:w-auto items-center">
+                  {/* Botones de acción principales: Reproducir/Pausar + Revelar + Validación Rápida */}
+                  <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
                     <button
                       onClick={handleTogglePlayMusic}
                       className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
@@ -3292,6 +3496,24 @@ export default function HostView() {
                     >
                       {musicRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       <span className="hidden sm:inline">{musicRevealed ? 'Ocultar' : 'Revelar'}</span>
+                    </button>
+
+                    <button
+                      onClick={handleValidateMusicHit}
+                      className="flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 bg-emerald-400 hover:bg-emerald-300 text-slate-950"
+                      title="Validar acierto musical para el equipo activo"
+                    >
+                      <Check className="w-4 h-4 text-slate-950" />
+                      <span>Acierto</span>
+                    </button>
+
+                    <button
+                      onClick={handleValidateMusicMiss}
+                      className="px-3 py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-red-600/80 hover:bg-red-600 text-white"
+                      title="Fallo tras pulsar: penaliza -1 y reanuda música"
+                    >
+                      <X className="w-4 h-4" />
+                      <span className="hidden sm:inline">Fallo</span>
                     </button>
                   </div>
                 </div>
@@ -3861,7 +4083,7 @@ export default function HostView() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
                   <button
                     onClick={handleToggleBabyPhotoReveal}
                     className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
@@ -3873,6 +4095,24 @@ export default function HostView() {
                     {babyPhotoRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     <span>{babyPhotoRevealed ? 'Ocultar' : 'Revelar'}</span>
                     <span className="hidden sm:inline"> Solución en TV</span>
+                  </button>
+
+                  <button
+                    onClick={handleValidateBabyPhotoHit}
+                    className="flex-1 md:flex-none px-3.5 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                    title="Validar acierto de bebé para el equipo activo"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Acierto</span>
+                  </button>
+
+                  <button
+                    onClick={handleValidateBabyPhotoMiss}
+                    className="px-3 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-red-600/80 hover:bg-red-600 text-white"
+                    title="Fallo tras pulsar (-1)"
+                  >
+                    <X className="w-4 h-4" />
+                    <span className="hidden sm:inline">Fallo</span>
                   </button>
                 </div>
               </div>
@@ -5383,16 +5623,20 @@ export default function HostView() {
         </div>
       )}
 
-      {/* MODAL: VEREDICTO DE PRUEBA FINALIZADA */}
+      {/* MODAL: VEREDICTO AUTOMÁTICO DE PRUEBA FINALIZADA */}
       {testFinishedModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto deco-card-frame">
+            {/* CABECERA */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <span className="text-3xl animate-bounce">🏁</span>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-white uppercase">
-                    Prueba Finalizada
+                  <h3 className="text-base sm:text-lg font-black text-white uppercase flex items-center gap-2">
+                    <span>Veredicto de la Prueba</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono">
+                      {testFinishedModal.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
+                    </span>
                   </h3>
                   <p className="text-xs text-amber-300 font-bold">
                     {testFinishedModal.gameTitle}
@@ -5407,244 +5651,216 @@ export default function HostView() {
               </button>
             </div>
 
-            {/* SECCIÓN INTERACTIVA DE RESOLUCIÓN DE CARTAS DE PODER DE ESTA PRUEBA */}
-            <div className="space-y-2 border-t border-b border-slate-800 py-3">
+            {/* TABLA DE CLASIFICACIÓN Y PUNTOS AUTOMÁTICOS */}
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  Cartas y Efectos de Esta Prueba ({powerCards.activeEffects.length}):
+                <span className="text-[11px] font-black uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  Clasificación y Puntuaciones Calculadas:
                 </span>
+                <span className="text-[10px] text-slate-400">
+                  Aciertos en vivo • Podio editable
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {currentVerdict.results.map((res) => {
+                  const cat = TEAMS_CATALOG.find((c) => c.index === res.teamIndex) || TEAMS_CATALOG[0];
+                  const rankEmoji = res.rank === 1 ? '🥇' : res.rank === 2 ? '🥈' : res.rank === 3 ? '🥉' : '🎖️';
+                  return (
+                    <div
+                      key={res.teamId}
+                      className={`p-3 rounded-2xl border transition-all ${
+                        res.rank === 1
+                          ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                          : 'bg-slate-950/80 border-slate-800'
+                      } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
+                    >
+                      {/* POSICIÓN Y EQUIPO */}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {/* Selector manual de puesto si el Host quiere forzar orden o desempatar */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-base">{rankEmoji}</span>
+                          <select
+                            value={manualPodiumRanks[res.teamId] !== undefined ? manualPodiumRanks[res.teamId] : res.rank}
+                            onChange={(e) => {
+                              const newRank = parseInt(e.target.value, 10);
+                              setManualPodiumRanks((prev) => ({ ...prev, [res.teamId]: newRank }));
+                            }}
+                            className="bg-slate-900 border border-slate-700 text-amber-300 text-xs font-black rounded-lg px-1.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
+                            title="Cambiar posición en el podio manualmente"
+                          >
+                            <option value={1}>1.º</option>
+                            <option value={2}>2.º</option>
+                            <option value={3}>3.º</option>
+                            <option value={4}>4.º</option>
+                            <option value={5}>5.º</option>
+                          </select>
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg} shrink-0`} />
+                            <span className={`text-xs font-black uppercase truncate ${cat.twText}`}>
+                              {res.teamName}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            Marcador actual: {teams.find((t) => t.id === res.teamId)?.score || 0} pts
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CONTADOR DE ACIERTOS (CON + Y -) */}
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+                          <span className="text-[10px] text-slate-400 font-bold mr-1">Aciertos:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRoundHits((prev) => ({
+                                ...prev,
+                                [res.teamId]: Math.max(0, (prev[res.teamId] || 0) - 1),
+                              }));
+                            }}
+                            className="w-5 h-5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black flex items-center justify-center active:scale-95"
+                            title="Restar 1 acierto"
+                          >
+                            -
+                          </button>
+                          <span className="text-xs font-black text-white font-mono w-5 text-center">
+                            {res.hits}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRoundHits((prev) => ({
+                                ...prev,
+                                [res.teamId]: (prev[res.teamId] || 0) + 1,
+                              }));
+                            }}
+                            className="w-5 h-5 rounded-md bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 text-xs font-black flex items-center justify-center active:scale-95"
+                            title="Sumar 1 acierto"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* DESGLOSE: PUNTOS BASE + CARTAS = TOTAL */}
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 block font-mono">
+                              Base: +{res.basePoints}
+                            </span>
+                            {res.totalCardDelta !== 0 && (
+                              <span
+                                className={`text-[10px] font-black font-mono block ${
+                                  res.totalCardDelta > 0 ? 'text-emerald-400' : 'text-red-400'
+                                }`}
+                              >
+                                Cartas: {res.totalCardDelta > 0 ? `+${res.totalCardDelta}` : res.totalCardDelta}
+                              </span>
+                            )}
+                          </div>
+
+                          <div
+                            className={`px-3 py-1.5 rounded-xl font-mono font-black text-sm border flex items-center justify-center ${
+                              res.finalPoints > 0
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                                : res.finalPoints < 0
+                                ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                            }`}
+                          >
+                            {res.finalPoints > 0 ? `+${res.finalPoints}` : res.finalPoints} pts
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* BADGES DE CARTAS ACTIVAS QUE IMPACTAN A ESTE EQUIPO */}
+                      {res.cardImpacts.length > 0 && (
+                        <div className="w-full pt-1.5 border-t border-slate-800/80 flex flex-wrap gap-1.5">
+                          {res.cardImpacts.map((impact, impIdx) => (
+                            <span
+                              key={impIdx}
+                              title={impact.explanation}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 cursor-help ${
+                                impact.delta >= 0
+                                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                  : 'bg-red-500/15 text-red-300 border-red-500/30'
+                              }`}
+                            >
+                              <span>{impact.cardEmoji}</span>
+                              <span>{impact.cardName}</span>
+                              <strong className={impact.delta >= 0 ? 'text-emerald-300' : 'text-red-300'}>
+                                ({impact.delta >= 0 ? `+${impact.delta}` : impact.delta})
+                              </strong>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* BOTÓN PRINCIPAL: APLICAR VEREDICTO */}
+            <button
+              onClick={handleApplyAutomatedVerdict}
+              className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
+            >
+              <Trophy className="w-5 h-5 fill-slate-950" />
+              <span>
+                🚀 Aplicar Veredicto al Marcador
+                {currentVerdict.consumedEffectIds.length > 0 && ` (${currentVerdict.consumedEffectIds.length} cartas resueltas)`}
+              </span>
+            </button>
+
+            {/* RECURSOS ADICIONALES: DAR CARTA BONUS O TRANSFERIR MALDICIÓN */}
+            <div className="pt-2 border-t border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400">
+                  Opciones complementarias:
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 flex-1">
+                  <span className="text-xs">🎁</span>
+                  <select
+                    value={selectedBonusTeam}
+                    onChange={(e) => setSelectedBonusTeam(e.target.value)}
+                    className="bg-slate-900 border border-slate-700 text-purple-300 text-xs rounded-lg px-2 py-1 flex-1 min-w-0"
+                  >
+                    <option value="random">Equipo al azar</option>
+                    {activeTeams.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleDealBonusCard(selectedBonusTeam)}
+                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-lg active:scale-95 transition-all shrink-0"
+                  >
+                    Dar Carta
+                  </button>
+                </div>
+
+                {/* BOTÓN PARA LIMPIAR EFECTOS MANUALMENTE SI QUEDA ALGUNO */}
                 {powerCards.activeEffects.length > 0 && (
                   <button
                     onClick={handleClearAllActiveEffects}
-                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold rounded-lg border border-slate-700"
-                    title="Archivar todos los efectos y enviarlos al descarte"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 active:scale-95"
+                    title="Archivar efectos restantes"
                   >
-                    ✓ Archivar Todos
+                    Archivar Efectos ({powerCards.activeEffects.length})
                   </button>
                 )}
               </div>
 
-              {powerCards.activeEffects.length === 0 ? (
-                <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-[11px] text-slate-400 text-center">
-                  No hay cartas pendientes de resolver para esta prueba.
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {powerCards.activeEffects.map((eff) => {
-                    const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
-                    const targetTeam = eff.targetTeamId ? activeTeams.find((t) => t.id === eff.targetTeamId) : null;
-                    return (
-                      <div
-                        key={eff.id}
-                        className="p-2.5 rounded-xl bg-slate-950 border border-amber-400/40 flex flex-wrap items-center justify-between gap-2 shadow"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-lg">{eff.cardEmoji}</span>
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-black text-white">{eff.cardName}</span>
-                              <span className="text-[10px] font-bold text-amber-300">({team?.name || eff.sourceTeamName})</span>
-                              {targetTeam && (
-                                <span className="text-[10px] font-bold text-red-400">➔ {targetTeam.name}</span>
-                              )}
-                              {eff.targetPlayerName && (
-                                <span className="text-[10px] font-bold text-red-400">➔ {eff.targetPlayerName}</span>
-                              )}
-                            </div>
-                            {eff.sensoryLimitation && (
-                              <span className="text-[10px] text-purple-300 block font-medium">
-                                {eff.sensoryLimitation}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* ACCIONES DE RESOLUCIÓN SEGÚN LA CARTA */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {eff.cardId === 'bomba' && eff.targetTeamId && (
-                            <button
-                              onClick={() => {
-                                handleScoreChange(eff.targetTeamId!, -3);
-                                handleRemoveActiveEffect(eff.id);
-                              }}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                              title="Detonar Bomba: el objetivo pierde 3 puntos"
-                            >
-                              💣 Detonar (-3)
-                            </button>
-                          )}
-
-                          {eff.cardId === 'objetivo' && (
-                            <button
-                              onClick={() => {
-                                handleScoreChange(eff.sourceTeamId, 2);
-                                handleRemoveActiveEffect(eff.id);
-                              }}
-                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                              title="Objetivo cumplido: el equipo emisor gana +2 pts"
-                            >
-                              🎯 Cobrar (+2)
-                            </button>
-                          )}
-
-                          {eff.cardId === 'caza_lider' && (
-                            <button
-                              onClick={() => {
-                                if (eff.targetTeamId) handleScoreChange(eff.targetTeamId, -3);
-                                handleScoreChange(eff.sourceTeamId, 3);
-                                handleRemoveActiveEffect(eff.id);
-                              }}
-                              className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                              title="Destronar al líder: robar 3 pts al líder"
-                            >
-                              👑 Destronar (+3 / -3)
-                            </button>
-                          )}
-
-                          {eff.cardId === 'ruleta_rusa' && (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  handleScoreChange(eff.sourceTeamId, 6);
-                                  handleRemoveActiveEffect(eff.id);
-                                }}
-                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                              >
-                                +6 pts (1º-2º)
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleScoreChange(eff.sourceTeamId, -4);
-                                  handleRemoveActiveEffect(eff.id);
-                                }}
-                                className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                              >
-                                -4 pts (3º-5º)
-                              </button>
-                            </div>
-                          )}
-
-                          {eff.cardId === 'la_sentencia' && eff.targetTeamId && (
-                            <button
-                              onClick={() => {
-                                handleScoreChange(eff.targetTeamId!, -4);
-                                handleRemoveActiveEffect(eff.id);
-                              }}
-                              className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                            >
-                              💀 Ejecutar (-4)
-                            </button>
-                          )}
-
-                          {eff.cardId === 'golpe_maestro' && (
-                            <button
-                              onClick={() => {
-                                let stolenTotal = 0;
-                                const updated = teams.map((t) => {
-                                  if (t.id === eff.sourceTeamId) return t;
-                                  if (t.is_active && t.score > 0) {
-                                    stolenTotal += 1;
-                                    return { ...t, score: Math.max(0, t.score - 1) };
-                                  }
-                                  return t;
-                                });
-                                const finalTeams = updated.map((t) =>
-                                  t.id === eff.sourceTeamId ? { ...t, score: t.score + stolenTotal } : t
-                                );
-                                setTeams(finalTeams);
-                                roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: finalTeams });
-                                handleRemoveActiveEffect(eff.id);
-                                alert(`💥 ¡Golpe Maestro! ${stolenTotal} pts recolectados de los rivales.`);
-                              }}
-                              className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow active:scale-95"
-                            >
-                              💥 Golpe Maestro (+1 c/u)
-                            </button>
-                          )}
-
-                          {eff.cardId === 'robo_siglo' && eff.targetTeamId && (
-                            <button
-                              onClick={() => {
-                                const tTeam = teams.find((t) => t.id === eff.targetTeamId);
-                                const pts = prompt(`¿Cuántos puntos ganó ${tTeam?.name || 'el rival'} en esta prueba? (Se robará el 50%)`, '4');
-                                const num = parseInt(pts || '0', 10);
-                                if (num > 0) {
-                                  const steal = Math.round(num * 0.5);
-                                  handleScoreChange(eff.targetTeamId!, -steal);
-                                  handleScoreChange(eff.sourceTeamId, steal);
-                                  handleRemoveActiveEffect(eff.id);
-                                }
-                              }}
-                              className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow active:scale-95"
-                            >
-                              👑 Robo 50%
-                            </button>
-                          )}
-
-                          {eff.cardId === 'impuesto_padrino' && (
-                            <button
-                              onClick={() => {
-                                const pts = prompt(
-                                  `¿Cuántos puntos consiguió el equipo vencedor en 1.er puesto?\n(Se transferirá el 50% al equipo ${eff.sourceTeamName})`,
-                                  '4'
-                                );
-                                const num = parseInt(pts || '0', 10);
-                                if (num > 0) {
-                                  const half = Math.round(num * 0.5);
-                                  handleScoreChange(eff.sourceTeamId, half);
-                                  handleRemoveActiveEffect(eff.id);
-                                  alert(`🎩 ¡Impuesto del Padrino cobrado! +${half} pts transferidos a ${eff.sourceTeamName}.`);
-                                }
-                              }}
-                              className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                            >
-                              🎩 Impuesto 50%
-                            </button>
-                          )}
-
-                          {eff.cardId === 'doble' && (
-                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-lg font-black">
-                              x2 Aplicado
-                            </span>
-                          )}
-
-                          {eff.cardId === 'ave_fenix' && (
-                            <button
-                              onClick={() => {
-                                const pts = prompt(
-                                  `¿Cuántos puntos base consiguió ${eff.sourceTeamName} en esta prueba?\n(Se sumará el x2 adicional para alcanzar el triple x3)`,
-                                  '3'
-                                );
-                                const num = parseInt(pts || '0', 10);
-                                if (num > 0) {
-                                  const bonus = num * 2;
-                                  handleScoreChange(eff.sourceTeamId, bonus);
-                                  handleRemoveActiveEffect(eff.id);
-                                  alert(`🔥 ¡EL AVE FÉNIX RESURGE! +${bonus} pts sumados a ${eff.sourceTeamName} (Total x3 = ${num * 3} pts).`);
-                                }
-                              }}
-                              className="px-2 py-1 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
-                            >
-                              🔥 Triplicar x3
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleRemoveActiveEffect(eff.id)}
-                            className="p-1 text-slate-500 hover:text-red-400 text-xs font-bold"
-                            title="Quitar efecto"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* LA MALDICIÓN ÉPICA: PATATA CALIENTE (SE PASA AL RIVAL SUPERADO) */}
+              {/* LA MALDICIÓN ÉPICA: PATATA CALIENTE */}
               {(() => {
                 const cursedTeams = activeTeams.filter((t) => {
                   const hand = powerCards.teamHands[t.id] || [];
@@ -5652,8 +5868,8 @@ export default function HostView() {
                 });
                 if (cursedTeams.length === 0) return null;
                 return (
-                  <div className="mt-2 p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 space-y-1.5">
-                    <span className="text-[10px] font-black uppercase text-purple-300 block flex items-center gap-1">
+                  <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 space-y-1.5">
+                    <span className="text-[10px] font-black uppercase text-purple-300 flex items-center gap-1">
                       <span>☠️</span> La Maldición (Patata Caliente - Fallos restan x2):
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -5670,7 +5886,9 @@ export default function HostView() {
                               const fromH = [...(powerCards.teamHands[cTeam.id] || [])];
                               const cardIdx = fromH.indexOf('la_maldicion');
                               if (cardIdx !== -1) fromH.splice(cardIdx, 1);
-                              const toH = [...(powerCards.teamHands[target.id] || []), 'la_maldicion'];
+                              const targetHand = powerCards.teamHands[target.id] || [];
+                              const wasFull = targetHand.length >= 3;
+                              const toH = [...targetHand, 'la_maldicion'];
                               const nextState: PowerCardsState = {
                                 ...powerCards,
                                 teamHands: {
@@ -5682,7 +5900,7 @@ export default function HostView() {
                               setPowerCards(nextState);
                               localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
                               roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
-                              alert(`☠️ ¡La Maldición ha sido transferida de ${cTeam.name} a ${target.name}!`);
+                              alert(`☠️ ¡La Maldición ha sido transferida de ${cTeam.name} a ${target.name}!${wasFull ? `\n\n⚠️ ${target.name} ya tenía ${targetHand.length} cartas: La Maldición entra como carga parásita bloqueando cualquier nuevo robo de cartas hasta que jueguen cartas de su mano.` : ''}`);
                             }
                           }}
                           className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 border border-purple-400/50 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow active:scale-95"
@@ -5697,68 +5915,8 @@ export default function HostView() {
               })()}
             </div>
 
-            {/* AJUSTES FINALES DE PUNTOS POR EQUIPO */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-black uppercase text-slate-400 tracking-wider block">
-                Marcador y Puntos Finales de la Prueba:
-              </span>
-              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                {activeTeams.map((t) => {
-                  const cat = TEAMS_CATALOG.find((c) => c.index === t.team_index) || TEAMS_CATALOG[0];
-                  return (
-                    <div
-                      key={t.id}
-                      className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-3 h-3 rounded-full ${cat.twBg} shrink-0`} />
-                        <span className={`text-xs font-black uppercase truncate ${cat.twText}`}>
-                          {t.name}
-                        </span>
-                        <span className="text-sm font-black text-white font-mono shrink-0">
-                          {t.score} pts
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => handleScoreChange(t.id, 5, true)}
-                          className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-black rounded-lg border border-amber-500/30"
-                          title="+5 puntos"
-                        >
-                          +5
-                        </button>
-                        <button
-                          onClick={() => handleScoreChange(t.id, 2, true)}
-                          className="px-2 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-500/30"
-                          title="+2 puntos"
-                        >
-                          +2
-                        </button>
-                        <button
-                          onClick={() => handleScoreChange(t.id, 1, true)}
-                          className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-[10px] font-black rounded-lg border border-blue-500/30"
-                          title="+1 punto"
-                        >
-                          +1
-                        </button>
-                        <button
-                          onClick={() => handleDealBonusCard(t.id)}
-                          className="px-2 py-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 text-[10px] font-black rounded-lg border border-purple-500/40 flex items-center gap-1"
-                          title="Dar carta bonus a este equipo"
-                        >
-                          <span>🎁</span>
-                          <span className="hidden sm:inline">Carta</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* ACCIONES DE CIERRE O SALTO AL SIGUIENTE JUEGO */}
-            <div className="pt-3 border-t border-slate-800 space-y-2">
+            <div className="pt-2 border-t border-slate-800 space-y-2">
               {testFinishedModal.suggestedNextGame && (
                 <button
                   onClick={() => {

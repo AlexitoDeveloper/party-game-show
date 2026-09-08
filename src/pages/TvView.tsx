@@ -205,7 +205,28 @@ export default function TvView() {
     sensoryLimitation?: string;
     recoveredCard?: PowerCard;
   } | null>(null);
-  const [testFinishedNotification, setTestFinishedNotification] = useState<{ gameTitle: string; winnerTeamName?: string } | null>(null);
+  const [testFinishedNotification, setTestFinishedNotification] = useState<{
+    gameTitle: string;
+    winnerTeamName?: string;
+    results?: Array<{
+      teamId: string;
+      teamName: string;
+      teamIndex: number;
+      colorHex: string;
+      rank: number;
+      hits: number;
+      basePoints: number;
+      cardImpacts: Array<{
+        cardId: string;
+        cardName: string;
+        cardEmoji: string;
+        delta: number;
+        explanation: string;
+      }>;
+      totalCardDelta: number;
+      finalPoints: number;
+    }>;
+  } | null>(null);
   const [selectedPresentationCard, setSelectedPresentationCard] = useState<PowerCard | null>(null);
 
   // Estados del minijuego de adivinar películas
@@ -414,8 +435,20 @@ export default function TvView() {
         setTimerSeconds(null);
         setMusicPlaying(false);
         setTimeout(() => {
+          setTestFinishedNotification((prev) => (prev?.results ? prev : null));
+        }, 8000);
+      } else if (event.type === 'TEST_VERDICT_APPLIED') {
+        setTestFinishedNotification({
+          gameTitle: event.payload.gameTitle,
+          results: event.payload.results,
+        });
+        triggerVictoryConfetti();
+        resetBuzzer();
+        setTimerSeconds(null);
+        setMusicPlaying(false);
+        setTimeout(() => {
           setTestFinishedNotification(null);
-        }, 7000);
+        }, 12000);
       } else if (event.type === 'SWITCH_GAME') {
         setRoom((prev) => ({
           ...prev,
@@ -2406,7 +2439,75 @@ export default function TvView() {
                   </p>
                 </div>
 
-                {testFinishedNotification.winnerTeamName && (
+                {testFinishedNotification.results && testFinishedNotification.results.length > 0 ? (
+                  <div className="space-y-2.5 pt-2">
+                    <span className="text-xs uppercase font-broadway tracking-widest text-amber-300 block text-center">
+                      🏆 Podio Oficial de la Prueba
+                    </span>
+                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                      {testFinishedNotification.results.map((res) => {
+                        const rankEmoji = res.rank === 1 ? '🥇' : res.rank === 2 ? '🥈' : res.rank === 3 ? '🥉' : '🎖️';
+                        return (
+                          <div
+                            key={res.teamId}
+                            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                              res.rank === 1
+                                ? 'bg-gold-gradient/20 border-[#d4af37] shadow-deco-gold'
+                                : 'bg-[#14141e]/90 border-[#d4af37]/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-2xl shrink-0">{rankEmoji}</span>
+                              <div className="min-w-0 text-left">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="w-3 h-3 rounded-full shrink-0"
+                                    style={{ backgroundColor: res.colorHex }}
+                                  />
+                                  <span className="text-base font-broadway uppercase text-white truncate">
+                                    {res.teamName}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-amber-200/70 font-vintage block">
+                                  {res.hits} {res.hits === 1 ? 'acierto' : 'aciertos'} en la ronda
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {res.cardImpacts.map((imp, impIdx) => (
+                                <span
+                                  key={impIdx}
+                                  className={`text-xs font-broadway px-2 py-0.5 rounded-lg border flex items-center gap-1 ${
+                                    imp.delta >= 0
+                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                      : 'bg-red-500/20 text-red-300 border-red-500/40'
+                                  }`}
+                                  title={imp.explanation}
+                                >
+                                  <span>{imp.cardEmoji}</span>
+                                  <span>{imp.delta >= 0 ? `+${imp.delta}` : imp.delta}</span>
+                                </span>
+                              ))}
+
+                              <span
+                                className={`px-3.5 py-1.5 rounded-xl font-broadway text-lg font-black border ${
+                                  res.finalPoints > 0
+                                    ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50'
+                                    : res.finalPoints < 0
+                                    ? 'bg-red-500/30 text-red-300 border-red-500/50'
+                                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                                }`}
+                              >
+                                {res.finalPoints > 0 ? `+${res.finalPoints}` : res.finalPoints} pts
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : testFinishedNotification.winnerTeamName ? (
                   <div className="bg-gold-gradient/15 border-2 border-[#d4af37]/60 rounded-2xl p-4 shadow-inner">
                     <span className="text-[11px] uppercase font-broadway tracking-wider text-amber-300 block">
                       Equipo más destacado:
@@ -2415,12 +2516,14 @@ export default function TvView() {
                       🎉 {testFinishedNotification.winnerTeamName}
                     </span>
                   </div>
-                )}
+                ) : null}
 
-                <div className="pt-2 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-200/70">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                  <span>El Anfitrión está asignando puntuaciones y cartas bonus en su consola...</span>
-                </div>
+                {!testFinishedNotification.results && (
+                  <div className="pt-2 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-200/70">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span>El Anfitrión está asignando puntuaciones y cartas bonus en su consola...</span>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

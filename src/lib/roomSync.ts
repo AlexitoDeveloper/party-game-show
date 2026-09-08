@@ -54,6 +54,30 @@ export type RoomSyncEvent =
   | { type: 'LAUNCH_TIMER'; payload: { seconds: number } }
   | { type: 'CLEAR_CAPTAIN_GAMBLES'; payload?: { teamId?: string } }
   | { type: 'TEST_FINISHED'; payload: { gameTitle: string; winnerTeamName?: string } }
+  | {
+      type: 'TEST_VERDICT_APPLIED';
+      payload: {
+        gameTitle: string;
+        results: Array<{
+          teamId: string;
+          teamName: string;
+          teamIndex: number;
+          colorHex: string;
+          rank: number;
+          hits: number;
+          basePoints: number;
+          cardImpacts: Array<{
+            cardId: string;
+            cardName: string;
+            cardEmoji: string;
+            delta: number;
+            explanation: string;
+          }>;
+          totalCardDelta: number;
+          finalPoints: number;
+        }>;
+      };
+    }
   | { type: 'PRESENTATION_SLIDE'; payload: { slide: number } }
   | { type: 'TRIGGER_CONFETTI'; payload?: { teamId?: string | number } }
   | {
