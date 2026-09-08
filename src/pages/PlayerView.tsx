@@ -12,6 +12,11 @@ import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards';
 import PowerCardView from '../components/PowerCardView';
 import { FannedHandDeck } from '../components/cards/FannedHandDeck';
+import { PlayerBuzzerSection } from '../components/player/PlayerBuzzerSection';
+import { PlayerBingoSection } from '../components/player/PlayerBingoSection';
+import { PlayerMimicaSection } from '../components/player/PlayerMimicaSection';
+import { PlayerCardHandModal } from '../components/player/PlayerCardHandModal';
+import { PlayerDoubleOrNothingModal } from '../components/player/PlayerDoubleOrNothingModal';
 import { ArcadeBuzzer } from '../components/ArcadeBuzzer';
 import { getTeamTheme } from '../lib/teamThemes';
 import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
@@ -1021,216 +1026,30 @@ export default function PlayerView() {
 
           {/* ESCENARIO DEL MÓVIL SEGÚN TIPO DE MINIJUEGO */}
           {activeGame.engine === 'buzzer' ? (
-            /* PULSADOR 3D GIGANTE EXCLUSIVO PARA JUEGOS DE PULSADOR */
-            <div className="my-auto flex flex-col items-center w-full">
-
-              {isBanned ? (
-                /* PULSADOR SELLADO CON CADENAS DE HIERRO Y CANDADO DE LATÓN */
-                <motion.div
-                  animate={bannedShake ? { x: [-12, 12, -8, 8, -4, 4, 0] } : {}}
-                  transition={{ duration: 0.4 }}
-                  onClick={handleBannedClick}
-                  className="relative w-64 h-64 rounded-full bg-[#150808] border-8 border-red-900 flex flex-col items-center justify-center p-5 text-center shadow-2xl cursor-pointer select-none group active:scale-95 transition-transform overflow-hidden deco-card-frame"
-                  title="¡Toca para intentar forcejear el candado!"
-                >
-                  {/* FONDO METÁLICO CON RAYAS DE PELIGRO */}
-                  <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(185,28,28,0.15)_0px,rgba(185,28,28,0.15)_15px,transparent_15px,transparent_30px)]" />
-
-                  {/* CADENAS DE HIERRO CRUZADAS */}
-                  <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-7 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-900 border-y-2 border-stone-950 rotate-45 shadow-2xl flex items-center justify-around px-2 z-10">
-                    <span className="text-xs opacity-70">⛓️</span>
-                    <span className="text-[9px] font-broadway uppercase tracking-widest text-stone-300 font-black">BLOQUEADO</span>
-                    <span className="text-xs opacity-70">⛓️</span>
-                  </div>
-                  <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-7 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-900 border-y-2 border-stone-950 -rotate-45 shadow-2xl flex items-center justify-around px-2 z-10">
-                    <span className="text-xs opacity-70">⛓️</span>
-                    <span className="text-[9px] font-broadway uppercase tracking-widest text-stone-300 font-black">CLAUSURA</span>
-                    <span className="text-xs opacity-70">⛓️</span>
-                  </div>
-
-                  {/* CANDADO DE LATÓN MACIZO EN RELIEVE */}
-                  <div className="relative z-20 w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-400 via-[#b38f2a] to-amber-900 border-4 border-[#f5eedb] flex flex-col items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform">
-                    <Lock className="w-10 h-10 text-slate-950 fill-slate-950" />
-                    <span className="text-[9px] font-broadway uppercase tracking-widest text-slate-950 font-black mt-0.5">
-                      SELLADO
-                    </span>
-                  </div>
-
-                  <div className="relative z-20 mt-3 bg-black/90 px-3 py-1 rounded-full border border-red-500/60 shadow-md">
-                    <span className="text-[10px] font-broadway uppercase text-red-300 tracking-wider">
-                      ¡TOCA PARA FORCEJEAR!
-                    </span>
-                  </div>
-                </motion.div>
-              ) : captainDuel?.isActive && !player?.is_captain ? (
-                <div className="w-64 h-64 rounded-full bg-[#0c0c14]/95 border-8 border-[#d4af37]/50 flex flex-col items-center justify-center p-6 text-center shadow-deco-gold opacity-85 deco-card-frame">
-                  <ShieldAlert className="w-12 h-12 text-[#d4af37] mb-2" />
-                  <span className="text-sm font-broadway uppercase text-gold-gradient">
-                    DUELO DE CAPITANES
-                  </span>
-                  <span className="text-[11px] font-vintage text-amber-200/80 font-bold mt-1 max-w-[170px]">
-                    Solo tu Capitán 👑 puede presionar en este reto
-                  </span>
-                </div>
-              ) : (
-                <ArcadeBuzzer
-                  theme={getTeamTheme(selectedTeam.index)}
-                  isLocked={isLocked}
-                  isDuelActive={captainDuel?.isActive}
-                  onPress={handleBuzzerClick}
-                />
-              )}
-
-              {/* ESTADO EN TIEMPO REAL CON ALTURA FIJA PARA EVITAR DESPLAZAMIENTOS */}
-              <div className="mt-4 h-14 flex items-center justify-center text-center px-2">
-                {isLocked ? (
-                  isMeWinner ? (
-                    <span className="text-sm font-broadway text-gold-gradient uppercase tracking-wider block drop-shadow-md">
-                      🎉 ¡HAS SIDO EL MÁS RÁPIDO! RESPONDE AHORA
-                    </span>
-                  ) : (
-                    <span className="text-xs font-vintage font-bold text-amber-200/70 uppercase tracking-wider block">
-                      Otro equipo ha pulsado primero ({winner?.teamName})
-                    </span>
-                  )
-                ) : (
-                  <span className="text-xs font-vintage font-bold text-amber-300/80 uppercase tracking-widest block">
-                    Mantén el dedo listo sobre el timbre de bronce
-                  </span>
-                )}
-              </div>
-            </div>
+            <PlayerBuzzerSection
+              isBanned={isBanned}
+              bannedShake={bannedShake}
+              onBannedClick={handleBannedClick}
+              captainDuel={captainDuel}
+              player={player}
+              selectedTeamIndex={selectedTeam.index}
+              isLocked={isLocked}
+              onBuzzerClick={handleBuzzerClick}
+              isMeWinner={isMeWinner}
+              winner={winner}
+            />
           ) : activeGame.id === 'bingo' ? (
-            /* 🎱 VISTA EN VIVO DE BINGO (SIN PULSADOR) */
-            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
-                  <span>🎱</span> BINGO DE SALÓN EN VIVO
-                </div>
-
-                {/* BOLA EN PANTALLA */}
-                <div className="flex flex-col items-center justify-center my-2 min-h-[140px]">
-                  {bingoIsSpinning ? (
-                    <div className="w-28 h-28 rounded-full bg-gold-gradient flex flex-col items-center justify-center shadow-deco-gold border-4 border-[#f5eedb] animate-spin">
-                      <span className="text-3xl">🎱</span>
-                    </div>
-                  ) : bingoCurrentBall ? (
-                    (() => {
-                      const theme = getBingoBallTheme(bingoCurrentBall);
-                      const nick = BINGO_NICKNAMES[bingoCurrentBall];
-                      return (
-                        <div className="flex flex-col items-center animate-bounce-short">
-                          <div
-                            className={`w-28 h-28 rounded-full flex flex-col items-center justify-center border-4 shadow-deco-gold relative select-none ${theme.bgGradient} ${theme.border} ${theme.shadow}`}
-                          >
-                            <div className="absolute top-2 left-4 w-6 h-3 bg-white/40 rounded-full blur-[1px] -rotate-12 pointer-events-none" />
-                            <span className={`text-5xl font-broadway tracking-tighter ${theme.ballTextClass}`}>
-                              {bingoCurrentBall}
-                            </span>
-                          </div>
-                          {nick && (
-                            <span className="mt-2.5 text-xs font-broadway uppercase tracking-wider text-slate-950 bg-gold-gradient border border-[#f5eedb]/40 px-3 py-1 rounded-full shadow-sm">
-                              "{nick}"
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="w-28 h-28 rounded-full bg-[#07070a]/90 border-2 border-dashed border-[#d4af37]/40 flex flex-col items-center justify-center text-amber-300/60 p-2 text-center">
-                      <span className="text-2xl mb-1">🎱</span>
-                      <span className="text-[10px] font-vintage font-bold">Esperando extracción de bola</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* CONTADOR DE BOLAS */}
-                <div className="mt-3 pt-3 border-t border-[#d4af37]/30 flex items-center justify-between text-xs text-amber-200/80 font-vintage">
-                  <span className="font-bold">Bolas extraídas:</span>
-                  <span className="font-broadway text-gold-gradient text-sm">
-                    {bingoDrawnBalls.length} <span className="text-[11px] text-amber-200/50">/ 90</span>
-                  </span>
-                </div>
-
-                {/* BOLAS RECIENTES */}
-                {bingoDrawnBalls.length > 0 && (
-                  <div className="mt-2.5 flex items-center justify-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] uppercase font-vintage font-bold text-amber-300/60 mr-1">Previas:</span>
-                    {bingoDrawnBalls.slice(-5).reverse().map((num, idx) => {
-                      const ballTheme = getBingoBallTheme(num);
-                      return (
-                        <span
-                          key={`${num}-${idx}`}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-broadway font-black shadow-sm ${ballTheme.bgGradient} ${ballTheme.ballTextClass} ${idx === 0 ? 'ring-2 ring-amber-400' : 'opacity-70'}`}
-                        >
-                          {num}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* RECORDATORIO DE PREMIOS */}
-                <div className="mt-3 grid grid-cols-2 gap-2 text-left">
-                  <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2 shadow-inner">
-                    <div className="text-[10px] font-broadway uppercase text-amber-300">📏 Línea</div>
-                    <div className="text-xs font-vintage font-bold text-white">+2 puntos</div>
-                  </div>
-                  <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-xl p-2 shadow-inner">
-                    <div className="text-[10px] font-broadway uppercase text-gold-gradient">🎱 BINGO</div>
-                    <div className="text-xs font-vintage font-bold text-white">+6 puntos</div>
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-amber-200/70 mt-3 font-vintage font-semibold">
-                  Juega con tu cartón físico. Si completas Línea o Bingo, ¡avisa al anfitrión en directo!
-                </p>
-              </div>
-            </div>
+            <PlayerBingoSection
+              bingoIsSpinning={bingoIsSpinning}
+              bingoCurrentBall={bingoCurrentBall}
+              bingoDrawnBalls={bingoDrawnBalls}
+            />
           ) : activeGame.id === 'mimica' ? (
-            /* 🎭 MÍMICA */
-            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
-              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
-                  <span>🎭</span> TEATRO DE CINE MUDO
-                </div>
-                <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">{activeGame.title}</h3>
-                <p className="text-xs font-vintage text-amber-100/80 mb-3">
-                  Atento a tus 2 compañeros que actúan en el centro de la sala. ¡No se puede hablar ni emitir sonidos!
-                </p>
-
-                <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-3 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-vintage font-bold text-amber-200">¿Eres actor de tu equipo?</span>
-                    <button
-                      onClick={() => setSecretCardVisible(!secretCardVisible)}
-                      className="text-xs text-slate-950 font-broadway font-black flex items-center gap-1 bg-gold-gradient px-2.5 py-1 rounded-lg border border-[#f5eedb]/50 shadow-sm active:scale-95"
-                    >
-                      {secretCardVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{secretCardVisible ? 'Ocultar' : 'Ver Despacho'}</span>
-                    </button>
-                  </div>
-
-                  {secretCardVisible && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-3 pt-3 border-t border-[#d4af37]/30 text-xs font-vintage text-amber-100"
-                    >
-                      <div className="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-[#d4af37] font-broadway text-[10px] uppercase mb-1">
-                        TELEGRAMA SECRETO
-                      </div>
-                      <p className="font-bold text-amber-200 mb-1">Solicita al anfitrión tu palabra o tarjeta secreta.</p>
-                      <p className="text-[11px] text-red-300 font-bold">🚫 ¡Totalmente prohibido hablar, susurrar o emitir ruidos!</p>
-                    </motion.div>
-                  )}
-                </div>
-
-                <div className="text-[11px] text-amber-300/70 font-vintage font-medium mt-2">
-                  El anfitrión controlará el tiempo y asignará los puntos al terminar.
-                </div>
-              </div>
-            </div>
+            <PlayerMimicaSection
+              gameTitle={activeGame.title}
+              secretCardVisible={secretCardVisible}
+              onToggleSecretCard={() => setSecretCardVisible(!secretCardVisible)}
+            />
           ) : activeGame.id === 'drawing' ? (
             /* 🎨 TELÉFONO DIBUJADO */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
@@ -1357,329 +1176,30 @@ export default function PlayerView() {
       )}
 
       {/* MODAL COLECCIONABLE DE NAIPES DE PODER (ESTILO SPEAKEASY) */}
-      {isCardModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#07070a]/95 backdrop-blur-xl flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 select-none">
-          <div className="bg-[#0c0c14] border-2 border-[#d4af37]/60 rounded-3xl w-full max-w-sm max-h-[92vh] overflow-y-auto p-3.5 sm:p-5 shadow-deco-gold space-y-3 deco-card-frame">
-            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🃏</span>
-                <div>
-                  <h3 className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">Naipes de tu Bando</h3>
-                  <span className="text-[10px] font-vintage text-amber-200/70">
-                    {selectedTeam?.name} • Baraja de Casino
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setIsCardModalOpen(false);
-                  setSelectedCardToPlay(null);
-                }}
-                className="p-1.5 bg-[#14141e] border border-[#d4af37]/30 rounded-full text-amber-200 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* SECCIÓN SI ESTÁ SELECCIONANDO OBJETIVO PARA LANZAR */}
-            {selectedCardToPlay ? (
-              <div className="space-y-4">
-                <div className="flex flex-col items-center justify-center my-2 space-y-2">
-                  <PowerCardView card={selectedCardToPlay} size="sm" />
-                  <p className="text-xs text-amber-300 font-medium italic text-center">
-                    "{selectedCardToPlay.tagline}"
-                  </p>
-                </div>
-
-                {selectedCardToPlay.requiresTarget === 'team' && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-slate-300 block">
-                      Elige el Equipo Rival Objetivo:
-                    </label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {activeTeams
-                        .filter((t) => t.id !== myTeamId)
-                        .map((team) => {
-                          const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
-                          const isSelected = targetTeamId === team.id;
-                          return (
-                            <button
-                              key={team.id}
-                              onClick={() => setTargetTeamId(team.id)}
-                              className={`p-3 rounded-xl border text-left font-bold text-xs flex items-center justify-between transition-all ${
-                                isSelected
-                                  ? `${cat?.twBg} text-slate-950 font-black shadow-md scale-102`
-                                  : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-                              }`}
-                            >
-                              <span>{team.name}</span>
-                              {isSelected && <span>✓ Seleccionado</span>}
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-
-                {selectedCardToPlay.requiresTarget === 'player' && (
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase text-slate-300 block">
-                        Elige el Jugador Rival Objetivo:
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsManualPlayerEntry(!isManualPlayerEntry)}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 underline font-bold"
-                      >
-                        {isManualPlayerEntry ? 'Volver a lista' : 'Escribir a mano'}
-                      </button>
-                    </div>
-
-                    {!isManualPlayerEntry ? (
-                      rivalPlayers.length === 0 ? (
-                        <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-center space-y-1">
-                          <p className="text-xs text-slate-400">No hay otros jugadores detectados.</p>
-                          <button
-                            type="button"
-                            onClick={() => setIsManualPlayerEntry(true)}
-                            className="text-xs text-amber-400 font-bold underline"
-                          >
-                            Escribir nombre del rival manualmente
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto pr-1">
-                          {rivalPlayers.map((p) => {
-                            const pTeam = activeTeams.find((t) => t.id === p.team_id || t.team_index === p.team_index);
-                            const pCat = pTeam ? TEAMS_CATALOG.find((c) => c.index === pTeam.team_index) : null;
-                            const isSelected = targetPlayerName === p.nickname;
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => {
-                                  setTargetPlayerName(p.nickname);
-                                  if (pTeam) setTargetTeamId(pTeam.id);
-                                }}
-                                className={`p-2.5 rounded-xl border text-left font-bold text-xs flex items-center justify-between transition-all ${
-                                  isSelected
-                                    ? 'bg-amber-400 text-slate-950 font-black shadow-md scale-102 border-amber-300'
-                                    : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base">{p.badge_emoji || '👤'}</span>
-                                  <div>
-                                    <span className="block leading-tight text-xs font-black">{p.nickname}</span>
-                                    <span className={`text-[9px] uppercase font-bold block ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
-                                      {pCat?.name || pTeam?.name || 'Equipo Rival'}
-                                    </span>
-                                  </div>
-                                </div>
-                                {isSelected && <span className="text-[10px] font-black">✓ Elegido</span>}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )
-                    ) : (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          placeholder="Nombre del jugador rival..."
-                          value={targetPlayerName}
-                          onChange={(e) => setTargetPlayerName(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none focus:border-amber-400"
-                        />
-
-                        <span className="text-[10px] text-slate-500 block uppercase font-bold">
-                          Equipo del jugador:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {activeTeams
-                            .filter((t) => t.id !== myTeamId)
-                            .map((t) => (
-                              <button
-                                key={t.id}
-                                type="button"
-                                onClick={() => setTargetTeamId(t.id)}
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
-                                  targetTeamId === t.id
-                                    ? 'bg-amber-400 text-slate-950'
-                                    : 'bg-slate-950 text-slate-400 border border-slate-800'
-                                }`}
-                              >
-                                {t.name}
-                              </button>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {selectedCardToPlay.requiresTarget === 'card' && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-slate-300 block">
-                      Elige la Carta a Recuperar del Descarte:
-                    </label>
-                    {!powerCards?.discardPile || powerCards.discardPile.length === 0 ? (
-                      <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-center space-y-1">
-                        <span className="text-xl">📭</span>
-                        <p className="text-xs text-slate-400">
-                          No hay cartas en la pila de descartes aún.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        {powerCards.discardPile.map((dCardId, idx) => {
-                          const dCard = getPowerCardById(dCardId);
-                          if (!dCard) return null;
-                          const isSelected = targetCardId === dCardId;
-                          return (
-                            <button
-                              key={`${dCardId}_${idx}`}
-                              onClick={() => setTargetCardId(dCardId)}
-                              className={`w-full p-2.5 rounded-xl border text-left font-bold text-xs flex items-center justify-between transition-all ${
-                                isSelected
-                                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-amber-300 shadow-md font-black'
-                                  : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="text-base">{dCard.emoji}</span>
-                                <div>
-                                  <span className="block">{dCard.name}</span>
-                                  <span className="text-[10px] opacity-75 font-normal">
-                                    ★ {dCard.rarity}
-                                  </span>
-                                </div>
-                              </div>
-                              {isSelected && <span>✓ Elegida</span>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => setSelectedCardToPlay(null)}
-                    className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs uppercase hover:bg-slate-700"
-                  >
-                    Atrás
-                  </button>
-                  <button
-                    disabled={
-                      (selectedCardToPlay.requiresTarget === 'team' && !targetTeamId) ||
-                      (selectedCardToPlay.requiresTarget === 'player' && !targetPlayerName.trim()) ||
-                      (selectedCardToPlay.requiresTarget === 'card' &&
-                        (!targetCardId || !powerCards?.discardPile?.length))
-                    }
-                    onClick={() =>
-                      executeCardAction(selectedCardToPlay, targetTeamId, targetPlayerName, targetCardId)
-                    }
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-40 disabled:pointer-events-none text-slate-950 font-black text-xs uppercase shadow-lg shadow-amber-500/30 active:scale-95 transition-all"
-                  >
-                    🚀 ¡Activar Poder!
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* LISTA DE CARTAS EN MANO CON CARRUSEL 3D COVERFLOW */
-              <div className="space-y-4">
-                {myTeamCards.length === 0 ? (
-                  <div className="py-10 text-center space-y-2">
-                    <span className="text-4xl select-none opacity-40 block">📭</span>
-                    <p className="text-xs text-amber-200/70 font-vintage">
-                      Tu equipo no tiene cartas de poder en este momento.
-                    </p>
-                    <p className="text-[11px] text-amber-400/80 italic font-editorial">
-                      ¡Atento a la TV cuando el anfitrión reparta cartas al inicio o tras una prueba!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    {/* Header bar indicando rol del jugador */}
-                    <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-[11px] text-amber-300 font-vintage mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{player?.is_captain ? 'Eres el Capitán: Puedes Jugar Naipes' : 'Solo Capitán puede jugarlas'}</span>
-                      </div>
-                      <span className="text-[10px] text-amber-400/70">
-                        {myTeamCards.length} en mano
-                      </span>
-                    </div>
-
-                    {/* Carrusel 3D Coverflow de Naipes */}
-                    <FannedHandDeck
-                      cards={myTeamCards}
-                      disabled={!player?.is_captain}
-                      onPlayCard={(card) => {
-                        if (player?.is_captain) {
-                          handlePlayCard(card);
-                        } else {
-                          setFeedbackToast('👑 Solo el Capitán puede jugar las cartas.');
-                          setTimeout(() => setFeedbackToast(null), 3500);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <PlayerCardHandModal
+        isOpen={isCardModalOpen}
+        onClose={() => setIsCardModalOpen(false)}
+        selectedTeam={selectedTeam}
+        player={player}
+        myTeamCards={myTeamCards}
+        activeTeams={activeTeams}
+        myTeamId={myTeamId}
+        rivalPlayers={rivalPlayers}
+        powerCards={powerCards}
+        onPlayCard={handlePlayCard}
+        onExecuteCardAction={executeCardAction}
+        onToast={(msg) => {
+          setFeedbackToast(msg);
+          setTimeout(() => setFeedbackToast(null), 3500);
+        }}
+      />
 
       {/* MODAL DEL CAPITÁN: DOBLE O NADA */}
-      <AnimatePresence>
-        {isDoubleModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 select-none"
-          >
-            <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center mx-auto text-3xl shadow-lg shadow-amber-500/20">
-                ⭐
-              </div>
-              <div>
-                <h3 className="text-xl font-black uppercase text-white font-arcade">
-                  ¡Doble o Nada del Capitán!
-                </h3>
-                <p className="text-xs text-amber-300/90 font-bold mt-1">
-                  1 único uso por partida
-                </p>
-              </div>
-              <p className="text-xs text-slate-300">
-                Como Capitán, apuestas en esta prueba. Si tu equipo puntúa, ¡se <strong>duplican</strong> los puntos conseguidos! Pero si falláis, recibiréis penalización.
-              </p>
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setIsDoubleModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs uppercase hover:bg-slate-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => {
-                    handleTriggerDoubleOrNothing();
-                    setIsDoubleModalOpen(false);
-                  }}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs uppercase shadow-lg shadow-amber-500/30 active:scale-95 transition-all"
-                >
-                  🔥 ¡Apostar Doble!
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <PlayerDoubleOrNothingModal
+        isOpen={isDoubleModalOpen}
+        onClose={() => setIsDoubleModalOpen(false)}
+        onConfirm={handleTriggerDoubleOrNothing}
+      />
 
       {/* FOOTER */}
       <footer className="text-center text-[10px] text-slate-600 uppercase tracking-widest z-10">

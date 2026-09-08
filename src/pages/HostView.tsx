@@ -68,7 +68,6 @@ import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDo
 import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
 import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 import PowerCardView from '../components/PowerCardView';
-import { ThreeCasinoChip } from '../components/3d/ThreeCasinoChip';
 import { CoinBurstCelebration } from '../components/particles/CoinBurstCelebration';
 import { DecoProceduralSpandrel } from '../components/deco/DecoProceduralSpandrel';
 import {
@@ -93,6 +92,17 @@ import {
   TestVerdictCalculation,
   TeamVerdictResult,
 } from '../lib/testVerdict';
+import { HostTestVerdictModal } from '../components/host/HostTestVerdictModal';
+import { HostMusicControls } from '../components/host/minigames/HostMusicControls';
+import { HostMoviesControls } from '../components/host/minigames/HostMoviesControls';
+import { HostBabyPhotosControls } from '../components/host/minigames/HostBabyPhotosControls';
+import { HostTriviaControls } from '../components/host/minigames/HostTriviaControls';
+import { HostUnDosTresControls } from '../components/host/minigames/HostUnDosTresControls';
+import { HostBingoControls } from '../components/host/minigames/HostBingoControls';
+import { HostMimicaControls } from '../components/host/minigames/HostMimicaControls';
+import { HostDrawingControls } from '../components/host/minigames/HostDrawingControls';
+import { HostTeamsScoreboard } from '../components/host/HostTeamsScoreboard';
+import { HostPowerCardsTab } from '../components/host/HostPowerCardsTab';
 
 export default function HostView() {
   const { code } = useParams<{ code: string }>();
@@ -3324,1322 +3334,148 @@ export default function HostView() {
                 );
               })}
             </div>
-
-            {/* FICHAS TÁCTILES DE CASINO 3D (AJUSTE RÁPIDO MOBILE-FIRST) */}
-            <div className="mt-4 p-3 bg-gradient-to-r from-[#170e08] via-[#0d0905] to-[#170e08] border border-[#d4af37]/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🎰</span>
-                <div>
-                  <span className="text-xs font-broadway uppercase tracking-wider text-amber-300 block">
-                    Fichas Rápidas de Casino 3D
-                  </span>
-                  <span className="text-[10px] text-amber-400/70 font-vintage">
-                    Toca una ficha para asignarla a {selectedTeamCatalog ? selectedTeamCatalog.name : 'el equipo activo'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center">
-                  <ThreeCasinoChip
-                    value="+5"
-                    color="#b45309"
-                    size={48}
-                    onClick={() => {
-                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
-                      if (tId) handleScoreChange(tId, 5);
-                    }}
-                  />
-                  <span className="text-[9px] font-vintage text-amber-300 font-bold mt-0.5">+5 PTS</span>
-                </div>
-
-                <div className="flex flex-col items-center">
-                  <ThreeCasinoChip
-                    value="+2"
-                    color="#047857"
-                    size={48}
-                    onClick={() => {
-                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
-                      if (tId) handleScoreChange(tId, 2);
-                    }}
-                  />
-                  <span className="text-[9px] font-vintage text-emerald-300 font-bold mt-0.5">+2 PTS</span>
-                </div>
-
-                <div className="flex flex-col items-center">
-                  <ThreeCasinoChip
-                    value="+1"
-                    color="#d97706"
-                    size={48}
-                    onClick={() => {
-                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
-                      if (tId) handleScoreChange(tId, 1);
-                    }}
-                  />
-                  <span className="text-[9px] font-vintage text-amber-200 font-bold mt-0.5">+1 PTO</span>
-                </div>
-
-                <div className="flex flex-col items-center">
-                  <ThreeCasinoChip
-                    value="-1"
-                    color="#991b1b"
-                    size={48}
-                    onClick={() => {
-                      const tId = selectedTeamForPoints || activeTeams[0]?.id;
-                      if (tId) handleScoreChange(tId, -1);
-                    }}
-                  />
-                  <span className="text-[9px] font-vintage text-red-300 font-bold mt-0.5">-1 PTO</span>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* CONTROLES ESPECÍFICOS PARA ADIVINA LA CANCIÓN (100% SPOTIFY) */}
-          {room.active_game_id === 'music' && (
-            <div className="pt-4 border-t border-slate-800 space-y-4">
-              {/* BARRA SUPERIOR SPOTIFY CON BOTÓN ALEATORIO */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-                    <Disc className="w-4 h-4 text-emerald-400 animate-spin" style={{ animationDuration: '4s' }} />
-                    Adivina la Canción — Spotify
-                  </span>
-                </div>
-
-                {musicBank.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handlePickRandomSong}
-                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
-                      title="Elegir canción aleatoria de la lista"
-                    >
-                      <Shuffle className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Aleatorio</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN CON SOLUCIÓN Y CONTROL DE AUDIO */}
-              {currentSongTrack ? (
-                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-3.5 sm:p-4 shadow-lg flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-start md:items-center">
-                  {/* Miniatura previa de la carátula */}
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-emerald-500/50 flex-shrink-0 flex items-center justify-center relative shadow-md">
-                    {(currentSongTrack.coverUrl || currentSongTrack.albumArt) ? (
-                      <img
-                        src={currentSongTrack.coverUrl || currentSongTrack.albumArt}
-                        alt={currentSongTrack.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Music className="w-8 h-8 text-emerald-400" />
-                    )}
-                    {musicPlaying && (
-                      <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center backdrop-blur-[1px]">
-                        <Volume2 className="w-6 h-6 text-white animate-bounce" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Información secreta para el presentador */}
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Spotify {currentSongTrack.year ? `• ${currentSongTrack.year}` : ''}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hidden sm:inline-block">
-                        Preview 30s
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">
-                        SOLUCIÓN (TV):
-                      </span>
-                      <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-1.5 truncate">
-                        <span className="truncate">{currentSongTrack.title}</span>
-                        <span className="text-emerald-400 text-sm sm:text-base font-bold truncate shrink-0">— {currentSongTrack.artist}</span>
-                      </h3>
-                    </div>
-
-                    <p className="text-xs text-slate-400 hidden sm:block">
-                      💡 Dale a Reproducir para que suene en la TV. Al pulsar cualquier buzzer, se pausará automáticamente.
-                    </p>
-                  </div>
-
-                  {/* Botones de acción principales: Reproducir/Pausar + Revelar + Validación Rápida */}
-                  <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
-                    <button
-                      onClick={handleTogglePlayMusic}
-                      className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
-                        musicPlaying
-                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-                          : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                      }`}
-                      title={musicPlaying ? 'Pausar audio en TV' : 'Reproducir preview en TV'}
-                    >
-                      {musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                      <span className="hidden sm:inline">{musicPlaying ? 'Pausar Audio' : 'Reproducir'}</span>
-                    </button>
-
-                    <button
-                      onClick={handleToggleRevealMusic}
-                      className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
-                        musicRevealed
-                          ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                          : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                      }`}
-                      title={musicRevealed ? 'Ocultar solución en TV' : 'Revelar solución en TV'}
-                    >
-                      {musicRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      <span className="hidden sm:inline">{musicRevealed ? 'Ocultar' : 'Revelar'}</span>
-                    </button>
-
-                    <button
-                      onClick={handleValidateMusicHit}
-                      className="flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 bg-emerald-400 hover:bg-emerald-300 text-slate-950"
-                      title="Validar acierto musical para el equipo activo"
-                    >
-                      <Check className="w-4 h-4 text-slate-950" />
-                      <span>Acierto</span>
-                    </button>
-
-                    <button
-                      onClick={handleValidateMusicMiss}
-                      className="px-3 py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-red-600/80 hover:bg-red-600 text-white"
-                      title="Fallo tras pulsar: penaliza -1 y reanuda música"
-                    >
-                      <X className="w-4 h-4" />
-                      <span className="hidden sm:inline">Fallo</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-slate-950/80 border border-emerald-500/20 border-dashed rounded-2xl p-6 text-center space-y-2">
-                  <Music className="w-10 h-10 text-emerald-400 mx-auto animate-pulse" />
-                  <h3 className="text-base font-black text-white">No hay ninguna canción de Spotify seleccionada</h3>
-                  <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    Busca un tema abajo en el catálogo de Spotify o introduce el enlace de una playlist pública para empezar la partida musical.
-                  </p>
-                </div>
+              {/* MINIJUEGO: ADIVINA LA CANCIÓN (SPOTIFY) */}
+              {room.active_game_id === 'music' && (
+                <HostMusicControls
+                  currentSongTrack={currentSongTrack}
+                  musicPlaying={musicPlaying}
+                  musicRevealed={musicRevealed}
+                  musicBank={musicBank}
+                  musicSearchMode={musicSearchMode}
+                  onSetMusicSearchMode={setMusicSearchMode}
+                  musicSearchQuery={musicSearchQuery}
+                  onSetMusicSearchQuery={setMusicSearchQuery}
+                  musicSearchResults={musicSearchResults}
+                  isSearchingMusic={isSearchingMusic}
+                  spotifyPlaylistInput={spotifyPlaylistInput}
+                  onSetSpotifyPlaylistInput={setSpotifyPlaylistInput}
+                  isImportingPlaylist={isImportingPlaylist}
+                  onTogglePlayMusic={handleTogglePlayMusic}
+                  onToggleRevealMusic={handleToggleRevealMusic}
+                  onValidateMusicHit={handleValidateMusicHit}
+                  onValidateMusicMiss={handleValidateMusicMiss}
+                  onPickRandomSong={handlePickRandomSong}
+                  onSelectSong={handleSelectSong}
+                  onRemoveTrackFromBank={handleRemoveTrackFromBank}
+                  onClearMusicBank={handleClearMusicBank}
+                  onSearchMusicOnline={handleSearchMusicOnline}
+                  onImportPlaylistFromSpotify={handleImportPlaylistFromSpotify}
+                  onSelectSearchedTrack={handleSelectSearchedTrack}
+                />
               )}
 
-              {/* INTEGRACIÓN OFICIAL SPOTIFY: BUSCADOR, PLAYLISTS Y BIBLIOTECA */}
-              <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-3.5 sm:p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 truncate">
-                      Spotify
-                    </span>
-                  </div>
+              {/* MINIJUEGO: ADIVINA LA PELÍCULA (EMOJIS) */}
+              {room.active_game_id === 'movies' && (
+                <HostMoviesControls
+                  activePackName={activePackName}
+                  onLoadOfficialPack={handleLoadOfficialPack}
+                  onUploadJson={handleUploadJson}
+                  onResetToDemo={handleResetToDemo}
+                  movieIndex={movieIndex}
+                  filteredMovies={filteredMovies}
+                  movieCategoryFilter={movieCategoryFilter}
+                  onCategoryFilterChange={handleCategoryFilterChange}
+                  currentMovie={currentMovie}
+                  movieRevealed={movieRevealed}
+                  onToggleReveal={handleToggleReveal}
+                  movieFrameLevel={movieFrameLevel}
+                  onSetFrameLevel={handleSetFrameLevel}
+                  autoMoviePoints={autoMoviePoints}
+                  onValidateMovieHitAuto={handleValidateMovieHitAuto}
+                  onValidateMovieMissAuto={handleValidateMovieMissAuto}
+                  onPrevMovie={handlePrevMovie}
+                  onNextMovie={handleNextMovie}
+                />
+              )}
 
-                  {/* Selector de modo: Buscar canción vs Importar Playlist vs Biblioteca */}
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setMusicSearchMode('search')}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        musicSearchMode === 'search'
-                          ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                      title="Buscar temazo en Spotify"
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Buscar</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMusicSearchMode('playlist')}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        musicSearchMode === 'playlist'
-                          ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                      title="Importar playlist de Spotify"
-                    >
-                      <ListMusic className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Playlist</span>
-                    </button>
-                    {musicBank.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setMusicSearchMode('bank')}
-                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                          musicSearchMode === 'bank'
-                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                        title="Canciones cargadas en biblioteca"
-                      >
-                        <Disc className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Lista</span>
-                        <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-black/40 text-emerald-300">
-                          {musicBank.length}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+              {/* MINIJUEGO: FOTOS PROYECTOR (BEBÉS) */}
+              {activeGame.id === 'fotos_proyector' && (
+                <HostBabyPhotosControls
+                  babyPhotoIndex={babyPhotoIndex}
+                  babyPhotosList={babyPhotosList}
+                  currentBabyPhoto={currentBabyPhoto}
+                  babyPhotoRevealed={babyPhotoRevealed}
+                  onToggleBabyPhotoReveal={handleToggleBabyPhotoReveal}
+                  onValidateBabyPhotoHit={handleValidateBabyPhotoHit}
+                  onValidateBabyPhotoMiss={handleValidateBabyPhotoMiss}
+                  onSelectBabyPhotoDirect={handleSelectBabyPhotoDirect}
+                  onPrevBabyPhoto={handlePrevBabyPhoto}
+                  onNextBabyPhoto={handleNextBabyPhoto}
+                />
+              )}
 
-                {musicSearchMode === 'search' ? (
-                  <>
-                    <form onSubmit={handleSearchMusicOnline} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={musicSearchQuery}
-                        onChange={(e) => setMusicSearchQuery(e.target.value)}
-                        placeholder="Buscar en Spotify (ej: Despacito, Queen, Rosalía...)"
-                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-w-0"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isSearchingMusic || !musicSearchQuery.trim()}
-                        className="px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shrink-0 shadow"
-                        title="Buscar canciones"
-                      >
-                        {isSearchingMusic ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                        <span className="hidden sm:inline">Buscar</span>
-                      </button>
-                    </form>
+              {/* MINIJUEGO: PREGUNTAS TRIVIAL */}
+              {activeGame.id === 'trivial' && (
+                <HostTriviaControls
+                  currentTriviaQuestion={currentTriviaQuestion}
+                  triviaIndex={triviaIndex}
+                  triviaBank={triviaBank}
+                  triviaReboundActive={triviaReboundActive}
+                  winner={winner}
+                  triviaRevealed={triviaRevealed}
+                  onRandomTrivia={handleRandomTrivia}
+                  onValidateTriviaHit={handleValidateTriviaHit}
+                  onValidateTriviaFail={handleValidateTriviaFail}
+                  onValidateTriviaReboundHit={handleValidateTriviaReboundHit}
+                  onToggleTriviaReveal={handleToggleTriviaReveal}
+                  onPrevTrivia={handlePrevTrivia}
+                  onNextTrivia={handleNextTrivia}
+                />
+              )}
 
-                    {/* RESULTADOS DE BÚSQUEDA DE SPOTIFY */}
-                    {musicSearchResults.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pt-2 border-t border-slate-800/80">
-                        {musicSearchResults.map((track) => (
-                          <div
-                            key={track.id}
-                            onClick={() => handleSelectSearchedTrack(track)}
-                            className="flex items-center gap-2.5 p-2 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/60 rounded-xl cursor-pointer transition-all group"
-                          >
-                            {(track.coverUrl || track.albumArt) ? (
-                              <img
-                                src={track.coverUrl || track.albumArt}
-                                alt={track.title}
-                                className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
-                                <Music className="w-4 h-4 text-emerald-400" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-white truncate group-hover:text-emerald-300">
-                                {track.title}
-                              </p>
-                              <p className="text-[10px] text-slate-400 truncate">
-                                {track.artist} {track.year ? `• ${track.year}` : ''}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all flex items-center gap-1 text-[10px] font-bold"
-                              title="Poner en TV"
-                            >
-                              <Play className="w-3 h-3 fill-current" />
-                              <span className="hidden sm:inline">Poner</span>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : musicSearchMode === 'playlist' ? (
-                  /* IMPORTADOR DE PLAYLISTS DE SPOTIFY */
-                  <div className="space-y-3">
-                    <p className="text-xs text-slate-400 hidden sm:block">
-                      Pega el enlace de cualquier playlist pública de Spotify para importar sus canciones automáticamente:
-                    </p>
-                    <form onSubmit={handleImportPlaylistFromSpotify} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={spotifyPlaylistInput}
-                        onChange={(e) => setSpotifyPlaylistInput(e.target.value)}
-                        placeholder="https://open.spotify.com/playlist/..."
-                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-w-0"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isImportingPlaylist || !spotifyPlaylistInput.trim()}
-                        className="px-3.5 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-md"
-                        title="Importar playlist de Spotify"
-                      >
-                        {isImportingPlaylist ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListMusic className="w-3.5 h-3.5" />}
-                        <span className="hidden sm:inline">{isImportingPlaylist ? 'Importando...' : 'Importar'}</span>
-                      </button>
-                    </form>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
-                      <span className="font-semibold text-slate-300">💡 Sugeridas:</span>
-                      <button
-                        type="button"
-                        onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M')}
-                        className="text-emerald-400 hover:underline bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700"
-                      >
-                        Hits 2000s
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva')}
-                        className="text-emerald-400 hover:underline bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700"
-                      >
-                        Pop Español
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSpotifyPlaylistInput('https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd')}
-                        className="text-emerald-400 hover:underline bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700"
-                      >
-                        Rock Clásico
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* LISTA DE CANCIONES CARGADAS EN LA BIBLIOTECA */
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-800 text-xs">
-                      <span className="text-slate-400 font-bold truncate">
-                        Disponibles ({musicBank.length}):
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={handlePickRandomSong}
-                          className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
-                          title="Elegir aleatoria"
-                        >
-                          <Shuffle className="w-3 h-3" />
-                          <span className="hidden sm:inline">Aleatoria</span>
-                        </button>
-                        <span className="text-slate-600">•</span>
-                        <button
-                          type="button"
-                          onClick={handleClearMusicBank}
-                          className="text-red-400 hover:text-red-300 font-bold flex items-center gap-1"
-                          title="Vaciar lista"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span className="hidden sm:inline">Vaciar</span>
-                        </button>
-                      </div>
-                    </div>
+              {/* MINIJUEGO: 1, 2, 3 ¿YA? */}
+              {activeGame.id === 'un_dos_tres' && (
+                <HostUnDosTresControls
+                  currentUdtChallenge={currentUdtChallenge}
+                  aliveTeams={aliveTeams}
+                  activeTeams={activeTeams}
+                  currentUdtTeam={currentUdtTeam}
+                  onResetUdtRound={handleResetUdtRound}
+                  onStartUdtTimer={handleStartUdtTimer}
+                  onPassUdtRound={handlePassUdtRound}
+                  onEliminateUdtTeam={handleEliminateUdtTeam}
+                />
+              )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pt-1">
-                      {musicBank.map((track) => {
-                        const isCurrent = currentSongTrack?.id === track.id;
-                        return (
-                          <div
-                            key={track.id}
-                            onClick={() => handleSelectSong(track, true)}
-                            className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-all border ${
-                              isCurrent
-                                ? 'bg-emerald-950/60 border-emerald-500 shadow-md ring-1 ring-emerald-500'
-                                : 'bg-slate-950 hover:bg-slate-800/80 border-slate-800'
-                            }`}
-                          >
-                            {(track.coverUrl || track.albumArt) ? (
-                              <img
-                                src={track.coverUrl || track.albumArt}
-                                alt={track.title}
-                                className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
-                                <Music className="w-4 h-4 text-emerald-400" />
-                              </div>
-                            )}
+              {/* MINIJUEGO: BINGO */}
+              {activeGame.id === 'bingo' && (
+                <HostBingoControls
+                  bingoDrawnBalls={bingoDrawnBalls}
+                  bingoCurrentBall={bingoCurrentBall}
+                  bingoIsSpinning={bingoIsSpinning}
+                  onResetBingo={handleResetBingo}
+                  onDrawBingoBall={handleDrawBingoBall}
+                  teams={teams}
+                  selectedTeamCatalog={selectedTeamCatalog}
+                  onScoreChange={handleScoreChange}
+                />
+              )}
 
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs font-bold truncate ${isCurrent ? 'text-emerald-300' : 'text-white'}`}>
-                                {track.title}
-                              </p>
-                              <p className="text-[10px] text-slate-400 truncate">
-                                {track.artist} {track.year ? `• ${track.year}` : ''}
-                              </p>
-                            </div>
+              {/* MINIJUEGO: MÍMICA */}
+              {activeGame.id === 'mimica' && (
+                <HostMimicaControls
+                  currentMimicaCard={currentMimicaCard}
+                  mimicaCardIndex={mimicaCardIndex}
+                  mimicaCards={mimicaCards}
+                  onPickRandomMimicaCard={handlePickRandomMimicaCard}
+                  mimicaIsRunning={mimicaIsRunning}
+                  mimicaTimerSeconds={mimicaTimerSeconds}
+                  onToggleMimicaTimer={handleToggleMimicaTimer}
+                  mimicaHitsCount={mimicaHitsCount}
+                  onAddMimicaHit={handleAddMimicaHit}
+                  onSubtractMimicaHit={handleSubtractMimicaHit}
+                  onResetMimicaRound={handleResetMimicaRound}
+                  onNextMimicaCard={handleNextMimicaCard}
+                />
+              )}
 
-                            <div className="flex items-center gap-1 shrink-0">
-                              {isCurrent ? (
-                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500 text-slate-950">
-                                  TV
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="px-2 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 hover:bg-emerald-600 hover:text-white text-[10px] flex items-center gap-1"
-                                  title="Poner en TV"
-                                >
-                                  <Play className="w-2.5 h-2.5 fill-current" />
-                                  <span className="hidden sm:inline">Poner</span>
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => handleRemoveTrackFromBank(track.id, e)}
-                                className="p-1 text-slate-500 hover:text-red-400 rounded-md transition-colors"
-                                title="Eliminar de la lista"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+              {/* MINIJUEGO: TELÉFONO DIBUJADO */}
+              {activeGame.id === 'drawing' && (
+                <HostDrawingControls />
+              )}
 
-          {/* CONTROLES ESPECÍFICOS PARA ADIVINA LA PELÍCULA CON EMOJIS */}
-          {room.active_game_id === 'movies' && (
-            <div className="pt-4 border-t border-[#d4af37]/30 space-y-4">
-              {/* BARRA DE GESTIÓN DE PACK / PROTECCIÓN ANTI-SPOILERS */}
-              <div className="bg-[#0c0c14]/95 border border-[#d4af37]/40 rounded-2xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-deco-gold">
-                <div className="flex items-center gap-2">
-                  <PackageCheck className="w-4 h-4 text-[#d4af37] shrink-0" />
-                  <div>
-                    <span className="text-amber-200/70 font-vintage font-medium">Pack Activo: </span>
-                    <strong className="text-white font-broadway">{activePackName}</strong>
-                    {activePackName.includes('Demo') && (
-                      <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-vintage">
-                        🛡️ Modo Anti-Spoiler Activo
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                  <button
-                    onClick={handleLoadOfficialPack}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black flex items-center gap-1.5 transition-all shadow-sm border border-[#f5eedb]/40 text-xs uppercase"
-                    title="Cargar las 21 películas oficiales para la fiesta"
-                  >
-                    <Sparkle className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Pack Oficial Fiesta</span>
-                    <span className="sm:hidden">Oficial</span>
-                  </button>
-
-                  <label className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-vintage font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
-                    <FolderUp className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="hidden sm:inline">Subir JSON</span>
-                    <span className="sm:hidden">JSON</span>
-                    <input type="file" accept=".json" onChange={handleUploadJson} className="hidden" />
-                  </label>
-
-                  {!activePackName.includes('Demo') && (
-                    <button
-                      onClick={handleResetToDemo}
-                      className="px-2.5 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200/60 hover:text-white border border-[#d4af37]/30 text-[11px] font-vintage"
-                      title="Volver a las películas de prueba para seguir desarrollando sin spoilers"
-                    >
-                      <span className="hidden sm:inline">Modo Demo</span>
-                      <span className="sm:hidden">Demo</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Film className="w-5 h-5 text-[#d4af37]" />
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    Película en Pantalla ({movieIndex + 1}/{filteredMovies.length})
-                  </span>
-                </div>
-
-                {/* Filtros por Categoría: Taquillazos, Disney/Pixar, Terror */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {(['Todos', 'Taquillazos', 'Disney / Pixar', 'Terror'] as const).map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => handleCategoryFilterChange(cat)}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-vintage font-bold whitespace-nowrap transition-all ${
-                        movieCategoryFilter === cat
-                          ? 'bg-gold-gradient text-slate-950 shadow-md font-black border border-[#f5eedb]/50'
-                          : 'bg-[#14141e] text-amber-200/70 hover:text-white border border-[#d4af37]/30'
-                      }`}
-                    >
-                      {cat === 'Taquillazos' ? '🍿 Taquillazos' : cat === 'Disney / Pixar' ? '🏰 Disney / Pixar' : cat === 'Terror' ? '👻 Terror' : '🎬 Todos'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN */}
-              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{currentMovie.genreEmoji}</span>
-                    <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      {currentMovie.category} • Año {currentMovie.year}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-broadway text-gold-gradient">
-                    {currentMovie.title}
-                    {currentMovie.originalTitle && currentMovie.originalTitle !== currentMovie.title && (
-                      <span className="text-xs text-amber-200/60 font-editorial font-normal ml-2">({currentMovie.originalTitle})</span>
-                    )}
-                  </h3>
-                  {currentMovie.director && (
-                    <p className="text-xs font-vintage text-amber-200/70">
-                      Director: <span className="text-white font-broadway">{currentMovie.director}</span>
-                    </p>
-                  )}
-
-                  {/* Emojis mostrados por fases al host */}
-                  <div className="flex flex-wrap items-center gap-2 py-1">
-                    <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-                      <span className="text-[10px] text-amber-400 font-broadway uppercase">P1 (2 emojis):</span>
-                      {currentMovie.emojisStage1.map((em, idx) => (
-                        <span key={idx}>{em}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-                      <span className="text-[10px] text-sky-400 font-broadway uppercase">P2 (4 emojis):</span>
-                      {currentMovie.emojisStage2.map((em, idx) => (
-                        <span key={idx}>{em}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-                      <span className="text-[10px] text-emerald-400 font-broadway uppercase">P3 (Completo):</span>
-                      {currentMovie.emojisFull.map((em, idx) => (
-                        <span key={idx}>{em}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-amber-200/80 font-vintage italic bg-[#0c0c14] px-3 py-1.5 rounded-xl border border-[#d4af37]/30">
-                    💡 Significado: {currentMovie.explanation}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                  <button
-                    onClick={handleToggleReveal}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
-                      movieRevealed
-                        ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(52,211,153,0.35)]'
-                        : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold border border-[#f5eedb]/40'
-                    }`}
-                  >
-                    {movieRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    <span>{movieRevealed ? 'Ocultar' : 'Revelar'}</span>
-                    <span className="hidden sm:inline">{movieRevealed ? ' Solución en TV' : ' Título en TV!'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* VALIDACIÓN AUTOMÁTICA SEGÚN EMOJIS EN PANTALLA */}
-              <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-broadway text-amber-300 uppercase">
-                    Puntuación Automática:
-                  </span>
-                  <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
-                    {movieFrameLevel === 1 ? 'Nivel 1 (2 Emojis) = +3 pts' : movieFrameLevel === 2 ? 'Nivel 2 (4 Emojis) = +2 pts' : 'Nivel 3/4 (Pistas) = +1 pt'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={handleValidateMovieHitAuto}
-                    className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Validar Acierto (+{autoMoviePoints} pts)</span>
-                  </button>
-                  <button
-                    onClick={handleValidateMovieMissAuto}
-                    className="px-3 py-2.5 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1 active:scale-95 transition-all"
-                  >
-                    <X className="w-4 h-4" />
-                    <span>Fallo (-1)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* SELECTOR DE NIVEL DE PISTA / EMOJIS */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-vintage font-bold text-amber-200/80">Pista:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      onClick={() => handleSetFrameLevel(1)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                        movieFrameLevel === 1
-                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-                      }`}
-                    >
-                      <span className="sm:hidden">P1 (+5)</span>
-                      <span className="hidden sm:inline">P1: 2 Emojis (+5)</span>
-                    </button>
-                    <button
-                      onClick={() => handleSetFrameLevel(2)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                        movieFrameLevel === 2
-                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-                      }`}
-                    >
-                      <span className="sm:hidden">P2 (+3)</span>
-                      <span className="hidden sm:inline">P2: 4 Emojis (+3)</span>
-                    </button>
-                    <button
-                      onClick={() => handleSetFrameLevel(3)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                        movieFrameLevel === 3
-                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-                      }`}
-                    >
-                      <span className="sm:hidden">P3 (+1)</span>
-                      <span className="hidden sm:inline">P3: Todos (+1)</span>
-                    </button>
-                    <button
-                      onClick={() => handleSetFrameLevel(4)}
-                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                        movieFrameLevel === 4
-                          ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-                      }`}
-                    >
-                      <span className="sm:hidden">P4 (+1)</span>
-                      <span className="hidden sm:inline">P4: Pistas (+1)</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrevMovie}
-                    className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
-                    title="Película anterior"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleNextMovie}
-                    className="px-3.5 sm:px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
-                  >
-                    <span className="hidden sm:inline">Siguiente Película</span>
-                    <span className="sm:hidden">Siguiente</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CONTROL ESPECÍFICO: FOTOS PROYECTOR (BEBÉS) */}
-          {activeGame.id === 'fotos_proyector' && (
-            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
-                <div className="flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-[#d4af37]" />
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    Proyector de Diapositivas ({babyPhotoIndex + 1}/{babyPhotosList.length})
-                  </span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-vintage font-bold border border-red-500/30">
-                  <span>🚫 Regla: Si es su foto, −2 pts si pulsa</span>
-                </div>
-              </div>
-
-              {/* CHIVATO SECRETO PARA EL ANFITRIÓN */}
-              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                {/* Miniatura previa de la foto */}
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/60 border-2 border-[#d4af37]/50 flex-shrink-0 flex items-center justify-center shadow-md">
-                  <img
-                    src={currentBabyPhoto.imageUrl}
-                    alt={currentBabyPhoto.personName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      {currentBabyPhoto.category}
-                    </span>
-                    {currentBabyPhoto.ownerPlayerName && (
-                      <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
-                        Prohibido pulsar a: {currentBabyPhoto.ownerPlayerName}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-xl font-broadway text-gold-gradient">
-                    {currentBabyPhoto.personName}
-                  </h3>
-                  {currentBabyPhoto.hint && (
-                    <p className="text-xs font-vintage text-amber-200/70">
-                      Pista: <span className="text-white font-semibold">{currentBabyPhoto.hint}</span>
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
-                  <button
-                    onClick={handleToggleBabyPhotoReveal}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
-                      babyPhotoRevealed
-                        ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(52,211,153,0.35)]'
-                        : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold border border-[#f5eedb]/40'
-                    }`}
-                  >
-                    {babyPhotoRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    <span>{babyPhotoRevealed ? 'Ocultar' : 'Revelar'}</span>
-                    <span className="hidden sm:inline"> Solución en TV</span>
-                  </button>
-
-                  <button
-                    onClick={handleValidateBabyPhotoHit}
-                    className="flex-1 md:flex-none px-3.5 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 bg-emerald-500 hover:bg-emerald-400 text-slate-950"
-                    title="Validar acierto de bebé para el equipo activo"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Acierto</span>
-                  </button>
-
-                  <button
-                    onClick={handleValidateBabyPhotoMiss}
-                    className="px-3 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-red-600/80 hover:bg-red-600 text-white"
-                    title="Fallo tras pulsar (-1)"
-                  >
-                    <X className="w-4 h-4" />
-                    <span className="hidden sm:inline">Fallo</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* SELECTOR RÁPIDO DE FOTOGRAFÍAS */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-xl">
-                  {babyPhotosList.map((photo, idx) => (
-                    <button
-                      key={photo.id || idx}
-                      onClick={() => handleSelectBabyPhotoDirect(idx)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-broadway whitespace-nowrap transition-all ${
-                        babyPhotoIndex === idx
-                          ? 'bg-gold-gradient text-slate-950 font-black shadow-deco-gold scale-105 border border-[#f5eedb]/40'
-                          : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-                      }`}
-                    >
-                      Foto {idx + 1}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrevBabyPhoto}
-                    className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
-                    title="Foto anterior"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleNextBabyPhoto}
-                    className="px-3.5 sm:px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
-                  >
-                    <span className="hidden sm:inline">Siguiente Foto</span>
-                    <span className="sm:hidden">Siguiente</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CONTROL ESPECÍFICO: PREGUNTAS TRIVIAL */}
-          {activeGame.id === 'trivial' && (
-            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{currentTriviaQuestion.categoryEmoji}</span>
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    Pregunta {triviaIndex + 1}/{triviaBank.length} — {currentTriviaQuestion.category}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {triviaReboundActive && (
-                    <span className="px-3 py-1 rounded-full bg-gold-gradient text-slate-950 border border-[#f5eedb]/40 text-xs font-broadway font-black animate-pulse shadow-sm">
-                      🔄 Rebote Activo (+1 pt)
-                    </span>
-                  )}
-                  <button
-                    onClick={handleRandomTrivia}
-                    className="px-3 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 flex items-center gap-1.5 shadow-sm"
-                  >
-                    <Shuffle className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Aleatoria</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* TARJETA CHIVATO SECRETO PARA EL HOST */}
-              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg space-y-3">
-                <div className="text-xs uppercase font-broadway text-amber-400">
-                  {currentTriviaQuestion.options ? 'Pregunta Tipo Test (Opciones en TV)' : 'Pregunta Abierta Directa'}
-                </div>
-                <h3 className="text-lg font-broadway text-amber-50">
-                  {currentTriviaQuestion.question}
-                </h3>
-
-                {currentTriviaQuestion.options && (
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {currentTriviaQuestion.options.map((opt, oIdx) => (
-                      <div
-                        key={oIdx}
-                        className={`p-2.5 rounded-xl border ${
-                          currentTriviaQuestion.correctAnswer.toLowerCase().includes(opt.toLowerCase())
-                            ? 'bg-emerald-950/80 border-emerald-400 text-emerald-200 font-broadway font-black shadow-[0_0_15px_rgba(52,211,153,0.3)]'
-                            : 'bg-[#14141e] border-[#d4af37]/30 text-amber-100 font-vintage font-bold'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + oIdx)}) {opt}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="p-3.5 rounded-xl bg-[#07070a] border-2 border-emerald-400/60 flex items-center justify-between shadow-md">
-                  <div>
-                    <span className="text-[10px] uppercase font-broadway font-black text-emerald-400 block">Respuesta Correcta:</span>
-                    <span className="text-base font-broadway text-emerald-300">{currentTriviaQuestion.correctAnswer}</span>
-                  </div>
-                  {currentTriviaQuestion.hint && (
-                    <span className="text-xs text-amber-200/70 font-vintage italic">Pista: {currentTriviaQuestion.hint}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* BOTONES DE VALIDACIÓN Y REBOTE */}
-              <div className="bg-[#14141e] border border-[#d4af37]/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-broadway text-amber-300 uppercase">
-                    Veredicto del Host:
-                  </span>
-                  {winner ? (
-                    <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
-                      Equipo: {winner.teamName}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-vintage text-amber-200/60">Pulsador libre</span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  {triviaReboundActive ? (
-                    <button
-                      onClick={handleValidateTriviaReboundHit}
-                      className="flex-1 sm:flex-none px-4 py-2.5 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-deco-gold border border-[#f5eedb]/40 active:scale-95"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>Validar Rebote (+1 pt)</span>
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={handleValidateTriviaHit}
-                        className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>Correcto (+2 pts)</span>
-                      </button>
-                      <button
-                        onClick={handleValidateTriviaFail}
-                        className="flex-1 sm:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
-                      >
-                        <X className="w-4 h-4" />
-                        <span>Fallo y Rebote (-1 pt)</span>
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={handleToggleTriviaReveal}
-                    className={`px-3 py-2.5 rounded-xl text-xs font-broadway font-bold border transition-all ${
-                      triviaRevealed
-                        ? 'bg-gold-gradient text-slate-950 border-[#f5eedb]/50 shadow-deco-gold font-black'
-                        : 'bg-[#07070a] text-amber-200 border-[#d4af37]/40 hover:bg-[#1a1a28]'
-                    }`}
-                  >
-                    {triviaRevealed ? 'Ocultar Solución TV' : 'Mostrar Solución TV'}
-                  </button>
-                </div>
-              </div>
-
-              {/* NAVEGADOR DE PREGUNTAS */}
-              <div className="flex items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
-                <button
-                  onClick={handlePrevTrivia}
-                  className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-xs font-vintage font-bold text-amber-200/80">
-                  Pregunta {triviaIndex + 1} de {triviaBank.length}
-                </span>
-                <button
-                  onClick={handleNextTrivia}
-                  className="px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 border border-[#f5eedb]/40"
-                >
-                  <span>Siguiente Pregunta</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* CONTROL ESPECÍFICO: 1, 2, 3 ¿YA? */}
-          {activeGame.id === 'un_dos_tres' && (
-            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-[#d4af37]" />
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    1, 2, 3 ¿Ya? — Nivel {currentUdtChallenge.levelNumber} ({currentUdtChallenge.level})
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-vintage font-bold text-amber-200/80">
-                    Supervivientes: {aliveTeams.length}/{activeTeams.length}
-                  </span>
-                  <button
-                    onClick={handleResetUdtRound}
-                    className="px-2.5 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 shadow-sm"
-                  >
-                    Reset Ronda
-                  </button>
-                </div>
-              </div>
-
-              {/* RETO ACTIVO Y RESPUESTAS MODELO PARA EL HOST */}
-              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase font-broadway text-amber-400">
-                    {currentUdtChallenge.category}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
-                    Turno: {currentUdtTeam?.name}
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-broadway text-amber-50">
-                  {currentUdtChallenge.prompt}
-                </h3>
-
-                <div>
-                  <span className="text-[10px] uppercase font-vintage font-bold text-amber-200/70 block mb-1">
-                    Ejemplos válidos para comprobar al vuelo:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {currentUdtChallenge.examples.map((ex, eIdx) => (
-                      <span
-                        key={eIdx}
-                        className="px-2.5 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 text-[11px] text-amber-200 font-vintage font-bold"
-                      >
-                        {ex}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* CONTROLES DEL TEMPORIZADOR Y ELIMINACIÓN */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <button
-                  onClick={handleStartUdtTimer}
-                  className="p-3.5 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 border border-[#f5eedb]/40"
-                >
-                  <Timer className="w-4 h-4" />
-                  <span>⏱️ Iniciar 5 Segundos</span>
-                </button>
-                <button
-                  onClick={handlePassUdtRound}
-                  className="p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-broadway font-black text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>✅ Superado (Siguiente)</span>
-                </button>
-                <button
-                  onClick={handleEliminateUdtTeam}
-                  className="p-3.5 rounded-2xl bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-md active:scale-95"
-                >
-                  <Skull className="w-4 h-4" />
-                  <span>💀 Fallo (Eliminar)</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* CONTROL ESPECÍFICO: BINGO */}
-          {activeGame.id === 'bingo' && (
-            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
-              <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🎱</span>
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    Bombo Virtual de BINGO (Bolas extraídas: {bingoDrawnBalls.length}/90)
-                  </span>
-                </div>
-                <button
-                  onClick={handleResetBingo}
-                  className="px-2.5 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 shadow-sm"
-                >
-                  Reiniciar Bombo
-                </button>
-              </div>
-
-              {/* BOLA ACTUAL Y ACCIÓN DE SACAR BOLA CON RULETA */}
-              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner">
-                <div className="flex items-center gap-4">
-                  {(() => {
-                    const theme = getBingoBallTheme(bingoCurrentBall);
-                    const nick = bingoCurrentBall ? BINGO_NICKNAMES[bingoCurrentBall] : null;
-                    return (
-                      <>
-                        <div
-                          className={`w-16 h-16 rounded-full bg-gradient-to-tr ${theme.bgGradient} border-2 ${theme.border} ${theme.ballTextClass} font-broadway text-3xl flex items-center justify-center shadow-deco-gold transition-all ${
-                            bingoIsSpinning ? 'animate-spin' : ''
-                          } ${theme.isLightColor ? 'ring-2 ring-slate-400' : ''}`}
-                        >
-                          {bingoIsSpinning ? '?' : bingoCurrentBall || '—'}
-                        </div>
-                        <div>
-                          <span className="text-[10px] uppercase font-broadway text-amber-400 block">
-                            {bingoIsSpinning ? 'Ruleta en marcha...' : 'Última Bola:'}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl font-broadway text-gold-gradient">
-                              {bingoIsSpinning ? '¡Girando bombo!' : bingoCurrentBall ? `Bola ${bingoCurrentBall}` : 'Ninguna bola aún'}
-                            </span>
-                            {nick && !bingoIsSpinning && (
-                              <span className="px-2.5 py-0.5 rounded-lg bg-gold-gradient text-slate-950 font-broadway font-black text-[10px] uppercase shadow-sm">
-                                {nick}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                <button
-                  onClick={handleDrawBingoBall}
-                  disabled={bingoIsSpinning}
-                  className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-sm uppercase font-broadway font-black flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 transition-all ${
-                    bingoIsSpinning
-                      ? 'bg-[#14141e] text-amber-200/40 cursor-not-allowed border border-[#d4af37]/20'
-                      : 'bg-gold-gradient hover:brightness-110 text-slate-950 border border-[#f5eedb]/50'
-                  }`}
-                >
-                  {bingoIsSpinning ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
-                      <span>Girando Ruleta...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>🎰 ¡Girar Ruleta y Sacar Bola!</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* BOTONES DE PREMIO DIRECTO */}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => {
-                    const targetTeam = selectedTeamCatalog
-                      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
-                      : teams.find((t) => t.is_active);
-                    if (targetTeam) {
-                      handleScoreChange(targetTeam.id, 2);
-                      soundFX.playVictory();
-                    } else {
-                      alert('Selecciona un equipo primero para cantar Línea');
-                    }
-                  }}
-                  className="flex-1 px-4 py-3 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/40 rounded-2xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <span>📏 Cantar Línea (+2 pts)</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const targetTeam = selectedTeamCatalog
-                      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
-                      : teams.find((t) => t.is_active);
-                    if (targetTeam) {
-                      handleScoreChange(targetTeam.id, 6);
-                      soundFX.playVictory();
-                    } else {
-                      alert('Selecciona un equipo primero para cantar BINGO');
-                    }
-                  }}
-                  className="flex-1 px-4 py-3 bg-gold-gradient hover:brightness-110 text-slate-950 border border-[#f5eedb]/50 rounded-2xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 shadow-deco-gold"
-                >
-                  <span>🎱 ¡Cantar BINGO! (+6 pts)</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* CONTROL ESPECÍFICO: MÍMICA */}
-          {activeGame.id === 'mimica' && (
-            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-5 deco-card-frame">
-              <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🎭</span>
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    Mímica Secreta ({mimicaCardIndex + 1}/{mimicaCards.length})
-                  </span>
-                </div>
-                <button
-                  onClick={handlePickRandomMimicaCard}
-                  className="px-2.5 py-1 bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 rounded-xl text-xs font-vintage font-bold border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
-                >
-                  <Shuffle className="w-3 h-3 text-amber-400" />
-                  <span>Aleatorio</span>
-                </button>
-              </div>
-
-              {/* TARJETA SECRETA DEL ACTOR (SOLO VISIBLE PARA EL HOST) */}
-              <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase font-broadway text-amber-400">
-                    {currentMimicaCard.categoryEmoji} {currentMimicaCard.category}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-broadway font-bold border border-amber-500/30">
-                    Dificultad: {currentMimicaCard.difficulty}
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-broadway text-gold-gradient">
-                  {currentMimicaCard.title}
-                </h3>
-
-                {currentMimicaCard.clueOrDetail && (
-                  <p className="text-xs text-amber-200/90 font-vintage italic bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30">
-                    💡 Cómo actuarlo: {currentMimicaCard.clueOrDetail}
-                  </p>
-                )}
-              </div>
-
-              {/* CONTROLES DE TIEMPO Y ACIERTOS */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                <button
-                  onClick={handleToggleMimicaTimer}
-                  className={`p-3.5 rounded-2xl font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
-                    mimicaIsRunning
-                      ? 'bg-amber-500 text-slate-950 animate-pulse'
-                      : mimicaTimerSeconds === 0
-                      ? 'bg-red-500 hover:bg-red-400 text-white'
-                      : 'bg-gold-gradient text-slate-950 border border-[#f5eedb]/40 shadow-deco-gold'
-                  }`}
-                >
-                  <Timer className="w-4 h-4" />
-                  <span>
-                    {mimicaIsRunning
-                      ? `⏸️ Pausar (${mimicaTimerSeconds}s)`
-                      : mimicaTimerSeconds === 0
-                      ? '⏱️ Reiniciar 90s'
-                      : mimicaTimerSeconds && mimicaTimerSeconds < 90
-                      ? `▶️ Reanudar (${mimicaTimerSeconds}s)`
-                      : '⏱️ Iniciar 90s'}
-                  </span>
-                </button>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={handleAddMimicaHit}
-                    className="flex-1 p-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>🎯 +1 ({mimicaHitsCount})</span>
-                  </button>
-                  {mimicaHitsCount > 0 && (
-                    <button
-                      onClick={handleSubtractMimicaHit}
-                      className="px-2.5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-red-300 font-black text-xs border border-slate-700 active:scale-95 transition-all"
-                      title="Restar 1 acierto (corrección)"
-                    >
-                      -1
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleResetMimicaRound}
-                  className="p-3.5 rounded-2xl bg-slate-800/90 hover:bg-red-950/80 text-slate-300 hover:text-red-200 border border-slate-700 hover:border-red-500/50 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                  title="Poner a 0 los aciertos y reiniciar el cronómetro a 90s para el siguiente equipo"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset Ronda</span>
-                </button>
-
-                <button
-                  onClick={handleNextMimicaCard}
-                  className="p-3.5 rounded-2xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all"
-                >
-                  <span>Siguiente Tarjeta</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* CONTROL ESPECÍFICO: TELÉFONO DIBUJADO */}
-          {activeGame.id === 'drawing' && (
-            <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-3xl p-6 shadow-deco-gold space-y-4 deco-card-frame">
-              <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🎨</span>
-                  <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-                    Teléfono Dibujado — Dinámica en Papel Real
-                  </span>
-                </div>
-                <div className="text-xs font-vintage font-bold text-amber-300 bg-amber-500/15 border border-[#d4af37]/40 px-3 py-1 rounded-full">
-                  Decisión libre del Jugador 1
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 text-left space-y-2">
-                <div className="flex items-center gap-2 text-amber-300 text-xs font-broadway uppercase">
-                  <span>💡</span>
-                  <span>Sin palabras previas impuestas</span>
-                </div>
-                <p className="text-xs font-vintage text-amber-100/90 leading-relaxed">
-                  El <strong>Jugador 1</strong> de cada equipo decide libremente qué frase, palabra o concepto va a dibujar en el primer folio para iniciar la cadena (no requiere de frases generadas por el sistema).
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-amber-200/80">
-                  <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
-                    <span className="text-amber-400 font-broadway block mb-0.5">1.º Turno (Dibujo)</span>
-                    J1 piensa su idea y la dibuja. Dobla el papel y se lo entrega a J2.
-                  </div>
-                  <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
-                    <span className="text-amber-300 font-broadway block mb-0.5">2.º Turno (Texto)</span>
-                    J2 solo ve el dibujo, escribe lo que cree que es, dobla para ocultar el dibujo y pasa a J3.
-                  </div>
-                  <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
-                    <span className="text-emerald-400 font-broadway block mb-0.5">Final y Revelación</span>
-                    Se despliegan todos los folios en la sala, se comprueba la evolución y se asignan los puntos.
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs font-vintage text-amber-200/70 text-center">
-                📝 Se juega presencialmente en papel real. Al terminar la cadena, asigna las puntuaciones con los botones superiores.
-              </p>
-            </div>
-          )}
         </section>
       ) : room.status === 'podium' || room.status === 'ended' ? (
         <div className="space-y-4">
@@ -4812,224 +3648,22 @@ export default function HostView() {
 
   {/* PESTAÑA: SISTEMA DE CARTAS DE PODER */}
   {activeTab === 'cards' && (
-    <div className="space-y-6">
-      {/* SECCIÓN: SISTEMA DE CARTAS DE PODER PARA EQUIPOS */}
-      <section className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-6 shadow-2xl space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🃏</span>
-              <h2 className="text-base sm:text-lg font-black text-white">Cartas de Poder</h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
-                Mazo Único
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-1 hidden sm:block">
-              Reparte cartas únicas al inicio o al finalizar pruebas. Los equipos las juegan desde sus móviles.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleDealInitialCards}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black uppercase flex items-center gap-1.5 sm:gap-2 shadow-md active:scale-95 transition-all"
-            >
-              <span>🃏</span>
-              <span className="hidden sm:inline">Repartir 1 Carta a Todos (Inicio)</span>
-              <span className="sm:hidden">Repartir a Todos</span>
-            </button>
-
-            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-              <select
-                value={selectedBonusTeam}
-                onChange={(e) => setSelectedBonusTeam(e.target.value)}
-                className="bg-slate-900 text-slate-200 text-xs rounded-lg px-2 py-1.5 border border-slate-700 outline-none max-w-[120px] sm:max-w-none truncate"
-              >
-                <option value="random">🎲 Azar</option>
-                {activeTeams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                onClick={() => handleDealBonusCard(selectedBonusTeam)}
-                className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase flex items-center gap-1 active:scale-95 transition-all shrink-0"
-                title="Repartir 1 carta bonus al finalizar una prueba"
-              >
-                <Dices className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Dar Bonus</span>
-                <span className="sm:hidden">Bonus</span>
-              </button>
-            </div>
-
-            <button
-              onClick={handleResetPowerCards}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 active:scale-95 transition-all"
-              title="Reiniciar mazo de cartas"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* METRICS DEL MAZO */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-2xl flex items-center gap-3">
-            <span className="text-2xl">🎴</span>
-            <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">En Mazo Común</span>
-              <span className="text-lg font-black text-indigo-400">{powerCards.deck.length} cartas</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-2xl flex items-center gap-3">
-            <span className="text-2xl">👥</span>
-            <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">En Manos</span>
-              <span className="text-lg font-black text-emerald-400">
-                {Object.values(powerCards.teamHands).reduce((acc, h) => acc + h.length, 0)} cartas
-              </span>
-            </div>
-          </div>
-
-          <div
-            onClick={() => setIsDiscardModalOpen(true)}
-            className="bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-400/50 p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all group"
-            title="Ver cartas en la pila de descartes"
-          >
-            <span className="text-2xl group-hover:scale-110 transition-transform">🪦</span>
-            <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase block group-hover:text-amber-300">
-                Descartes (Ver)
-              </span>
-              <span className="text-lg font-black text-slate-300">{powerCards.discardPile.length} cartas</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-2xl flex items-center gap-3">
-            <span className="text-2xl">⚡</span>
-            <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">Efectos Activos</span>
-              <span className="text-lg font-black text-amber-400">{powerCards.activeEffects.length}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* LISTA DE EFECTOS ACTIVOS CON BOTONES DE RESOLUCIÓN */}
-        {renderActiveEffects()}
-
-        {/* INVENTARIO DE CARTAS POR EQUIPO */}
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">
-            Cartas en posesión de cada equipo:
-          </span>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {activeTeams.map((team) => {
-              const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
-              const hand = powerCards.teamHands[team.id] || [];
-
-              return (
-                <div
-                  key={team.id}
-                  className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${cat?.twBg}`} />
-                      <h4 className="text-sm font-black text-white">{team.name}</h4>
-                    </div>
-                    <span className="text-xs font-mono font-bold bg-slate-800 px-2 py-0.5 rounded-lg text-slate-300 border border-slate-700">
-                      {hand.length} {hand.length === 1 ? 'carta' : 'cartas'}
-                    </span>
-                  </div>
-
-                  {/* Cartas en mano */}
-                  <div className="space-y-1.5 min-h-[48px]">
-                    {hand.length === 0 ? (
-                      <div className="text-slate-600 text-xs italic py-2">Sin cartas en mano</div>
-                    ) : (
-                      hand.map((cardId) => {
-                        const card = getPowerCardById(cardId);
-                        if (!card) return null;
-
-                        return (
-                          <div
-                            key={cardId}
-                            className="bg-slate-900 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-lg shrink-0">{card.emoji}</span>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-xs font-black text-white truncate">{card.name}</span>
-                                  <span
-                                    className={`text-[8px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
-                                      card.rarity === 'Legendaria'
-                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                                        : card.rarity === 'Épica'
-                                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                                        : card.rarity === 'Rara'
-                                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                    }`}
-                                  >
-                                    {card.rarity}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-slate-400 truncate hidden sm:block">{card.tagline}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                              {card.id === 'la_maldicion' ? (
-                                <>
-                                  <button
-                                    onClick={() => handleScoreChange(team.id, -1)}
-                                    className="px-2 py-1 rounded-lg bg-red-950/80 hover:bg-red-800 text-red-200 border border-red-500/40 text-[10px] font-black uppercase transition-all"
-                                    title="Penalizar 1 punto al equipo por conservar la maldición al terminar la prueba"
-                                  >
-                                    💀 -1 pt
-                                  </button>
-                                  <button
-                                    onClick={() => handlePlayCardDirectly(team.id, card.id)}
-                                    className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-[10px] font-black uppercase transition-all"
-                                    title="Descartar la maldición perdiendo 3 puntos"
-                                  >
-                                    ✕ Descartar (-3)
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => handleInitiatePlayCard(team.id, card)}
-                                  className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/30 text-[10px] font-black uppercase transition-all"
-                                  title="Activar carta"
-                                >
-                                  Jugar
-                                </button>
-                              )}
-
-                              <button
-                                onClick={() => handleRevokeCardFromTeam(team.id, card.id)}
-                                className="p-1 rounded-lg bg-slate-800/80 hover:bg-red-950/60 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-500/40 text-[10px] active:scale-95 transition-all"
-                                title="Quitar carta de la mano y enviar al descarte"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    </div>
+    <HostPowerCardsTab
+      powerCards={powerCards}
+      activeTeams={activeTeams}
+      selectedBonusTeam={selectedBonusTeam}
+      onSetSelectedBonusTeam={setSelectedBonusTeam}
+      onDealInitialCards={handleDealInitialCards}
+      onDealBonusCard={handleDealBonusCard}
+      onResetPowerCards={handleResetPowerCards}
+      onOpenDiscardModal={() => setIsDiscardModalOpen(true)}
+      onClearAllActiveEffects={handleClearAllActiveEffects}
+      onRemoveActiveEffect={handleRemoveActiveEffect}
+      onScoreChange={handleScoreChange}
+      onInitiatePlayCard={handleInitiatePlayCard}
+      onPlayCardDirectly={handlePlayCardDirectly}
+      onRevokeCardFromTeam={handleRevokeCardFromTeam}
+    />
   )}
 
   {/* PESTAÑA: CATÁLOGO DE JUEGOS */}
@@ -5095,128 +3729,21 @@ export default function HostView() {
 
   {/* PESTAÑA: EQUIPOS & JUGADORES */}
   {activeTab === 'teams' && (
-    <div className="space-y-6">
-      {/* CONFIGURACIÓN DINÁMICA DE EQUIPOS & MARCADOR GENERAL */}
-      <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-          <div className="flex items-center gap-3">
-            <Sliders className="w-5 h-5 text-indigo-400" />
-            <div>
-              <h2 className="text-base font-bold">Número de Equipos Dinámicos</h2>
-              <p className="text-xs text-slate-400">Ajusta según las personas que asistan (2 a 6)</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-slate-800 p-1.5 rounded-2xl border border-slate-700 w-fit">
-            <button
-              disabled={room.active_teams_count <= 2}
-              onClick={() => handleTeamCountChange(room.active_teams_count - 1)}
-              className="p-2 bg-slate-700 hover:bg-slate-600 rounded-xl disabled:opacity-30 active:scale-95 transition-all"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <span className="text-xl font-black w-8 text-center text-amber-400 font-mono">
-              {room.active_teams_count}
-            </span>
-            <button
-              disabled={room.active_teams_count >= TEAMS_CATALOG.length}
-              onClick={() => handleTeamCountChange(room.active_teams_count + 1)}
-              className="p-2 bg-slate-700 hover:bg-slate-600 rounded-xl disabled:opacity-30 active:scale-95 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* MARCADOR DE EQUIPOS CON GESTIÓN DE CAPITANES */}
-        <div className="pt-3 border-t border-slate-800">
-          {renderTeamsScoreboard()}
-        </div>
-      </section>
-
-      {/* LISTA DE JUGADORES EN VIVO DETECTADOS */}
-      <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-5">
-        <div className="flex items-center justify-between mb-3 gap-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 truncate">
-              <span className="hidden sm:inline">Jugadores Detectados</span>
-              <span className="sm:hidden">Jugadores</span> ({players.length})
-            </h2>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={() => {
-                setPlayers([]);
-                localStorage.removeItem(`party_players_${roomCode}`);
-                roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
-              }}
-              className="text-[11px] text-red-400 hover:text-red-300 border border-red-500/30 px-2 py-1 rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-1"
-              title="Vaciar lista de jugadores"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span className="hidden sm:inline">Vaciar</span>
-            </button>
-            <button
-              onClick={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}
-              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 font-semibold border border-slate-700 px-2 py-1 rounded-lg"
-              title="Re-escanear jugadores"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span className="hidden sm:inline">Re-escanear</span>
-            </button>
-          </div>
-        </div>
-
-        {players.length === 0 ? (
-          <div className="text-center py-6 border border-dashed border-slate-800 rounded-2xl text-slate-500 text-xs">
-            Aún no ha entrado ningún jugador. Los nombres aparecerán aquí al instante en que introduzcan su alias.
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {players.map((p) => {
-              const assignedTeam = teams.find((t) => t.id === p.team_id || t.team_index === p.team_index);
-              const teamCatalog = assignedTeam ? TEAMS_CATALOG.find((c) => c.index === assignedTeam.team_index) : null;
-
-              return (
-                <div
-                  key={p.id}
-                  className={`border px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 shadow-sm transition-all ${
-                    p.is_captain
-                      ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
-                      : 'bg-slate-800/90 border-slate-700'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${teamCatalog ? teamCatalog.twBg : 'bg-slate-500 animate-pulse'}`} />
-                  <span className="text-xs font-bold text-white flex items-center gap-1 truncate max-w-[110px] sm:max-w-none">
-                    {p.nickname}
-                    {p.is_captain && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium truncate">
-                    {teamCatalog ? `(${teamCatalog.name})` : '(Sin bando)'}
-                  </span>
-                  {assignedTeam && (
-                    <button
-                      onClick={() => handleSetCaptain(assignedTeam.id, p.id)}
-                      title={p.is_captain ? 'Capitán activo (Clic para desasignar o deshacer)' : 'Nombrar Capitán de su equipo'}
-                      className={`ml-1 px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 transition-all active:scale-95 shrink-0 ${
-                        p.is_captain
-                          ? 'bg-amber-400 hover:bg-red-500 hover:text-white text-slate-950 shadow-sm'
-                          : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                      }`}
-                    >
-                      <Crown className={`w-3 h-3 ${p.is_captain ? 'fill-current' : ''}`} />
-                      <span className="hidden sm:inline">{p.is_captain ? 'Quitar Cap ✕' : 'Nombrar Cap'}</span>
-                      <span className="sm:hidden">{p.is_captain ? '✕' : 'Cap'}</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    </div>
+    <HostTeamsScoreboard
+      room={room}
+      activeTeams={activeTeams}
+      teams={teams}
+      players={players}
+      onTeamCountChange={handleTeamCountChange}
+      onScoreChange={handleScoreChange}
+      onSetCaptain={handleSetCaptain}
+      onClearPlayers={() => {
+        setPlayers([]);
+        localStorage.removeItem(`party_players_${roomCode}`);
+        roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
+      }}
+      onRescanPlayers={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}
+    />
   )}
 
   {/* PESTAÑA: MESA DE EFECTOS DE SONIDO COMPLETA */}
@@ -5625,333 +4152,50 @@ export default function HostView() {
 
       {/* MODAL: VEREDICTO AUTOMÁTICO DE PRUEBA FINALIZADA */}
       {testFinishedModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto deco-card-frame">
-            {/* CABECERA */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl animate-bounce">🏁</span>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-white uppercase flex items-center gap-2">
-                    <span>Veredicto de la Prueba</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono">
-                      {testFinishedModal.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-amber-300 font-bold">
-                    {testFinishedModal.gameTitle}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setTestFinishedModal(null)}
-                className="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* TABLA DE CLASIFICACIÓN Y PUNTOS AUTOMÁTICOS */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
-                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                  Clasificación y Puntuaciones Calculadas:
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  Aciertos en vivo • Podio editable
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {currentVerdict.results.map((res) => {
-                  const cat = TEAMS_CATALOG.find((c) => c.index === res.teamIndex) || TEAMS_CATALOG[0];
-                  const rankEmoji = res.rank === 1 ? '🥇' : res.rank === 2 ? '🥈' : res.rank === 3 ? '🥉' : '🎖️';
-                  return (
-                    <div
-                      key={res.teamId}
-                      className={`p-3 rounded-2xl border transition-all ${
-                        res.rank === 1
-                          ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                          : 'bg-slate-950/80 border-slate-800'
-                      } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
-                    >
-                      {/* POSICIÓN Y EQUIPO */}
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {/* Selector manual de puesto si el Host quiere forzar orden o desempatar */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-base">{rankEmoji}</span>
-                          <select
-                            value={manualPodiumRanks[res.teamId] !== undefined ? manualPodiumRanks[res.teamId] : res.rank}
-                            onChange={(e) => {
-                              const newRank = parseInt(e.target.value, 10);
-                              setManualPodiumRanks((prev) => ({ ...prev, [res.teamId]: newRank }));
-                            }}
-                            className="bg-slate-900 border border-slate-700 text-amber-300 text-xs font-black rounded-lg px-1.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
-                            title="Cambiar posición en el podio manualmente"
-                          >
-                            <option value={1}>1.º</option>
-                            <option value={2}>2.º</option>
-                            <option value={3}>3.º</option>
-                            <option value={4}>4.º</option>
-                            <option value={5}>5.º</option>
-                          </select>
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg} shrink-0`} />
-                            <span className={`text-xs font-black uppercase truncate ${cat.twText}`}>
-                              {res.teamName}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            Marcador actual: {teams.find((t) => t.id === res.teamId)?.score || 0} pts
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* CONTADOR DE ACIERTOS (CON + Y -) */}
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-400 font-bold mr-1">Aciertos:</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRoundHits((prev) => ({
-                                ...prev,
-                                [res.teamId]: Math.max(0, (prev[res.teamId] || 0) - 1),
-                              }));
-                            }}
-                            className="w-5 h-5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black flex items-center justify-center active:scale-95"
-                            title="Restar 1 acierto"
-                          >
-                            -
-                          </button>
-                          <span className="text-xs font-black text-white font-mono w-5 text-center">
-                            {res.hits}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRoundHits((prev) => ({
-                                ...prev,
-                                [res.teamId]: (prev[res.teamId] || 0) + 1,
-                              }));
-                            }}
-                            className="w-5 h-5 rounded-md bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 text-xs font-black flex items-center justify-center active:scale-95"
-                            title="Sumar 1 acierto"
-                          >
-                            +
-                          </button>
-                        </div>
-
-                        {/* DESGLOSE: PUNTOS BASE + CARTAS = TOTAL */}
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
-                            <span className="text-[10px] text-slate-400 block font-mono">
-                              Base: +{res.basePoints}
-                            </span>
-                            {res.totalCardDelta !== 0 && (
-                              <span
-                                className={`text-[10px] font-black font-mono block ${
-                                  res.totalCardDelta > 0 ? 'text-emerald-400' : 'text-red-400'
-                                }`}
-                              >
-                                Cartas: {res.totalCardDelta > 0 ? `+${res.totalCardDelta}` : res.totalCardDelta}
-                              </span>
-                            )}
-                          </div>
-
-                          <div
-                            className={`px-3 py-1.5 rounded-xl font-mono font-black text-sm border flex items-center justify-center ${
-                              res.finalPoints > 0
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
-                                : res.finalPoints < 0
-                                ? 'bg-red-500/20 text-red-300 border-red-500/40'
-                                : 'bg-slate-800 text-slate-300 border-slate-700'
-                            }`}
-                          >
-                            {res.finalPoints > 0 ? `+${res.finalPoints}` : res.finalPoints} pts
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* BADGES DE CARTAS ACTIVAS QUE IMPACTAN A ESTE EQUIPO */}
-                      {res.cardImpacts.length > 0 && (
-                        <div className="w-full pt-1.5 border-t border-slate-800/80 flex flex-wrap gap-1.5">
-                          {res.cardImpacts.map((impact, impIdx) => (
-                            <span
-                              key={impIdx}
-                              title={impact.explanation}
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 cursor-help ${
-                                impact.delta >= 0
-                                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                                  : 'bg-red-500/15 text-red-300 border-red-500/30'
-                              }`}
-                            >
-                              <span>{impact.cardEmoji}</span>
-                              <span>{impact.cardName}</span>
-                              <strong className={impact.delta >= 0 ? 'text-emerald-300' : 'text-red-300'}>
-                                ({impact.delta >= 0 ? `+${impact.delta}` : impact.delta})
-                              </strong>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* BOTÓN PRINCIPAL: APLICAR VEREDICTO */}
-            <button
-              onClick={handleApplyAutomatedVerdict}
-              className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
-            >
-              <Trophy className="w-5 h-5 fill-slate-950" />
-              <span>
-                🚀 Aplicar Veredicto al Marcador
-                {currentVerdict.consumedEffectIds.length > 0 && ` (${currentVerdict.consumedEffectIds.length} cartas resueltas)`}
-              </span>
-            </button>
-
-            {/* RECURSOS ADICIONALES: DAR CARTA BONUS O TRANSFERIR MALDICIÓN */}
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400">
-                  Opciones complementarias:
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 flex-1">
-                  <span className="text-xs">🎁</span>
-                  <select
-                    value={selectedBonusTeam}
-                    onChange={(e) => setSelectedBonusTeam(e.target.value)}
-                    className="bg-slate-900 border border-slate-700 text-purple-300 text-xs rounded-lg px-2 py-1 flex-1 min-w-0"
-                  >
-                    <option value="random">Equipo al azar</option>
-                    {activeTeams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => handleDealBonusCard(selectedBonusTeam)}
-                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-lg active:scale-95 transition-all shrink-0"
-                  >
-                    Dar Carta
-                  </button>
-                </div>
-
-                {/* BOTÓN PARA LIMPIAR EFECTOS MANUALMENTE SI QUEDA ALGUNO */}
-                {powerCards.activeEffects.length > 0 && (
-                  <button
-                    onClick={handleClearAllActiveEffects}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 active:scale-95"
-                    title="Archivar efectos restantes"
-                  >
-                    Archivar Efectos ({powerCards.activeEffects.length})
-                  </button>
-                )}
-              </div>
-
-              {/* LA MALDICIÓN ÉPICA: PATATA CALIENTE */}
-              {(() => {
-                const cursedTeams = activeTeams.filter((t) => {
-                  const hand = powerCards.teamHands[t.id] || [];
-                  return hand.includes('la_maldicion');
-                });
-                if (cursedTeams.length === 0) return null;
-                return (
-                  <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 space-y-1.5">
-                    <span className="text-[10px] font-black uppercase text-purple-300 flex items-center gap-1">
-                      <span>☠️</span> La Maldición (Patata Caliente - Fallos restan x2):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cursedTeams.map((cTeam) => (
-                        <button
-                          key={cTeam.id}
-                          onClick={() => {
-                            const rivals = activeTeams.filter((t) => t.id !== cTeam.id);
-                            const promptText = `¿A qué rival le pasa ${cTeam.name} La Maldición?\n${rivals.map((r, i) => `${i + 1}. ${r.name}`).join('\n')}`;
-                            const chosen = prompt(promptText);
-                            const idx = parseInt(chosen || '0', 10) - 1;
-                            const target = rivals[idx];
-                            if (target) {
-                              const fromH = [...(powerCards.teamHands[cTeam.id] || [])];
-                              const cardIdx = fromH.indexOf('la_maldicion');
-                              if (cardIdx !== -1) fromH.splice(cardIdx, 1);
-                              const targetHand = powerCards.teamHands[target.id] || [];
-                              const wasFull = targetHand.length >= 3;
-                              const toH = [...targetHand, 'la_maldicion'];
-                              const nextState: PowerCardsState = {
-                                ...powerCards,
-                                teamHands: {
-                                  ...powerCards.teamHands,
-                                  [cTeam.id]: fromH,
-                                  [target.id]: toH,
-                                },
-                              };
-                              setPowerCards(nextState);
-                              localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
-                              roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
-                              alert(`☠️ ¡La Maldición ha sido transferida de ${cTeam.name} a ${target.name}!${wasFull ? `\n\n⚠️ ${target.name} ya tenía ${targetHand.length} cartas: La Maldición entra como carga parásita bloqueando cualquier nuevo robo de cartas hasta que jueguen cartas de su mano.` : ''}`);
-                            }
-                          }}
-                          className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 border border-purple-400/50 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow active:scale-95"
-                          title="Pasar La Maldición a un equipo superado"
-                        >
-                          <span>🔄 Pasar Maldición de {cTeam.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* ACCIONES DE CIERRE O SALTO AL SIGUIENTE JUEGO */}
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              {testFinishedModal.suggestedNextGame && (
-                <button
-                  onClick={() => {
-                    const next = testFinishedModal.suggestedNextGame!;
-                    setTestFinishedModal(null);
-                    handleSelectGame(next);
-                  }}
-                  className="w-full p-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-green-500/25 active:scale-95 transition-all"
-                >
-                  <Play className="w-4 h-4 fill-slate-950" />
-                  <span>Siguiente: {testFinishedModal.suggestedNextGame.title}</span>
-                </button>
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    setTestFinishedModal(null);
-                    handleReturnToLobby();
-                  }}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-black uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Ir al Lobby</span>
-                </button>
-                <button
-                  onClick={() => setTestFinishedModal(null)}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-black uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                >
-                  <span>Cerrar Modal</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <HostTestVerdictModal
+          testFinishedModal={testFinishedModal}
+          onClose={() => setTestFinishedModal(null)}
+          currentVerdict={currentVerdict}
+          teams={teams}
+          activeTeams={activeTeams}
+          manualPodiumRanks={manualPodiumRanks}
+          onSetManualPodiumRanks={setManualPodiumRanks}
+          onSetRoundHits={setRoundHits}
+          onApplyVerdict={handleApplyAutomatedVerdict}
+          selectedBonusTeam={selectedBonusTeam}
+          onSetSelectedBonusTeam={setSelectedBonusTeam}
+          onDealBonusCard={handleDealBonusCard}
+          powerCards={powerCards}
+          onClearAllActiveEffects={handleClearAllActiveEffects}
+          onTransferMaldicion={(sourceTeam, targetTeam) => {
+            const fromH = [...(powerCards.teamHands[sourceTeam.id] || [])];
+            const cardIdx = fromH.indexOf('la_maldicion');
+            if (cardIdx !== -1) fromH.splice(cardIdx, 1);
+            const targetHand = powerCards.teamHands[targetTeam.id] || [];
+            const wasFull = targetHand.length >= 3;
+            const toH = [...targetHand, 'la_maldicion'];
+            const nextState = {
+              ...powerCards,
+              teamHands: {
+                ...powerCards.teamHands,
+                [sourceTeam.id]: fromH,
+                [targetTeam.id]: toH,
+              },
+            };
+            setPowerCards(nextState);
+            localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
+            roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
+            alert(`☠️ ¡La Maldición ha sido transferida de ${sourceTeam.name} a ${targetTeam.name}!${wasFull ? `\n\n⚠️ ${targetTeam.name} ya tenía ${targetHand.length} cartas: La Maldición entra como carga parásita bloqueando cualquier nuevo robo de cartas hasta que jueguen cartas de su mano.` : ''}`);
+          }}
+          onSelectNextGame={(game) => {
+            setTestFinishedModal(null);
+            handleSelectGame(game);
+          }}
+          onReturnToLobby={() => {
+            setTestFinishedModal(null);
+            handleReturnToLobby();
+          }}
+        />
       )}
     </main>
   );
