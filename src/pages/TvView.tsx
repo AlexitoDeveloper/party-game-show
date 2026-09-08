@@ -67,6 +67,10 @@ import { triggerTeamConfetti } from '../lib/triggerTeamConfetti';
 import { TwemojiText } from '../components/TwemojiText';
 import { GameIcon } from '../components/GameIcon';
 import { generateAvatarDataUri, DiceBearStyle } from '../lib/dicebear';
+import { speakeasyJukebox, JukeboxState } from '../lib/audio';
+import { SpeakeasyJukeboxWidget } from '../components/audio/SpeakeasyJukeboxWidget';
+import { SpeakeasyGazettePodium } from '../components/podium/SpeakeasyGazettePodium';
+import { ThreeArtDecoPodiumStage } from '../components/3d/ThreeArtDecoPodiumStage';
 
 export default function TvView() {
   const { code } = useParams<{ code: string }>();
@@ -94,6 +98,9 @@ export default function TvView() {
       title: savedTitle || 'GAME SHOW ARENA',
     };
   });
+
+  const [jukeboxState, setJukeboxState] = useState<JukeboxState>(() => speakeasyJukebox.getState());
+  const [podiumPage, setPodiumPage] = useState<'podium' | 'medals'>('podium');
 
   const [teams, setTeams] = useState<Team[]>(() => {
     const saved = localStorage.getItem(`party_teams_${roomCode}`);
@@ -144,6 +151,33 @@ export default function TvView() {
 
   // Instancia de sincronización multi-pantalla como pantalla de TV
   const roomSync = useMemo(() => getRoomSync(roomCode, 'tv'), [roomCode]);
+
+  useEffect(() => {
+    // Iniciar hilo musical automáticamente en la TV
+    speakeasyJukebox.autoStart();
+
+    const unsub = speakeasyJukebox.subscribe((st) => {
+      setJukeboxState(st);
+      roomSync.broadcast({ type: 'JUKEBOX_STATE_SYNC', payload: st });
+    });
+
+    // Desbloquear al primer clic o toque en cualquier parte de la TV si el navegador lo bloqueó
+    const handleFirstTouch = () => {
+      if (!speakeasyJukebox.getState().isPlaying) {
+        speakeasyJukebox.play();
+      }
+    };
+    window.addEventListener('click', handleFirstTouch, { once: true });
+    window.addEventListener('pointerdown', handleFirstTouch, { once: true });
+    window.addEventListener('keydown', handleFirstTouch, { once: true });
+
+    return () => {
+      unsub();
+      window.removeEventListener('click', handleFirstTouch);
+      window.removeEventListener('pointerdown', handleFirstTouch);
+      window.removeEventListener('keydown', handleFirstTouch);
+    };
+  }, [roomSync]);
 
   // Hook del motor de carreras con arbitraje en TV
   const { winner: buzzerWinner, isLocked: buzzerLocked, resetBuzzer } = useBuzzerRace({
@@ -203,6 +237,11 @@ export default function TvView() {
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const musicAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
+  // Adaptación automática del volumen del Speakeasy Jukebox según la prueba o juego
+  useEffect(() => {
+    speakeasyJukebox.setGameContext(room.status, room.active_game_id, musicPlaying);
+  }, [room.status, room.active_game_id, musicPlaying]);
+
   const currentSong: SongTrack | null = remoteMusicTrack;
 
   // Reiniciar tiempo de audio a 0 solo cuando cambie efectivamente de canción
@@ -226,6 +265,13 @@ export default function TvView() {
     }
   }, [buzzerLocked, musicPlaying, musicRevealed]);
 
+  const musicRevealedRef = React.useRef(musicRevealed);
+  musicRevealedRef.current = musicRevealed;
+  const currentSongRef = React.useRef(currentSong);
+  currentSongRef.current = currentSong;
+  const musicPlayingRef = React.useRef(musicPlaying);
+  musicPlayingRef.current = musicPlaying;
+
   // Manejo del elemento de audio HTML5 según musicPlaying
   useEffect(() => {
     if (!musicAudioRef.current) return;
@@ -239,6 +285,16 @@ export default function TvView() {
         if (err.name === 'NotAllowedError') {
           setAutoplayBlocked(true);
         }
+        setMusicPlaying(false);
+        roomSync.broadcast({
+          type: 'MUSIC_STATE_UPDATE',
+          payload: {
+            trackIndex: 0,
+            isPlaying: false,
+            isRevealed: musicRevealedRef.current,
+            trackData: currentSongRef.current || undefined,
+          },
+        });
       });
     } else {
       musicAudioRef.current.pause();
@@ -343,6 +399,7 @@ export default function TvView() {
           },
         });
         roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+        roomSync.broadcast({ type: 'JUKEBOX_STATE_SYNC', payload: speakeasyJukebox.getState() });
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
         resetBuzzer();
@@ -479,6 +536,17 @@ export default function TvView() {
         triggerTeamConfetti(event.payload?.teamId || winningTeamCatalog?.index);
         setShowTvCoinBurst(true);
         setTimeout(() => setShowTvCoinBurst(false), 2400);
+      } else if (event.type === 'JUKEBOX_COMMAND') {
+        const { action, volume } = event.payload;
+        if (action === 'play') speakeasyJukebox.play();
+        else if (action === 'pause') speakeasyJukebox.pause();
+        else if (action === 'toggle') speakeasyJukebox.toggle();
+        else if (action === 'next') speakeasyJukebox.next();
+        else if (action === 'prev') speakeasyJukebox.prev();
+        else if (action === 'volume' && typeof volume === 'number') speakeasyJukebox.setVolume(volume);
+        else if (action === 'mute') speakeasyJukebox.toggleMute();
+      } else if (event.type === 'PODIUM_PAGE_CHANGE') {
+        setPodiumPage(event.payload.page);
       }
     });
 
@@ -913,7 +981,45 @@ export default function TvView() {
         ref={musicAudioRef}
         src={currentSong?.previewUrl || ''}
         preload="auto"
-        onEnded={() => setMusicPlaying(false)}
+        onEnded={() => {
+          setMusicPlaying(false);
+          roomSync.broadcast({
+            type: 'MUSIC_STATE_UPDATE',
+            payload: {
+              trackIndex: 0,
+              isPlaying: false,
+              isRevealed: musicRevealedRef.current,
+              trackData: currentSongRef.current || undefined,
+            },
+          });
+        }}
+        onError={(e) => {
+          console.warn('Error al reproducir audio preview en TV:', e);
+          setMusicPlaying(false);
+          roomSync.broadcast({
+            type: 'MUSIC_STATE_UPDATE',
+            payload: {
+              trackIndex: 0,
+              isPlaying: false,
+              isRevealed: musicRevealedRef.current,
+              trackData: currentSongRef.current || undefined,
+            },
+          });
+        }}
+        onPause={() => {
+          if (musicPlayingRef.current) {
+            setMusicPlaying(false);
+            roomSync.broadcast({
+              type: 'MUSIC_STATE_UPDATE',
+              payload: {
+                trackIndex: 0,
+                isPlaying: false,
+                isRevealed: musicRevealedRef.current,
+                trackData: currentSongRef.current || undefined,
+              },
+            });
+          }
+        }}
       />
 
       {/* Aviso flotante si el navegador bloquea el autoplay en la TV */}
@@ -931,8 +1037,16 @@ export default function TvView() {
         </div>
       )}
 
-      {/* FONDO RETRO-GRID DINÁMICO ACELERADO POR GPU */}
-      <RetroGridBackground activeTeamColor={winningTeamCatalog?.colorHex} />
+      {/* FONDO 3D ART DÉCO 1930s (THREE.JS) DURANTE LA CLAUSURA / PODIO */}
+      {(room.status === 'podium' || room.status === 'ended') ? (
+        <ThreeArtDecoPodiumStage
+          winnerColorHex={winningTeamCatalog?.colorHex || '#d4af37'}
+          className="fixed inset-0 pointer-events-none z-0"
+        />
+      ) : (
+        /* FONDO RETRO-GRID DINÁMICO ACELERADO POR GPU EN PARTIDAS REGULARES Y LOBBY */
+        <RetroGridBackground activeTeamColor={winningTeamCatalog?.colorHex} />
+      )}
 
       {/* LLUVIA DE MONEDAS Y FICHAS DORADAS EN CELEBRACIONES */}
       <CoinBurstCelebration active={showTvCoinBurst} onComplete={() => setShowTvCoinBurst(false)} />
@@ -953,24 +1067,35 @@ export default function TvView() {
         )}
       </AnimatePresence>
 
-      {/* HEADER TV / PROYECTOR ART DÉCO 1930s */}
-      <header className="flex items-center justify-between border-b border-[#d4af37]/30 pb-4 z-20">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-[#d4af37] via-[#b38f2a] to-[#8a6a1a] rounded-2xl shadow-lg shadow-amber-900/40 border border-[#f5eedb]/30">
-            <GameIcon name="Tv" size={32} color="#FFFFFF" glow={true} weight="fill" />
+      {/* HEADER TV / PROYECTOR ART DÉCO 1930s (ADAPTABLE Y ULTRA-COMPACTO EN PODIO) */}
+      <header className={`flex items-center justify-between border-b border-[#d4af37]/30 z-20 ${
+        room.status === 'podium' || room.status === 'ended' ? 'pb-2 mb-1' : 'pb-4 mb-2'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`bg-gradient-to-br from-[#d4af37] via-[#b38f2a] to-[#8a6a1a] rounded-2xl shadow-lg shadow-amber-900/40 border border-[#f5eedb]/30 ${
+            room.status === 'podium' || room.status === 'ended' ? 'p-2' : 'p-3'
+          }`}>
+            <GameIcon name="Tv" size={room.status === 'podium' || room.status === 'ended' ? 22 : 32} color="#FFFFFF" glow={true} weight="fill" />
           </div>
           <div>
-            <h1 className="text-3xl sm:text-4xl font-broadway uppercase tracking-wider text-gold-gradient drop-shadow-[0_2px_12px_rgba(212,175,55,0.4)]">
+            <h1 className={`font-broadway uppercase tracking-wider text-gold-gradient drop-shadow-[0_2px_12px_rgba(212,175,55,0.4)] leading-tight ${
+              room.status === 'podium' || room.status === 'ended' ? 'text-xl sm:text-2xl' : 'text-3xl sm:text-4xl'
+            }`}>
               {room.title || 'GAME SHOW ARENA'}
             </h1>
-            <p className="text-amber-100/70 text-sm font-vintage tracking-wider flex items-center gap-2 mt-0.5">
-              <GameIcon name="Sparkle" size={16} color="#d4af37" glow="#d4af37" weight="fill" />
+            <p className="text-amber-100/70 text-xs sm:text-sm font-vintage tracking-wider flex items-center gap-1.5 mt-0.5">
+              <GameIcon name="Sparkle" size={14} color="#d4af37" glow="#d4af37" weight="fill" />
               {room.status === 'lobby' ? (
                 <span>LOBBY DE CONVOCATORIA • ESPERANDO JUGADORES</span>
               ) : room.status === 'presentation' ? (
                 <span className="text-gold-gradient font-bold flex items-center gap-1.5">
                   <span>✨</span>
                   <span>PRESENTACIÓN OFICIAL DE LA VELADA</span>
+                </span>
+              ) : room.status === 'podium' || room.status === 'ended' ? (
+                <span className="text-gold-gradient font-bold flex items-center gap-1.5 font-broadway">
+                  <span>🏆</span>
+                  <span>CEREMONIA DE CLAUSURA • THE SPEAKEASY GAZETTE</span>
                 </span>
               ) : (
                 <span className="text-white font-bold flex items-center gap-1.5 font-broadway">
@@ -983,8 +1108,14 @@ export default function TvView() {
           </div>
         </div>
 
-        {/* CABECERA PASIVA DE LA TV (SIN BOTONES CLICABLES) */}
+        {/* CABECERA DE LA TV CON JUKEBOX, MODO CINE Y PLACA DE SALA */}
         <div className="flex items-center gap-3">
+          {/* INDICADOR VISUAL ART DÉCO DEL HILO MUSICAL SPEAKEASY (PASIVO) */}
+          <SpeakeasyJukeboxWidget
+            variant="tv"
+            externalState={jukeboxState}
+          />
+
           {/* MINI QR EN LA ESQUINA DURANTE LAS PRUEBAS/SHOW */}
           {room.status !== 'lobby' && joinUrl && (
             <div className="flex items-center gap-2.5 bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl px-3 py-1.5 shadow-xl backdrop-blur-md">
@@ -1085,32 +1216,52 @@ export default function TvView() {
             className="col-span-9 grid gap-4 h-full"
             style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
           >
-            {activeTeams.map((team) => {
-              const theme = getTeamTheme(team.team_index);
-              const teamMembers = players.filter(
-                (p) =>
-                  (p.team_index !== undefined && p.team_index !== null && p.team_index === team.team_index) ||
-                  p.team_id === team.id ||
-                  p.team_id === `team_${team.team_index}`
-              );
-              const hand = powerCards?.teamHands[team.id] || [];
+            {(() => {
+              const maxLobbyScore = Math.max(...activeTeams.map((t) => t.score || 0), 0);
+              return activeTeams.map((team) => {
+                const theme = getTeamTheme(team.team_index);
+                const teamMembers = players.filter(
+                  (p) =>
+                    (p.team_index !== undefined && p.team_index !== null && p.team_index === team.team_index) ||
+                    p.team_id === team.id ||
+                    p.team_id === `team_${team.team_index}`
+                );
+                const hand = powerCards?.teamHands[team.id] || [];
 
-              return (
-                <TeamScoreCard
-                  key={team.id}
-                  team={team}
-                  theme={theme}
-                  members={teamMembers}
-                  powerCardsCount={hand.length}
-                  variant="lobby"
-                />
-              );
-            })}
+                return (
+                  <TeamScoreCard
+                    key={team.id}
+                    team={team}
+                    theme={theme}
+                    members={teamMembers}
+                    powerCardsCount={hand.length}
+                    variant="lobby"
+                    maxRoomScore={maxLobbyScore}
+                  />
+                );
+              });
+            })()}
           </div>
         </section>
       ) : room.status === 'presentation' ? (
         /* ================= VISTA PRESENTACIÓN DEL SHOW ================= */
         renderPresentationView()
+      ) : room.status === 'podium' || room.status === 'ended' ? (
+        /* ================= VISTA CLAUSURA / THE SPEAKEASY GAZETTE ================= */
+        <SpeakeasyGazettePodium
+          teams={teams}
+          players={players}
+          powerCards={powerCards}
+          activePage={podiumPage}
+          onPageChange={setPodiumPage}
+          isHost={false}
+          onReturnToLobby={() => {
+            const updated: Room = { ...room, status: 'lobby' };
+            setRoom(updated);
+            roomSync.broadcast({ type: 'ROOM_UPDATE', payload: { status: 'lobby' } });
+            roomSync.broadcast({ type: 'RETURN_TO_LOBBY' });
+          }}
+        />
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ================= */
         <section className="flex-1 flex flex-col justify-center items-center my-4 z-10 w-full max-w-6xl mx-auto">
@@ -1119,10 +1270,16 @@ export default function TvView() {
             <div className="flex items-center gap-3">
               <span className="text-3xl">{activeGame.emoji}</span>
               <div>
-                <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-300 block">
-                  {activeGame.category}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-300 block">
+                    {activeGame.category}
+                  </span>
+                  <span className="text-[10px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-bold font-vintage shadow-sm">
+                    {activeGame.participantsLabel}
+                  </span>
+                </div>
                 <h3 className="text-xl font-broadway uppercase tracking-wide text-gold-gradient">{activeGame.title}</h3>
+                <p className="text-xs text-slate-300 font-vintage italic mt-0.5">{activeGame.participantsDescription}</p>
               </div>
             </div>
 
@@ -2150,7 +2307,7 @@ export default function TvView() {
       )}
 
       {/* MARCADOR INFERIOR PERMANENTE EN TV (DURANTE LAS PRUEBAS / JUEGOS) */}
-      {room.status !== 'lobby' && room.status !== 'presentation' && (
+      {room.status !== 'lobby' && room.status !== 'presentation' && room.status !== 'podium' && room.status !== 'ended' && (
         <footer className="border-t border-slate-800/80 pt-4 z-10">
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs uppercase font-bold tracking-wider text-slate-400">
@@ -2178,6 +2335,9 @@ export default function TvView() {
                 const hasRussianRoulette = powerCards?.activeEffects.some(
                   (e) => e.sourceTeamId === team.id && e.cardId === 'ruleta_rusa'
                 );
+                const hasPhoenix = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'ave_fenix'
+                );
                 const hasCurse = teamHand.includes('la_maldicion');
                 const hasCaptainGamble = !!captainGambles[team.id];
                 const teamCaptain = players.find(
@@ -2193,12 +2353,14 @@ export default function TvView() {
                     members={members}
                     powerCardsCount={teamHand.length}
                     variant="scoreboard"
+                    maxRoomScore={Math.max(...activeTeams.map((t) => t.score || 0), 0)}
                     activeEffects={{
                       hasDouble,
                       hasBomb,
                       hasShield,
                       hasSentence,
                       hasRussianRoulette,
+                      hasPhoenix,
                       hasCurse,
                       hasGamble: hasCaptainGamble,
                     }}

@@ -9,7 +9,11 @@ function partyRelayPlugin(): Plugin {
     configureServer(server) {
       server.ws.on('party-event', (data: any) => {
         // Retransmitir el evento a todos los navegadores y móviles conectados
-        server.ws.send('party-event', data);
+        try {
+          server.ws.send({ type: 'custom', event: 'party-event', data });
+        } catch {
+          try { (server.ws as any).send('party-event', data); } catch {}
+        }
       });
 
       // Endpoint para extraer el preview oficial de Spotify CDN (p.scdn.co) sin bloqueos CORS del navegador

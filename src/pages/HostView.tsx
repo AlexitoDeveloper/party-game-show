@@ -53,7 +53,7 @@ import {
   Beer,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { soundFX } from '../lib/audio';
+import { soundFX, JukeboxState, JUKEBOX_PLAYLIST } from '../lib/audio';
 import { TEAMS_CATALOG } from '../lib/constants';
 import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
@@ -87,6 +87,7 @@ import {
   getRandomSensoryLimitation,
   getPowerCardById,
 } from '../lib/powerCards';
+import { SpeakeasyJukeboxWidget } from '../components/audio/SpeakeasyJukeboxWidget';
 
 export default function HostView() {
   const { code } = useParams<{ code: string }>();
@@ -162,6 +163,17 @@ export default function HostView() {
   // Estados del Sistema de Capitanes
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
   const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
+
+  // Estado del Jukebox Speakeasy sincronizado desde la TV
+  const [jukeboxState, setJukeboxState] = useState<JukeboxState>({
+    isPlaying: false,
+    currentTrackIndex: 0,
+    currentTrack: JUKEBOX_PLAYLIST[0],
+    volume: 0.35,
+    isMuted: false,
+    isDucked: false,
+  });
+  const [podiumPage, setPodiumPage] = useState<'podium' | 'medals'>('podium');
 
   // Instancia de sincronización multi-pantalla como anfitrión
   const roomSync = useMemo(() => getRoomSync(roomCode, 'host'), [roomCode]);
@@ -651,6 +663,36 @@ export default function HostView() {
     setMimicaCardIndex(randIdx);
   };
 
+  // Temporizador interactivo para Mímica en HostView
+  useEffect(() => {
+    if (!mimicaIsRunning || mimicaTimerSeconds === null || mimicaTimerSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setMimicaTimerSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setMimicaIsRunning(false);
+          soundFX.playDecoBell();
+          syncMimicaState(mimicaHitsCount, 0, false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [mimicaIsRunning, mimicaTimerSeconds, mimicaHitsCount]);
+
+  const handleToggleMimicaTimer = () => {
+    if (mimicaIsRunning) {
+      setMimicaIsRunning(false);
+      syncMimicaState(mimicaHitsCount, mimicaTimerSeconds, false);
+    } else {
+      const secsToStart = (mimicaTimerSeconds === null || mimicaTimerSeconds <= 0) ? 90 : mimicaTimerSeconds;
+      setMimicaTimerSeconds(secsToStart);
+      setMimicaIsRunning(true);
+      syncMimicaState(mimicaHitsCount, secsToStart, true);
+    }
+  };
+
   const handleStartMimicaTimer = (secs: number = 90) => {
     setMimicaTimerSeconds(secs);
     setMimicaIsRunning(true);
@@ -668,6 +710,12 @@ export default function HostView() {
     soundFX.playSuccess();
     syncMimicaState(nextHits, mimicaTimerSeconds, mimicaIsRunning);
     handleNextMimicaCard();
+  };
+
+  const handleSubtractMimicaHit = () => {
+    const nextHits = Math.max(0, mimicaHitsCount - 1);
+    setMimicaHitsCount(nextHits);
+    syncMimicaState(nextHits, mimicaTimerSeconds, mimicaIsRunning);
   };
 
   const handleResetMimicaRound = () => {
@@ -805,6 +853,16 @@ export default function HostView() {
       syncMusicState(false, musicRevealed);
     }
   }, [isLocked, musicRevealed]);
+
+  // Temporizador de seguridad: las previews de Spotify duran 30s. Si termina en TV o se pierde señal, auto-restablecer botón a "Reproducir"
+  useEffect(() => {
+    if (!musicPlaying) return;
+    const timer = setTimeout(() => {
+      setMusicPlaying(false);
+      syncMusicState(false, musicRevealed);
+    }, 31000);
+    return () => clearTimeout(timer);
+  }, [musicPlaying, musicRevealed]);
 
   const handleTogglePlayMusic = () => {
     const nextPlaying = !musicPlaying;
@@ -965,7 +1023,13 @@ export default function HostView() {
 
     if (!targetId) return;
 
-    const { nextState, cardId, isFull } = dealCardToSingleTeam(powerCards, targetId);
+    // Remontada invisible: A partir de la 5.ª prueba (índice 4+) y solo para puestos 4.º o peor
+    const currentGameIndex = GAMES_CATALOG.findIndex((g) => g.id === (room.active_game_id || activeGame.id));
+    const sortedTeams = [...activeTeams].sort((a, b) => b.score - a.score);
+    const teamRank = sortedTeams.findIndex((t) => t.id === targetId) + 1;
+    const isUnderdog = currentGameIndex >= 4 && teamRank >= 4;
+
+    const { nextState, cardId, isFull } = dealCardToSingleTeam(powerCards, targetId, { isUnderdog });
     if (isFull) {
       const teamObj = activeTeams.find((t) => t.id === targetId);
       alert(`¡El equipo ${teamObj?.name || 'elegido'} ya tiene 3 cartas (el máximo permitido)! Debe jugar alguna antes de recibir más.`);
@@ -1001,6 +1065,29 @@ export default function HostView() {
       return;
     }
 
+    // Validación especial para El Ave Fénix (Legendaria): A partir de la 5ª prueba y solo si vas 4º o peor
+    if (cardId === 'ave_fenix') {
+      const currentGameIndex = GAMES_CATALOG.findIndex((g) => g.id === (room.active_game_id || activeGame.id));
+      const sortedTeams = [...activeTeams].sort((a, b) => b.score - a.score);
+      const teamRank = sortedTeams.findIndex((t) => t.id === sourceTeamId) + 1;
+
+      if (currentGameIndex >= 0 && currentGameIndex < 4) {
+        soundFX.playSound('buzz');
+        alert(
+          `🔥 ¡EL AVE FÉNIX NO PUEDE DESPEGAR AÚN!\nEsta legendaria solo puede jugarse a partir de la 5.ª prueba (prueba actual: ${currentGameIndex + 1}.ª). La carta vuelve a la mano.`
+        );
+        return;
+      }
+
+      if (teamRank > 0 && teamRank < 4) {
+        soundFX.playSound('buzz');
+        alert(
+          `🔥 ¡EL AVE FÉNIX SOLO AYUDA A LOS CAÍDOS!\nSolo puede jugarse si el equipo va 4.º o peor en la clasificación (puesto actual: ${teamRank}.º con ${team.score} pts). La carta vuelve a la mano.`
+        );
+        return;
+      }
+    }
+
     const targetTeam = targetTeamId ? activeTeams.find((t) => t.id === targetTeamId) : undefined;
 
     // Determinar equipo objetivo efectivo (si se especificó un jugador, resolver su equipo)
@@ -1016,6 +1103,7 @@ export default function HostView() {
 
     // Comprobar si el equipo objetivo tiene un ESCUDO activo que bloquee cartas dañinas
     const isHarmfulCard = [
+      'mal_de_ojo',
       'maldicion_comun',
       'baneo',
       'bomba',
@@ -1026,6 +1114,7 @@ export default function HostView() {
       'el_cuarto_mono',
       'titiritero',
       'robo_siglo',
+      'impuesto_padrino',
     ].includes(cardId);
 
     const activeShield = effectiveTargetTeamId
@@ -1070,7 +1159,12 @@ export default function HostView() {
 
     // Caso Especial 1: BANCO DE CARTAS
     if (cardId === 'banco_cartas') {
-      const { nextState, drawnCards } = executeDrawTwoForBank(powerCards);
+      const currentGameIndex = GAMES_CATALOG.findIndex((g) => g.id === (room.active_game_id || activeGame.id));
+      const sortedTeams = [...activeTeams].sort((a, b) => b.score - a.score);
+      const teamRank = sortedTeams.findIndex((t) => t.id === sourceTeamId) + 1;
+      const isUnderdog = currentGameIndex >= 4 && teamRank >= 4;
+
+      const { nextState, drawnCards } = executeDrawTwoForBank(powerCards, { isUnderdog });
       if (!drawnCards) {
         alert('¡No hay suficientes cartas en el mazo ni en descartes para el Banco de Cartas!');
         return;
@@ -1198,20 +1292,25 @@ export default function HostView() {
       sensoryLimitationText = `🎭 ${randomRule}`;
     }
 
-    // Caso Especial 6: MALDICIÓN COMÚN (-2 puntos inmediatos al rival objetivo)
-    if (cardId === 'maldicion_comun') {
+    // Caso Especial 6: MAL DE OJO / MALDICIÓN COMÚN (-2 puntos inmediatos al rival objetivo)
+    if (cardId === 'mal_de_ojo' || cardId === 'maldicion_comun') {
       const victimId = targetTeamId || sourceTeamId;
       handleScoreChange(victimId, -2);
     }
 
-    // Caso Especial 7: LA MALDICIÓN ÉPICA (-3 puntos al jugarla para descartarla)
+    // Caso Especial 7: LA MALDICIÓN ÉPICA (Patata caliente: duplica fallos y se pasa a rival)
     if (cardId === 'la_maldicion') {
-      handleScoreChange(sourceTeamId, -3);
+      sensoryLimitationText = '☠️ Maldición activa (Fallos restan el DOBLE)';
     }
 
-    // Caso Especial 8: ESCUDO (Protección activa durante la prueba)
+    // Caso Especial 8: ESCUDO (Protección activa durante la prueba actual)
     if (cardId === 'escudo') {
-      sensoryLimitationText = '🛡️ Escudo protector activo';
+      sensoryLimitationText = '🛡️ Escudo protector activo en esta prueba';
+    }
+
+    // Caso Especial 9: EL AVE FÉNIX (Triplica x3 puntos conseguidos en la prueba)
+    if (cardId === 'ave_fenix') {
+      sensoryLimitationText = '🔥 Puntos Triplicados (x3)';
     }
 
     const nextState = executePlayCard(
@@ -1459,6 +1558,14 @@ export default function HostView() {
         setRoom((prev) => ({ ...prev, ...event.payload }));
       } else if (event.type === 'TEAMS_UPDATE') {
         setTeams(event.payload);
+      } else if (event.type === 'MUSIC_STATE_UPDATE') {
+        setMusicPlaying(event.payload.isPlaying);
+        if (event.payload.isRevealed !== undefined) {
+          setMusicRevealed(event.payload.isRevealed);
+        }
+        if (event.payload.trackData !== undefined && event.payload.trackData !== null) {
+          setCurrentSongTrack(event.payload.trackData);
+        }
       } else if (event.type === 'MOVIE_STATE_UPDATE') {
         setMovieIndex(event.payload.movieIndex);
         setMovieFrameLevel(event.payload.frameLevel);
@@ -1469,6 +1576,10 @@ export default function HostView() {
       } else if (event.type === 'POWER_CARD_PLAY_REQUEST') {
         const { sourceTeamId, sourceTeamName, cardId, targetTeamId, targetTeamName, targetPlayerName, targetCardId } = event.payload;
         handlePlayCardDirectly(sourceTeamId, cardId, targetTeamId, targetPlayerName, targetCardId);
+      } else if (event.type === 'JUKEBOX_STATE_SYNC') {
+        setJukeboxState(event.payload);
+      } else if (event.type === 'PODIUM_PAGE_CHANGE') {
+        setPodiumPage(event.payload.page);
       } else if (event.type === 'SET_CAPTAIN') {
         setPlayers((prev) =>
           prev.map((p) => {
@@ -1612,6 +1723,7 @@ export default function HostView() {
     }
 
     roomSync.broadcast({ type: 'RETURN_TO_LOBBY' });
+    roomSync.broadcast({ type: 'JUKEBOX_COMMAND', payload: { action: 'play' } });
 
     if (isSupabaseConfigured) {
       await supabase.from('rooms').update({ status: 'lobby' }).eq('code', roomCode);
@@ -1669,6 +1781,29 @@ export default function HostView() {
       }).eq('code', roomCode);
     }
   };
+
+  // Finalizar velada completa y mostrar The Speakeasy Gazette en la TV
+  const handleFinishShowAndShowGazette = async () => {
+    const updatedRoom: Room = {
+      ...room,
+      status: 'podium',
+    };
+    setRoom(updatedRoom);
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
+    roomSync.broadcast({
+      type: 'ROOM_UPDATE',
+      payload: { status: 'podium' },
+    });
+    roomSync.broadcast({ type: 'JUKEBOX_COMMAND', payload: { action: 'play' } });
+    soundFX.playVictory();
+
+    if (isSupabaseConfigured) {
+      await supabase.from('rooms').update({
+        status: 'podium',
+      }).eq('code', roomCode);
+    }
+  };
+
 
   // Modificar puntuación manual con celebración y sincronización a TV
   const handleScoreChange = async (teamId: string, delta: number, silent?: boolean) => {
@@ -1781,7 +1916,7 @@ export default function HostView() {
 
     // 5. Si tenía penalización de puntos asociada, restaurarla
     let pointsToRestore = options?.restorePoints || 0;
-    if (cardId === 'maldicion_comun' && !options?.restorePoints) {
+    if ((cardId === 'mal_de_ojo' || cardId === 'maldicion_comun') && !options?.restorePoints) {
       pointsToRestore = 2;
     } else if (cardId === 'la_maldicion' && !options?.restorePoints) {
       pointsToRestore = 3;
@@ -2158,6 +2293,48 @@ export default function HostView() {
                   </button>
                 )}
 
+                {eff.cardId === 'impuesto_padrino' && (
+                  <button
+                    onClick={() => {
+                      const pts = prompt(
+                        `¿Cuántos puntos consiguió el equipo vencedor en 1.er puesto?\n(Se transferirá el 50% al equipo ${eff.sourceTeamName})`,
+                        '4'
+                      );
+                      const num = parseInt(pts || '0', 10);
+                      if (num > 0) {
+                        const half = Math.round(num * 0.5);
+                        handleScoreChange(eff.sourceTeamId, half);
+                        handleRemoveActiveEffect(eff.id);
+                        alert(`🎩 ¡Impuesto del Padrino cobrado! +${half} pts transferidos a ${eff.sourceTeamName}.`);
+                      }
+                    }}
+                    className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-[10px] shadow"
+                  >
+                    🎩 Impuesto 50%
+                  </button>
+                )}
+
+                {eff.cardId === 'ave_fenix' && (
+                  <button
+                    onClick={() => {
+                      const pts = prompt(
+                        `¿Cuántos puntos base consiguió ${eff.sourceTeamName} en esta prueba?\n(Se sumará el x2 adicional para alcanzar el triple x3)`,
+                        '3'
+                      );
+                      const num = parseInt(pts || '0', 10);
+                      if (num > 0) {
+                        const bonus = num * 2;
+                        handleScoreChange(eff.sourceTeamId, bonus);
+                        handleRemoveActiveEffect(eff.id);
+                        alert(`🔥 ¡EL AVE FÉNIX RESURGE! +${bonus} pts sumados a ${eff.sourceTeamName} (Total x3 = ${num * 3} pts).`);
+                      }
+                    }}
+                    className="px-2 py-1 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white rounded-lg font-black text-[10px] shadow"
+                  >
+                    🔥 Triplicar x3
+                  </button>
+                )}
+
                 <button
                   onClick={() => {
                     handleReturnCardToTeam(eff.sourceTeamId, eff.cardId, { removeEffectId: eff.id });
@@ -2185,7 +2362,20 @@ export default function HostView() {
   };
 
   const renderSoundboard = () => (
-    <section className="bg-slate-900/90 border-2 border-slate-800 hover:border-amber-400/50 transition-all rounded-3xl p-5 shadow-2xl space-y-3 backdrop-blur-xl">
+    <div className="space-y-4">
+      {/* HILO MUSICAL SPEAKEASY CON CONTROL DJ REMOTO (SUENA EN LA TV) */}
+      <SpeakeasyJukeboxWidget
+        variant="host"
+        externalState={jukeboxState}
+        onCommand={(cmd) => {
+          roomSync.broadcast({
+            type: 'JUKEBOX_COMMAND',
+            payload: cmd,
+          });
+        }}
+      />
+
+      <section className="bg-slate-900/90 border-2 border-slate-800 hover:border-amber-400/50 transition-all rounded-3xl p-5 shadow-2xl space-y-3 backdrop-blur-xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
         <div className="flex items-center gap-2.5">
           <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
@@ -2353,6 +2543,7 @@ export default function HostView() {
         </div>
       </div>
     </section>
+  </div>
   );
 
   const renderQuickSoundStrip = () => (
@@ -2458,23 +2649,29 @@ export default function HostView() {
       </header>
 
       {/* BARRA DE ESTADO GLOBAL Y BOTÓN PRINCIPAL */}
-      <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 transition-all flex items-center justify-between gap-2.5 shadow-deco-gold ${
+      <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shadow-deco-gold ${
         room.status === 'playing'
           ? 'bg-[#0c0c14]/95 border-[#d4af37]/60'
           : room.status === 'presentation'
           ? 'bg-[#120f18]/95 border-[#d4af37]/60'
           : 'bg-[#0c0c14]/90 border-[#d4af37]/35'
       }`}>
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto">
           <div className="text-2xl sm:text-3xl p-1.5 sm:p-2 bg-[#14141e] rounded-xl sm:rounded-2xl border border-[#d4af37]/30 flex-shrink-0 shadow-inner">
-            {room.status === 'presentation' ? '✨' : activeGame.emoji}
+            {room.status === 'presentation'
+              ? '✨'
+              : room.status === 'podium' || room.status === 'ended'
+              ? '🏆'
+              : activeGame.emoji}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <span className="text-[9px] uppercase font-vintage font-bold tracking-widest text-amber-300 block truncate">
               {room.status === 'lobby'
                 ? 'SALA EN ESPERA'
                 : room.status === 'presentation'
                 ? 'PRESENTACIÓN EN TV'
+                : room.status === 'podium' || room.status === 'ended'
+                ? 'CEREMONIA DE CLAUSURA'
                 : activeGame.category}
             </span>
             <span className="text-sm sm:text-base font-broadway uppercase tracking-wide text-white block truncate">
@@ -2482,34 +2679,90 @@ export default function HostView() {
                 ? 'Lobby de Convocatoria'
                 : room.status === 'presentation'
                 ? ((room.presentation_slide || 0) === 1 ? 'Cartas y Rarezas' : '10 Minijuegos Show')
+                : room.status === 'podium' || room.status === 'ended'
+                ? 'The Speakeasy Gazette'
                 : activeGame.title}
             </span>
           </div>
         </div>
 
         {/* BOTONES DE ACCIÓN SEGÚN ESTADO */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <div className="w-full sm:w-auto flex-shrink-0">
           {room.status === 'playing' ? (
-            <>
+            <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
               <button
                 onClick={() => handleFinishTest()}
-                className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-broadway text-xs uppercase px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-lg shadow-red-600/30 active:scale-95 transition-all border border-red-400/40"
+                className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-broadway text-xs uppercase px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-red-600/30 active:scale-95 transition-all border border-red-400/40"
                 title="Finalizar prueba actual, limpiar efectos y abrir veredicto"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline">Finalizar Prueba</span>
                 <span className="sm:hidden">Finalizar</span>
               </button>
 
               <button
+                onClick={handleFinishShowAndShowGazette}
+                className="bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
+                title="Proyectar portada de The Speakeasy Gazette y podio final en la TV"
+              >
+                <Trophy className="w-3.5 h-3.5 fill-slate-950 text-slate-950 shrink-0" />
+                <span className="hidden sm:inline">Fin de Velada</span>
+                <span className="sm:hidden">Periódico</span>
+              </button>
+
+              <button
                 onClick={handleReturnToLobby}
-                className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs uppercase p-2 sm:px-3 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 shadow active:scale-95 transition-all"
+                className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs uppercase px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-1 shadow active:scale-95 transition-all"
                 title="Volver al Lobby"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span className="hidden md:inline">Lobby</span>
+                <span className="md:hidden">Salir</span>
               </button>
-            </>
+            </div>
+          ) : room.status === 'podium' || room.status === 'ended' ? (
+            <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+              <button
+                onClick={() => {
+                  setPodiumPage('podium');
+                  roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page: 'podium' } });
+                }}
+                className={`px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl font-broadway text-xs uppercase flex items-center justify-center gap-1.5 transition-all ${
+                  podiumPage === 'podium'
+                    ? 'bg-gold-gradient text-slate-950 font-black shadow-deco-gold border border-[#f5eedb]/40'
+                    : 'bg-[#14141e] text-amber-200/80 border border-[#d4af37]/30 hover:text-white'
+                }`}
+                title="Mostrar Gran Campeón en la TV"
+              >
+                <Crown className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">🏆 Ver Campeón</span>
+                <span className="sm:hidden">Campeón</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPodiumPage('medals');
+                  roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page: 'medals' } });
+                }}
+                className={`px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl font-broadway text-xs uppercase flex items-center justify-center gap-1.5 transition-all ${
+                  podiumPage === 'medals'
+                    ? 'bg-gold-gradient text-slate-950 font-black shadow-deco-gold border border-[#f5eedb]/40'
+                    : 'bg-[#14141e] text-amber-200/80 border border-[#d4af37]/30 hover:text-white'
+                }`}
+                title="Mostrar Medallas y Salón de la Infamia en la TV"
+              >
+                <Award className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">🎖️ Ver Medallas</span>
+                <span className="sm:hidden">Medallas</span>
+              </button>
+              <button
+                onClick={handleReturnToLobby}
+                className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs uppercase px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl flex items-center justify-center gap-1 shadow active:scale-95 transition-all"
+                title="Volver al Lobby de convocatoria"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Salón</span>
+              </button>
+            </div>
           ) : room.status === 'presentation' ? (
             <>
               <button
@@ -2532,15 +2785,25 @@ export default function HostView() {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => handleSelectGame(GAMES_CATALOG[0])}
-              className="bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
-              title="Comenzar con el primer minijuego"
-            >
-              <Play className="w-3.5 h-3.5 fill-slate-950" />
-              <span className="hidden sm:inline">Comenzar</span>
-              <span className="sm:hidden">Jugar</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleSelectGame(GAMES_CATALOG[0])}
+                className="bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
+                title="Iniciar la velada con el Juego 1"
+              >
+                <Play className="w-3.5 h-3.5 fill-slate-950" />
+                <span>Iniciar Show</span>
+              </button>
+
+              <button
+                onClick={handleFinishShowAndShowGazette}
+                className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-300 hover:text-white font-broadway text-xs uppercase px-3 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 shadow active:scale-95 transition-all"
+                title="Ver portada del periódico The Speakeasy Gazette"
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Ver Periódico</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -2671,12 +2934,16 @@ export default function HostView() {
             <section className="bg-slate-900/90 border-2 border-amber-400/40 rounded-3xl p-6 shadow-2xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-2">
             <div>
-              <span className="text-[10px] uppercase font-bold text-amber-400 tracking-widest flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-bold text-amber-400 tracking-widest flex items-center gap-1.5 flex-wrap">
                 <Award className="w-4 h-4" />
-                <span className="hidden sm:inline">MESA DE PUNTUACIÓN AUTOMÁTICA</span>
-                <span className="sm:hidden">PUNTUACIÓN</span>
+                <span className="hidden sm:inline">MESA DE PUNTUACIÓN</span>
+                <span className="sm:hidden">PUNTOS</span>
+                <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full text-[10px] font-bold normal-case">
+                  {activeGame.participantsLabel}
+                </span>
               </span>
               <h2 className="text-lg sm:text-xl font-black">{activeGame.title}</h2>
+              <p className="text-xs text-slate-400 mt-0.5 font-medium">{activeGame.participantsDescription}</p>
             </div>
 
             {/* Selector de equipo al que asignar puntos */}
@@ -4027,30 +4294,60 @@ export default function HostView() {
               </div>
 
               {/* CONTROLES DE TIEMPO Y ACIERTOS */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                 <button
-                  onClick={() => (mimicaIsRunning ? handlePauseMimicaTimer() : handleStartMimicaTimer(90))}
-                  className={`p-3.5 rounded-2xl font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 ${
+                  onClick={handleToggleMimicaTimer}
+                  className={`p-3.5 rounded-2xl font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
                     mimicaIsRunning
-                      ? 'bg-amber-500 text-slate-950'
+                      ? 'bg-amber-500 text-slate-950 animate-pulse'
+                      : mimicaTimerSeconds === 0
+                      ? 'bg-red-500 hover:bg-red-400 text-white'
                       : 'bg-gold-gradient text-slate-950 border border-[#f5eedb]/40 shadow-deco-gold'
                   }`}
                 >
                   <Timer className="w-4 h-4" />
-                  <span>{mimicaIsRunning ? 'Pausar Tiempo' : 'Iniciar 90s'}</span>
+                  <span>
+                    {mimicaIsRunning
+                      ? `⏸️ Pausar (${mimicaTimerSeconds}s)`
+                      : mimicaTimerSeconds === 0
+                      ? '⏱️ Reiniciar 90s'
+                      : mimicaTimerSeconds && mimicaTimerSeconds < 90
+                      ? `▶️ Reanudar (${mimicaTimerSeconds}s)`
+                      : '⏱️ Iniciar 90s'}
+                  </span>
                 </button>
 
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleAddMimicaHit}
+                    className="flex-1 p-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>🎯 +1 ({mimicaHitsCount})</span>
+                  </button>
+                  {mimicaHitsCount > 0 && (
+                    <button
+                      onClick={handleSubtractMimicaHit}
+                      className="px-2.5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-red-300 font-black text-xs border border-slate-700 active:scale-95 transition-all"
+                      title="Restar 1 acierto (corrección)"
+                    >
+                      -1
+                    </button>
+                  )}
+                </div>
+
                 <button
-                  onClick={handleAddMimicaHit}
-                  className="p-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                  onClick={handleResetMimicaRound}
+                  className="p-3.5 rounded-2xl bg-slate-800/90 hover:bg-red-950/80 text-slate-300 hover:text-red-200 border border-slate-700 hover:border-red-500/50 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  title="Poner a 0 los aciertos y reiniciar el cronómetro a 90s para el siguiente equipo"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>🎯 +1 Acierto ({mimicaHitsCount})</span>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Ronda</span>
                 </button>
 
                 <button
                   onClick={handleNextMimicaCard}
-                  className="p-3.5 rounded-2xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                  className="p-3.5 rounded-2xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-broadway font-bold text-xs uppercase flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all"
                 >
                   <span>Siguiente Tarjeta</span>
                   <ChevronRight className="w-4 h-4" />
@@ -4104,6 +4401,65 @@ export default function HostView() {
             </div>
           )}
         </section>
+      ) : room.status === 'podium' || room.status === 'ended' ? (
+        <div className="space-y-4">
+          <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 shadow-deco-gold space-y-4 text-center">
+            <div className="w-16 h-16 rounded-3xl bg-gold-gradient text-slate-950 flex items-center justify-center mx-auto text-3xl shadow-deco-gold animate-bounce">
+              🏆
+            </div>
+            <div className="max-w-md mx-auto space-y-1">
+              <span className="text-xs uppercase font-broadway tracking-widest text-amber-300 font-bold block">
+                CEREMONIA DE CLAUSURA EN DIRECTO EN LA TV
+              </span>
+              <h3 className="text-2xl font-broadway uppercase text-gold-gradient">
+                The Speakeasy Gazette (1931)
+              </h3>
+              <p className="text-xs font-vintage text-amber-100/80">
+                La pantalla de TV está proyectando la portada de prensa de época, con el equipo ganador y el escenario 3D Art Déco animado (fichas de póker flotantes, abanico de sol dorado y focos teatrales).
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setPodiumPage('podium');
+                  roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page: 'podium' } });
+                }}
+                className={`px-5 py-3 rounded-2xl font-broadway text-xs uppercase flex items-center gap-2 transition-all shadow-md ${
+                  podiumPage === 'podium'
+                    ? 'bg-gold-gradient text-slate-950 font-black shadow-deco-gold border border-[#f5eedb]'
+                    : 'bg-[#14141e] text-amber-200 border border-[#d4af37]/40 hover:text-white'
+                }`}
+              >
+                <Crown className="w-4 h-4" />
+                <span>📰 Primera Plana: El Gran Golpe</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setPodiumPage('medals');
+                  roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page: 'medals' } });
+                }}
+                className={`px-5 py-3 rounded-2xl font-broadway text-xs uppercase flex items-center gap-2 transition-all shadow-md ${
+                  podiumPage === 'medals'
+                    ? 'bg-gold-gradient text-slate-950 font-black shadow-deco-gold border border-[#f5eedb]'
+                    : 'bg-[#14141e] text-amber-200 border border-[#d4af37]/40 hover:text-white'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>🎖️ Segunda Plana: Salón de la Infamia</span>
+              </button>
+
+              <button
+                onClick={handleReturnToLobby}
+                className="px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs uppercase flex items-center gap-2 active:scale-95 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4 text-amber-400" />
+                <span>Volver al Salón (Lobby)</span>
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* MÓDULO INDIVIDUAL DE PRESENTACIÓN INICIAL DEL EVENTO */}
@@ -4479,12 +4835,12 @@ export default function HostView() {
                   <p className="text-xs text-slate-400 mt-1 line-clamp-2">{game.description}</p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                  <span className="text-amber-400 font-bold">
-                    {game.engine === 'buzzer' ? '⚡ Pulsador' : game.engine === 'challenges' ? '⏱ Cadena/Reto' : '🎲 Clasificación'}
+                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] gap-1">
+                  <span className="text-amber-300 font-bold bg-amber-500/10 border border-amber-400/20 px-2 py-0.5 rounded-full text-[10px]">
+                    {game.participantsLabel}
                   </span>
                   {isSelected && (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="text-emerald-400 font-bold flex items-center gap-1 shrink-0">
                       <CheckCircle2 className="w-3.5 h-3.5" /> En Pantalla
                     </span>
                   )}
@@ -4973,10 +5329,16 @@ export default function HostView() {
                       {rivalPlayersList.map((p) => {
                         const pTeam = activeTeams.find((t) => t.id === p.team_id || t.team_index === p.team_index);
                         const pCat = pTeam ? TEAMS_CATALOG.find((c) => c.index === pTeam.team_index) : null;
+                        const isBaneoCard = targetModalState.card.id === 'baneo';
+                        const isAlreadyBanned = (powerCards.bannedPlayerNames || []).includes(p.nickname.toLowerCase().trim());
+                        const isDisabled = isBaneoCard && isAlreadyBanned;
+
                         return (
                           <button
                             key={p.id}
+                            disabled={isDisabled}
                             onClick={() => {
+                              if (isDisabled) return;
                               handlePlayCardDirectly(
                                 targetModalState.teamId,
                                 targetModalState.card.id,
@@ -4985,10 +5347,14 @@ export default function HostView() {
                               );
                               setTargetModalState(null);
                             }}
-                            className="p-3 rounded-xl border border-slate-800 bg-slate-950/90 hover:border-amber-400 hover:scale-102 transition-all text-left flex items-center justify-between group"
+                            className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
+                              isDisabled
+                                ? 'border-red-900/40 bg-slate-950/40 opacity-40 cursor-not-allowed'
+                                : 'border-slate-800 bg-slate-950/90 hover:border-amber-400 hover:scale-102 cursor-pointer'
+                            }`}
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-base">{p.badge_emoji || '👤'}</span>
+                              <span className="text-base">{isDisabled ? '🚫' : p.badge_emoji || '👤'}</span>
                               <div>
                                 <span className="text-xs font-black text-white block leading-tight">{p.nickname}</span>
                                 <span className={`text-[9px] font-bold uppercase ${pCat?.twText || 'text-slate-400'}`}>
@@ -4996,9 +5362,15 @@ export default function HostView() {
                                 </span>
                               </div>
                             </div>
-                            <span className="text-[11px] font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform">
-                              Elegir ➔
-                            </span>
+                            {isDisabled ? (
+                              <span className="text-[9px] font-bold text-red-400 bg-red-950/60 border border-red-800/50 px-1.5 py-0.5 rounded">
+                                Ya baneado
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform">
+                                Elegir ➔
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -5210,10 +5582,52 @@ export default function HostView() {
                             </button>
                           )}
 
+                          {eff.cardId === 'impuesto_padrino' && (
+                            <button
+                              onClick={() => {
+                                const pts = prompt(
+                                  `¿Cuántos puntos consiguió el equipo vencedor en 1.er puesto?\n(Se transferirá el 50% al equipo ${eff.sourceTeamName})`,
+                                  '4'
+                                );
+                                const num = parseInt(pts || '0', 10);
+                                if (num > 0) {
+                                  const half = Math.round(num * 0.5);
+                                  handleScoreChange(eff.sourceTeamId, half);
+                                  handleRemoveActiveEffect(eff.id);
+                                  alert(`🎩 ¡Impuesto del Padrino cobrado! +${half} pts transferidos a ${eff.sourceTeamName}.`);
+                                }
+                              }}
+                              className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                            >
+                              🎩 Impuesto 50%
+                            </button>
+                          )}
+
                           {eff.cardId === 'doble' && (
                             <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-lg font-black">
                               x2 Aplicado
                             </span>
+                          )}
+
+                          {eff.cardId === 'ave_fenix' && (
+                            <button
+                              onClick={() => {
+                                const pts = prompt(
+                                  `¿Cuántos puntos base consiguió ${eff.sourceTeamName} en esta prueba?\n(Se sumará el x2 adicional para alcanzar el triple x3)`,
+                                  '3'
+                                );
+                                const num = parseInt(pts || '0', 10);
+                                if (num > 0) {
+                                  const bonus = num * 2;
+                                  handleScoreChange(eff.sourceTeamId, bonus);
+                                  handleRemoveActiveEffect(eff.id);
+                                  alert(`🔥 ¡EL AVE FÉNIX RESURGE! +${bonus} pts sumados a ${eff.sourceTeamName} (Total x3 = ${num * 3} pts).`);
+                                }
+                              }}
+                              className="px-2 py-1 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white rounded-lg font-black text-[10px] shadow active:scale-95"
+                            >
+                              🔥 Triplicar x3
+                            </button>
                           )}
 
                           <button
@@ -5230,7 +5644,7 @@ export default function HostView() {
                 </div>
               )}
 
-              {/* PENALIZACIÓN DE LA MALDICIÓN ÉPICA (-1 PT POR PRUEBA EN MANO) */}
+              {/* LA MALDICIÓN ÉPICA: PATATA CALIENTE (SE PASA AL RIVAL SUPERADO) */}
               {(() => {
                 const cursedTeams = activeTeams.filter((t) => {
                   const hand = powerCards.teamHands[t.id] || [];
@@ -5240,20 +5654,41 @@ export default function HostView() {
                 return (
                   <div className="mt-2 p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 space-y-1.5">
                     <span className="text-[10px] font-black uppercase text-purple-300 block flex items-center gap-1">
-                      <span>☠️</span> Equipos con La Maldición en Mano (-1 pt al final de prueba):
+                      <span>☠️</span> La Maldición (Patata Caliente - Fallos restan x2):
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {cursedTeams.map((cTeam) => (
                         <button
                           key={cTeam.id}
                           onClick={() => {
-                            handleScoreChange(cTeam.id, -1);
-                            alert(`☠️ Penalización de -1 pt aplicada a ${cTeam.name} por tener La Maldición.`);
+                            const rivals = activeTeams.filter((t) => t.id !== cTeam.id);
+                            const promptText = `¿A qué rival le pasa ${cTeam.name} La Maldición?\n${rivals.map((r, i) => `${i + 1}. ${r.name}`).join('\n')}`;
+                            const chosen = prompt(promptText);
+                            const idx = parseInt(chosen || '0', 10) - 1;
+                            const target = rivals[idx];
+                            if (target) {
+                              const fromH = [...(powerCards.teamHands[cTeam.id] || [])];
+                              const cardIdx = fromH.indexOf('la_maldicion');
+                              if (cardIdx !== -1) fromH.splice(cardIdx, 1);
+                              const toH = [...(powerCards.teamHands[target.id] || []), 'la_maldicion'];
+                              const nextState: PowerCardsState = {
+                                ...powerCards,
+                                teamHands: {
+                                  ...powerCards.teamHands,
+                                  [cTeam.id]: fromH,
+                                  [target.id]: toH,
+                                },
+                              };
+                              setPowerCards(nextState);
+                              localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
+                              roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
+                              alert(`☠️ ¡La Maldición ha sido transferida de ${cTeam.name} a ${target.name}!`);
+                            }
                           }}
                           className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 border border-purple-400/50 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow active:scale-95"
-                          title="Descontar 1 punto por tener La Maldición"
+                          title="Pasar La Maldición a un equipo superado"
                         >
-                          <span>-1 pt a {cTeam.name}</span>
+                          <span>🔄 Pasar Maldición de {cTeam.name}</span>
                         </button>
                       ))}
                     </div>

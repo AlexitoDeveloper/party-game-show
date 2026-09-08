@@ -16,24 +16,31 @@ export interface PowerCard {
   rarityColorHex: string; // Color primario de la rareza
 }
 
-// Mapeo exacto de IDs de carta a los archivos oficiales en public/new_cards
+// Mapeo exacto de IDs de carta a los archivos oficiales en public/new_cards (18 cartas maestras)
 export const CARD_IMAGE_MAP: Record<string, string> = {
-  maldicion_comun: 'maldicion.jpeg',
+  // 🟢 COMUNES (4)
+  mal_de_ojo: 'mal_de_ojo.jpeg',
   baneo: 'baneo.jpeg',
   objetivo: 'objetivo.jpeg',
   bomba: 'bomba.jpeg',
-  intercambio_cartas: 'intercambio.jpeg',
+
+  // 🔵 RARAS (3)
   banco_cartas: 'banco_de_cartas.jpeg',
   cambio_forzoso: 'cambio_forzoso.jpeg',
   escudo: 'escudo.jpeg',
+
+  // 🟣 ÉPICAS (7)
+  el_cuarto_mono: 'el_cuarto_mono.jpeg',
   caza_lider: 'caza_al_lider.jpeg',
   robo: 'robo.jpeg',
   la_maldicion: 'maldicion_epica.jpeg',
   doble: 'doble.jpeg',
   ruleta_rusa: 'ruleta_rusa.jpeg',
   la_sentencia: 'la_sentencia.jpeg',
-  el_cuarto_mono: 'el_cuarto_mono.jpeg',
-  titiritero: 'el_intercambio.jpeg',
+
+  // 🟠 LEGENDARIAS (4)
+  impuesto_padrino: 'impuesto_padrino.jpeg',
+  ave_fenix: 'ave_fenix.jpeg',
   robo_siglo: 'robo_del_siglo.jpeg',
   golpe_maestro: 'golpe_maestro.jpeg',
 };
@@ -80,6 +87,7 @@ export interface PowerCardsState {
   discardPile: string[];          // IDs de cartas que ya han sido jugadas
   teamHands: Record<string, string[]>; // teamId -> array de card IDs en mano
   activeEffects: ActivePowerEffect[];  // Efectos vigentes en la ronda
+  bannedPlayerNames?: string[];   // Historial de jugadores que ya han sido baneados en la partida (máximo 1 por persona)
   lastDrawnEvent?: {
     teamId: string;
     teamName: string;
@@ -110,9 +118,9 @@ export const RARITY_WEIGHTS: Record<CardRarity, number> = {
 export const MASTER_POWER_CARDS: PowerCard[] = [
   // 🟢 COMUNES (Probabilidad: 50%)
   {
-    id: 'maldicion_comun',
-    name: 'Maldición',
-    emoji: '💀',
+    id: 'mal_de_ojo',
+    name: 'Mal de Ojo',
+    emoji: '🧿',
     rarity: 'Común',
     timing: 'Inmediata',
     tagline: '¡Pérdida de puntos!',
@@ -129,7 +137,7 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
     rarity: 'Común',
     timing: 'Antes de la prueba',
     tagline: '¡Quedas fuera!',
-    description: 'Elige a un jugador de otro equipo. Ese jugador no puede participar en la siguiente prueba.',
+    description: 'Elige a un rival que no haya sido baneado antes. No puede participar en la siguiente prueba. (Máximo 1 vez por persona en toda la partida).',
     requiresTarget: 'player',
     badgeColor: 'emerald',
     glowColorHex: '#10b981',
@@ -164,19 +172,6 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
 
   // 🔵 RARAS (Probabilidad: 30%)
   {
-    id: 'intercambio_cartas',
-    name: 'Intercambio de Cartas',
-    emoji: '🔄',
-    rarity: 'Rara',
-    timing: 'En cualquier momento',
-    tagline: 'Mano por mano',
-    description: 'Elige un equipo rival y una carta de tu mano. El otro equipo debe elegir una carta de su mano al azar. Intercambias ambas cartas.',
-    requiresTarget: 'team',
-    badgeColor: 'blue',
-    glowColorHex: '#3b82f6',
-    rarityColorHex: '#3b82f6',
-  },
-  {
     id: 'banco_cartas',
     name: 'Banco de Cartas',
     emoji: '🃏',
@@ -207,9 +202,9 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
     name: 'Escudo',
     emoji: '🛡️',
     rarity: 'Rara',
-    timing: 'Durante la prueba',
-    tagline: 'Inmunidad total',
-    description: 'Protege a un jugador de tu equipo de cualquier carta que le afecte durante una prueba.',
+    timing: 'Antes de la prueba',
+    tagline: 'Inmunidad de ronda',
+    description: 'Protege a tu equipo de cualquier carta o sabotaje rival durante esta prueba.',
     requiresTarget: 'none',
     badgeColor: 'blue',
     glowColorHex: '#3b82f6',
@@ -217,6 +212,19 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
   },
 
   // 🟣 ÉPICAS (Probabilidad: 15%)
+  {
+    id: 'el_cuarto_mono',
+    name: 'El Cuarto Mono',
+    emoji: '🌀',
+    rarity: 'Épica',
+    timing: 'Antes de la prueba',
+    tagline: 'Sentidos bloqueados',
+    description: 'Elige a un rival antes de la prueba. Se le asignará una limitación sensorial: 👁️ Un ojo tapado, 🔇 Sin sonido, 🤚 Mano no hábil o 🗣️ No hablar.',
+    requiresTarget: 'player',
+    badgeColor: 'purple',
+    glowColorHex: '#a855f7',
+    rarityColorHex: '#a855f7',
+  },
   {
     id: 'caza_lider',
     name: 'Caza al Líder',
@@ -249,8 +257,8 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
     emoji: '☠️',
     rarity: 'Épica',
     timing: 'Permanente',
-    tagline: 'Pesadilla implacable',
-    description: 'Esta carta no puede descartarse. Al final de cada prueba en la que continúes teniéndola, pierdes 1 punto. Puedes deshacerte de ella jugándola antes de una prueba, perdiendo 3 puntos inmediatamente.',
+    tagline: 'La Patata Caliente',
+    description: 'No se puede descartar. Mientras la tengas, cualquier fallo resta el DOBLE. Te libras pasándosela a un rival al que superes en la siguiente prueba.',
     requiresTarget: 'none',
     badgeColor: 'purple',
     glowColorHex: '#a855f7',
@@ -275,8 +283,8 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
     emoji: '🎰',
     rarity: 'Épica',
     timing: 'Antes de la prueba',
-    tagline: 'Riesgo desmedido',
-    description: 'Antes de una prueba: 🥇🥈 1.º o 2.º puesto → +6 puntos. 🥉 3.º, 4.º o 5.º puesto → −4 puntos.',
+    tagline: 'Apuesta a todo o nada',
+    description: 'Antes de la prueba: 🥇🥈 1.º o 2.º puesto → +6 pts extra. 🥉 Últimos puestos → −4 pts.',
     requiresTarget: 'none',
     badgeColor: 'purple',
     glowColorHex: '#a855f7',
@@ -298,27 +306,27 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
 
   // 🟠 LEGENDARIAS (Probabilidad: 5%)
   {
-    id: 'el_cuarto_mono',
-    name: 'El Cuarto Mono',
-    emoji: '🌀',
+    id: 'impuesto_padrino',
+    name: 'El Impuesto del Padrino',
+    emoji: '🎩',
     rarity: 'Legendaria',
     timing: 'Antes de la prueba',
-    tagline: 'Sentidos bloqueados',
-    description: 'Elige a un representante rival antes de una prueba. Se le asignará una limitación sensorial: 👁️ Un ojo tapado, 🔇 Sin sonido, 🤚 Mano menos hábil o 🗣️ No puede hablar.',
-    requiresTarget: 'player',
+    tagline: 'Comisión al campeón',
+    description: 'Si tu equipo no gana la prueba, el equipo vencedor en 1.er puesto debe entregarte el 50% de sus puntos obtenidos.',
+    requiresTarget: 'none',
     badgeColor: 'amber',
     glowColorHex: '#f59e0b',
     rarityColorHex: '#f59e0b',
   },
   {
-    id: 'titiritero',
-    name: 'El Titiritero',
-    emoji: '🎭',
+    id: 'ave_fenix',
+    name: 'El Ave Fénix',
+    emoji: '🔥',
     rarity: 'Legendaria',
     timing: 'Antes de la prueba',
-    tagline: 'Sabotaje cómico',
-    description: 'Elige a un representante rival antes de la prueba. Tu equipo le impone una regla cómica obligatoria: jugar de espaldas a la pantalla, cantar sus respuestas o bailar.',
-    requiresTarget: 'player',
+    tagline: 'Resurrección de cenizas',
+    description: 'A partir de la 5.ª prueba (solo si vas 4.º o peor): Triplica (x3) todos los puntos que consiga tu equipo en esta prueba.',
+    requiresTarget: 'none',
     badgeColor: 'amber',
     glowColorHex: '#f59e0b',
     rarityColorHex: '#f59e0b',
@@ -370,11 +378,10 @@ export function shuffleDeck(cardIds: string[]): string[] {
 
 /**
  * Genera un mazo balanceado con la distribución estadística exacta solicitada:
- * - 50% Comunes (30 cartas)
+ * - 50% Comunes (28 cartas)
  * - 30% Raras (18 cartas)
  * - 15% Épicas (9 cartas)
  * - 5% Legendarias (4 cartas — 1 copia de cada una)
- * Total: 61 cartas
  */
 export function generateWeightedDeck(): string[] {
   const deck: string[] = [];
@@ -383,17 +390,17 @@ export function generateWeightedDeck(): string[] {
   const epicas = MASTER_POWER_CARDS.filter((c) => c.rarity === 'Épica');
   const legendarias = MASTER_POWER_CARDS.filter((c) => c.rarity === 'Legendaria');
 
-  // 30 cartas comunes (~7 u 8 copias de cada una)
-  for (let i = 0; i < 30; i++) {
+  // 28 cartas comunes
+  for (let i = 0; i < 28; i++) {
     deck.push(comunes[i % comunes.length].id);
   }
 
-  // 18 cartas raras (~4 o 5 copias de cada una)
+  // 18 cartas raras
   for (let i = 0; i < 18; i++) {
     deck.push(raras[i % raras.length].id);
   }
 
-  // 9 cartas épicas (~1 o 2 copias de cada una)
+  // 9 cartas épicas
   for (let i = 0; i < 9; i++) {
     deck.push(epicas[i % epicas.length].id);
   }
@@ -413,6 +420,7 @@ export function createInitialPowerCardsState(): PowerCardsState {
     discardPile: [],
     teamHands: {},
     activeEffects: [],
+    bannedPlayerNames: [],
     lastDrawnEvent: null,
     lastPlayedEvent: null,
   };
@@ -420,12 +428,67 @@ export function createInitialPowerCardsState(): PowerCardsState {
 
 export const MAX_CARDS_PER_TEAM = 3;
 
+export interface DealCardOptions {
+  isUnderdog?: boolean;
+}
+
+/**
+ * Probabilidad de rarezas para equipos rezagados (Remontada / Underdog a partir de la 5.ª prueba y puesto 4.º o peor):
+ * - 20% Común
+ * - 30% Rara
+ * - 35% Épica
+ * - 15% Legendaria
+ */
+export function rollUnderdogRarity(): 'Común' | 'Rara' | 'Épica' | 'Legendaria' {
+  const roll = Math.random() * 100;
+  if (roll < 20) return 'Común';
+  if (roll < 50) return 'Rara';
+  if (roll < 85) return 'Épica';
+  return 'Legendaria';
+}
+
+/**
+ * Extrae una carta del mazo. Si isUnderdog es true, busca favorecer cartas de mayor rareza
+ * manteniendo intacto el mazo físico sin generar cartas ficticias.
+ */
+export function drawCardFromDeck(
+  currentDeck: string[],
+  isUnderdog: boolean = false
+): { drawnCardId: string; updatedDeck: string[] } {
+  if (currentDeck.length === 0) {
+    throw new Error('Deck is empty');
+  }
+
+  const updatedDeck = [...currentDeck];
+
+  if (!isUnderdog) {
+    const drawnCardId = updatedDeck.shift()!;
+    return { drawnCardId, updatedDeck };
+  }
+
+  // Tirada de rareza favorecida para el equipo rezagado
+  const targetRarity = rollUnderdogRarity();
+  const matchIndex = updatedDeck.findIndex((id) => getPowerCardById(id)?.rarity === targetRarity);
+
+  if (matchIndex !== -1) {
+    const drawnCardId = updatedDeck.splice(matchIndex, 1)[0];
+    return { drawnCardId, updatedDeck };
+  }
+
+  // Si no queda ninguna carta de esa rareza específica en el mazo, robar la superior
+  const drawnCardId = updatedDeck.shift()!;
+  return { drawnCardId, updatedDeck };
+}
+
 /**
  * Reparte 1 carta a cada equipo activo garantizando las probabilidades de rareza y límite de 3 cartas
  */
 export function dealInitialCardsToTeams(
   state: PowerCardsState,
-  teamIds: string[]
+  teamIds: string[],
+  options?: {
+    getIsUnderdog?: (teamId: string) => boolean;
+  }
 ): { nextState: PowerCardsState; dealt: { teamId: string; cardId: string }[] } {
   let currentDeck = [...state.deck];
   let discard = [...state.discardPile];
@@ -448,9 +511,12 @@ export function dealInitialCardsToTeams(
       }
     }
 
-    const cardId = currentDeck.shift()!;
-    dealt.push({ teamId, cardId });
-    newHands[teamId] = [...hand, cardId];
+    const isUnderdog = options?.getIsUnderdog ? options.getIsUnderdog(teamId) : false;
+    const { drawnCardId, updatedDeck } = drawCardFromDeck(currentDeck, isUnderdog);
+    currentDeck = updatedDeck;
+
+    dealt.push({ teamId, cardId: drawnCardId });
+    newHands[teamId] = [...hand, drawnCardId];
   }
 
   return {
@@ -466,10 +532,12 @@ export function dealInitialCardsToTeams(
 
 /**
  * Reparte 1 carta de bonus a un equipo específico respetando las probabilidades de rareza
+ * (con soporte transparente para mecánica de remontada si isUnderdog es true)
  */
 export function dealCardToSingleTeam(
   state: PowerCardsState,
-  teamId: string
+  teamId: string,
+  options?: DealCardOptions
 ): { nextState: PowerCardsState; cardId: string | null; isFull?: boolean } {
   const currentHand = state.teamHands[teamId] || [];
   if (currentHand.length >= MAX_CARDS_PER_TEAM) {
@@ -488,10 +556,12 @@ export function dealCardToSingleTeam(
     }
   }
 
-  const cardId = currentDeck.shift()!;
+  const { drawnCardId, updatedDeck } = drawCardFromDeck(currentDeck, options?.isUnderdog);
+  currentDeck = updatedDeck;
+
   const newHands = {
     ...state.teamHands,
-    [teamId]: [...currentHand, cardId],
+    [teamId]: [...currentHand, drawnCardId],
   };
 
   return {
@@ -501,7 +571,7 @@ export function dealCardToSingleTeam(
       discardPile: discard,
       teamHands: newHands,
     },
-    cardId,
+    cardId: drawnCardId,
   };
 }
 
@@ -547,11 +617,20 @@ export function executePlayCard(
     appliedAt: new Date().toISOString(),
   };
 
+  const bannedPlayers = [...(state.bannedPlayerNames || [])];
+  if (cardId === 'baneo' && targetPlayerName) {
+    const clean = targetPlayerName.trim().toLowerCase();
+    if (!bannedPlayers.includes(clean)) {
+      bannedPlayers.push(clean);
+    }
+  }
+
   return {
     ...state,
     teamHands: nextHands,
     discardPile: nextDiscard,
     activeEffects: [...state.activeEffects, newEffect],
+    bannedPlayerNames: bannedPlayers,
   };
 }
 
@@ -656,7 +735,10 @@ export function executeRecoverDiscardedCard(
 /**
  * Ejecutar BANCO DE CARTAS - Paso 1: Roba 2 cartas del mazo para presentar al equipo
  */
-export function executeDrawTwoForBank(state: PowerCardsState): {
+export function executeDrawTwoForBank(
+  state: PowerCardsState,
+  options?: DealCardOptions
+): {
   nextState: PowerCardsState;
   drawnCards: [string, string] | null;
 } {
@@ -674,8 +756,11 @@ export function executeDrawTwoForBank(state: PowerCardsState): {
 
   if (currentDeck.length < 2) return { nextState: state, drawnCards: null };
 
-  const card1 = currentDeck.shift()!;
-  const card2 = currentDeck.shift()!;
+  const d1 = drawCardFromDeck(currentDeck, options?.isUnderdog);
+  currentDeck = d1.updatedDeck;
+
+  const d2 = drawCardFromDeck(currentDeck, options?.isUnderdog);
+  currentDeck = d2.updatedDeck;
 
   return {
     nextState: {
@@ -683,7 +768,7 @@ export function executeDrawTwoForBank(state: PowerCardsState): {
       deck: currentDeck,
       discardPile: discard,
     },
-    drawnCards: [card1, card2],
+    drawnCards: [d1.drawnCardId, d2.drawnCardId],
   };
 }
 

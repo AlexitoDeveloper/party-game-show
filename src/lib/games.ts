@@ -9,12 +9,17 @@ export interface ScoringOption {
   description?: string;
 }
 
+export type ParticipantsMode = 'all' | 'solo' | 'duo' | 'actor_and_guesser' | 'rotative';
+
 export interface GameDefinition {
   id: string;
   title: string;
   emoji: string;
   category: 'Musical' | 'Conocimiento' | 'Creativo' | 'Velocidad' | 'Habilidad' | 'Juegos de Mesa';
   engine: MinigameType;
+  participantsMode: ParticipantsMode;
+  participantsLabel: string;
+  participantsDescription: string;
   description: string;
   rules: string[];
   scoringOptions: ScoringOption[];
@@ -29,6 +34,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🎵',
     category: 'Musical',
     engine: 'buzzer',
+    participantsMode: 'all',
+    participantsLabel: '👥 Todo el equipo',
+    participantsDescription: 'Todos los miembros escuchan y cualquiera puede pulsar el botón desde su móvil.',
     description: 'Suena un fragmento musical en la TV. El equipo más veloz pulsa para adivinar cantante, canción o ambos. Si falla la música continúa; si acierta, se revela en pantalla.',
     rules: [
       '🎤 Acierta cantante: +1 punto',
@@ -53,6 +61,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🧠',
     category: 'Conocimiento',
     engine: 'buzzer',
+    participantsMode: 'all',
+    participantsLabel: '👥 Todo el equipo',
+    participantsDescription: 'Deliberación en equipo; cualquiera puede pulsar el botón si sabe la respuesta.',
     description: 'Aparecen preguntas en la TV (con o sin opciones). Quien sepa la respuesta pulsa el botón. El host valida y hay sistema de rebote.',
     rules: [
       '⚡ Quien sepa la respuesta pulsa el botón del móvil',
@@ -76,6 +87,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🎨',
     category: 'Creativo',
     engine: 'challenges',
+    participantsMode: 'all',
+    participantsLabel: '👥 Todo el equipo (Cadena)',
+    participantsDescription: 'Todos los miembros forman la cadena de papel: J1 dibuja ➔ J2 escribe ➔ J3 dibuja...',
     description: 'Prueba en papel real. El jugador que empieza decide libremente qué va a dibujar (sin nada previo). Cadena cómica: J1 piensa y dibuja -> J2 escribe lo que cree -> J3 dibuja -> J4 escribe -> J5 dibuja final. Al acabar se puntúa según resultados.',
     rules: [
       '📝 Se juega presencialmente dibujando y escribiendo en papel real',
@@ -103,6 +117,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🎮',
     category: 'Juegos de Mesa',
     engine: 'duel',
+    participantsMode: 'solo',
+    participantsLabel: '👤 1 Representante',
+    participantsDescription: 'El capitán designa a 1 jugador por equipo para disputar las partidas del torneo de mesa.',
     description: 'Competición presencial en juegos de mesa como UNO, Dominó o Parchís. Al finalizar las partidas, se reparten los puntos según la posición de cada equipo.',
     rules: [
       '🎲 Partidas simultáneas o eliminatorias de UNO, Dominó o Parchís',
@@ -127,13 +144,16 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🎭',
     category: 'Creativo',
     engine: 'challenges',
-    description: 'Prueba presencial. El host le proporciona en secreto la tarjeta/reto al actor y su equipo debe adivinar. Al final se reparten los puntos según los aciertos logrados.',
+    participantsMode: 'duo',
+    participantsLabel: '👥 2 Actores + Resto adivina',
+    participantsDescription: '2 miembros del equipo salen a actuar juntos en silencio y todo el resto de su equipo intenta adivinar.',
+    description: 'Prueba presencial. El host le proporciona en secreto la tarjeta/reto a los 2 actores y su equipo debe adivinar. Al final se reparten los puntos según los aciertos logrados.',
     rules: [
-      '🤫 El anfitrión muestra en secreto el reto al actor en su móvil',
+      '🤫 El anfitrión muestra en secreto el reto a los 2 actores en su móvil',
       '🤐 ¡Totalmente prohibido hablar, susurrar o emitir sonidos!',
-      '⏱️ Tiempo a contrarreloj (60s / 90s) para adivinar',
-      '🎯 Cada reto acertado: +1 punto',
-      '🔥 O podio al final: 1.º (+5), 2.º (+3), 3.º (+2)',
+      '⏱️ Tiempo a contrarreloj de 90 segundos para adivinar el máximo posible',
+      '🎯 Cada reto acertado cuenta para el marcador de la ronda',
+      '🔥 Al terminar todos los turnos: Podio por aciertos: 1.º (+5), 2.º (+3), 3.º (+2)',
     ],
     scoringOptions: [
       { id: 'mimica_hit', label: '🎯 Acierto (+1)', delta: 1, badge: '+1', color: 'emerald', description: 'Acierto individual durante la ronda' },
@@ -151,6 +171,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '👶',
     category: 'Velocidad',
     engine: 'buzzer',
+    participantsMode: 'all',
+    participantsLabel: '👥 Todo el equipo',
+    participantsDescription: 'Todos atentos al proyector para pulsar; ¡ojo: penalización si pulsas en tu propia foto!',
     description: 'Se muestran una a una fotos en pantalla de bebés o niños (famosos o participantes). El más veloz pulsa para adivinar quién es.',
     rules: [
       '⚡ Foto proyectada en TV: el más rápido pulsa el botón',
@@ -174,6 +197,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '⚡',
     category: 'Velocidad',
     engine: 'challenges',
+    participantsMode: 'rotative',
+    participantsLabel: '👤 1 Representante por ronda',
+    participantsDescription: '1 jugador por equipo sale al centro; si falla o supera 5s queda fuera y le releva otro.',
     description: 'Cada equipo por turnos tiene 5 segundos para decir 3 respuestas correctas. Preguntas con dificultad creciente. Si fallas o no llegas, ¡quedes eliminado!',
     rules: [
       '⏱️ 5 segundos exactos para decir 3 respuestas válidas',
@@ -198,6 +224,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🎬',
     category: 'Conocimiento',
     engine: 'buzzer',
+    participantsMode: 'all',
+    participantsLabel: '👥 Todo el equipo',
+    participantsDescription: 'Descifrado conjunto; cualquiera puede pulsar el botón cuando descubra la película.',
     description: 'Descifra la película con secuencias de emojis. Puntuación automatizada según pistas en pantalla: 2 emojis = +5 pts, 4 emojis = +3 pts, todas = +1 pt.',
     rules: [
       '🎯 Acierto con 2 Emojis (Nivel 1): +5 puntos automáticos',
@@ -222,6 +251,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🍺',
     category: 'Habilidad',
     engine: 'challenges',
+    participantsMode: 'duo',
+    participantsLabel: '👥 Pareja (2 jugadores)',
+    participantsDescription: 'El capitán designa una pareja de tiradores por equipo para lanzar las bolas.',
     description: 'Juego presencial con vasos y bolas de ping pong. Puntuación al final según los resultados de cada equipo en la mesa.',
     rules: [
       '🥤 Vasos de colores en mesa presencial con bolas de ping pong',
@@ -245,6 +277,9 @@ export const GAMES_CATALOG: GameDefinition[] = [
     emoji: '🎱',
     category: 'Juegos de Mesa',
     engine: 'challenges',
+    participantsMode: 'all',
+    participantsLabel: '👥 Todo el equipo',
+    participantsDescription: 'Todos los miembros participan con sus cartones físicos en la mesa cantando línea o bingo.',
     description: 'Juego presencial con cartones físicos para los equipos y bombo interactivo virtual en la TV (1 a 90). Puntuación al final según resultados.',
     rules: [
       '🎟️ Cada equipo juega con sus cartones físicos en la sala',

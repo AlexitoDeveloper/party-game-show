@@ -7,6 +7,7 @@ import { SongTrack } from './musicData';
 
 import { TriviaQuestion } from './triviaData';
 import { UnDosTresChallenge } from './unDosTresData';
+import { JukeboxState } from './audio';
 
 export type RoomRole = 'host' | 'tv' | 'player';
 
@@ -55,6 +56,19 @@ export type RoomSyncEvent =
   | { type: 'TEST_FINISHED'; payload: { gameTitle: string; winnerTeamName?: string } }
   | { type: 'PRESENTATION_SLIDE'; payload: { slide: number } }
   | { type: 'TRIGGER_CONFETTI'; payload?: { teamId?: string | number } }
+  | {
+      type: 'JUKEBOX_COMMAND';
+      payload: {
+        action: 'play' | 'pause' | 'toggle' | 'next' | 'prev' | 'volume' | 'mute';
+        volume?: number;
+        trackIndex?: number;
+      };
+    }
+  | {
+      type: 'JUKEBOX_STATE_SYNC';
+      payload: JukeboxState;
+    }
+  | { type: 'PODIUM_PAGE_CHANGE'; payload: { page: 'podium' | 'medals' } }
   | { type: 'PING' };
 
 interface RelayMessage {

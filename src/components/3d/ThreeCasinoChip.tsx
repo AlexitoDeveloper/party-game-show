@@ -7,7 +7,15 @@ interface ThreeCasinoChipProps {
   size?: number; // pixel diameter
   onClick?: () => void;
   className?: string;
+  chipType?: 'devil' | 'bomba' | 'ace' | 'dice';
 }
+
+const CHIP_IMAGE_MAP: Record<string, string> = {
+  devil: '/chips/chip_devil.jpg',
+  bomba: '/chips/chip_bomba.jpg',
+  ace: '/chips/chip_ace.jpg',
+  dice: '/chips/chip_dice.jpg',
+};
 
 export const ThreeCasinoChip: React.FC<ThreeCasinoChipProps> = ({
   value = '10',
@@ -15,6 +23,7 @@ export const ThreeCasinoChip: React.FC<ThreeCasinoChipProps> = ({
   size = 64,
   onClick,
   className = '',
+  chipType,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const isSpinning = useRef(false);
@@ -38,15 +47,21 @@ export const ThreeCasinoChip: React.FC<ThreeCasinoChipProps> = ({
     });
     renderer.setSize(size, size);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
 
     // 2. Lights
-    const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.4);
+    const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.3);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffeedd, 2.0);
+    const keyLight = new THREE.DirectionalLight(0xffeedd, 2.2);
     keyLight.position.set(2, 4, 3);
     scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0xd4af37, 1.4);
+    rimLight.position.set(-2, 1, -2);
+    scene.add(rimLight);
 
     // 3. Chip Group
     const chipGroup = new THREE.Group();
@@ -55,59 +70,37 @@ export const ThreeCasinoChip: React.FC<ThreeCasinoChipProps> = ({
 
     // Cylinder Chip Mesh
     const chipRadius = 1.0;
-    const chipHeight = 0.16;
-    const cylinderGeo = new THREE.CylinderGeometry(chipRadius, chipRadius, chipHeight, 32);
+    const chipHeight = 0.18;
+    const cylinderGeo = new THREE.CylinderGeometry(chipRadius, chipRadius, chipHeight, 36);
 
-    // Procedural Chip Rim & Face Texture
-    const faceCanvas = document.createElement('canvas');
-    faceCanvas.width = 256;
-    faceCanvas.height = 256;
-    const fctx = faceCanvas.getContext('2d');
-    if (fctx) {
-      // Base color ring
-      fctx.fillStyle = color;
-      fctx.fillRect(0, 0, 256, 256);
+    // Determinar textura Hell of a Deal
+    const resolvedType =
+      chipType ||
+      (String(value).includes('5')
+        ? 'bomba'
+        : String(value).includes('2')
+        ? 'ace'
+        : String(value).includes('1') && !String(value).includes('10')
+        ? 'dice'
+        : 'devil');
 
-      // Art Deco striped chip rim accents (12 stripes)
-      fctx.fillStyle = '#fef3c7';
-      for (let i = 0; i < 12; i++) {
-        fctx.beginPath();
-        fctx.arc(128, 128, 128, (i * Math.PI) / 6, (i * Math.PI) / 6 + 0.18);
-        fctx.lineTo(128, 128);
-        fctx.fill();
-      }
-
-      // Inner inlay circle
-      fctx.fillStyle = '#120b08';
-      fctx.beginPath();
-      fctx.arc(128, 128, 85, 0, Math.PI * 2);
-      fctx.fill();
-
-      // Gold inlay rim
-      fctx.strokeStyle = '#d4af37';
-      fctx.lineWidth = 6;
-      fctx.stroke();
-
-      // Value text
-      fctx.fillStyle = '#fef3c7';
-      fctx.font = '900 48px sans-serif';
-      fctx.textAlign = 'center';
-      fctx.textBaseline = 'middle';
-      fctx.fillText(String(value), 128, 128);
-    }
-
-    const faceTexture = new THREE.CanvasTexture(faceCanvas);
+    const textureLoader = new THREE.TextureLoader();
+    const faceTexture = textureLoader.load(CHIP_IMAGE_MAP[resolvedType] || '/chips/chip_devil.jpg');
+    faceTexture.colorSpace = THREE.SRGBColorSpace;
+    faceTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    faceTexture.generateMipmaps = true;
+    faceTexture.minFilter = THREE.LinearMipmapLinearFilter;
 
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x1f1915,
-      metalness: 0.3,
-      roughness: 0.4,
+      color: 0x0c0b0a,
+      metalness: 0.2,
+      roughness: 0.45,
     });
 
     const faceMat = new THREE.MeshStandardMaterial({
       map: faceTexture,
-      metalness: 0.4,
-      roughness: 0.3,
+      metalness: 0.22,
+      roughness: 0.35,
     });
 
     // Cylinder materials: [side, top, bottom]

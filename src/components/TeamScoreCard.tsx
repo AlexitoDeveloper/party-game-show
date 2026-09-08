@@ -26,6 +26,7 @@ export interface TeamActiveEffects {
   hasSentence?: boolean;
   hasCurse?: boolean;
   hasRussianRoulette?: boolean;
+  hasPhoenix?: boolean;
 }
 
 interface TeamScoreCardProps {
@@ -42,6 +43,7 @@ interface TeamScoreCardProps {
   activeEffects?: TeamActiveEffects;
   isLeader?: boolean;
   className?: string;
+  maxRoomScore?: number;
 }
 
 /**
@@ -57,6 +59,7 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
   activeEffects = {},
   isLeader = false,
   className = '',
+  maxRoomScore = 0,
 }) => {
   const IconComponent = theme.icon;
 
@@ -138,8 +141,13 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               </span>
             )}
             {activeEffects.hasCurse && (
-              <span className="text-[10px] bg-red-950/80 text-red-400 border border-red-600/70 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Mano con Maldición (-1 pt por ronda)">
+              <span className="text-[10px] bg-red-950/80 text-red-400 border border-red-600/70 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Mano con Maldición (Fallos restan el DOBLE)">
                 ☠️
+              </span>
+            )}
+            {activeEffects.hasPhoenix && (
+              <span className="text-[10px] bg-gradient-to-r from-amber-600/50 to-red-600/50 text-amber-200 border border-amber-400/80 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-amber-500/40 flex items-center gap-0.5" title="Ave Fénix (x3 puntos conseguidos en esta prueba)">
+                🔥x3
               </span>
             )}
           </div>
@@ -289,7 +297,13 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
 
         {/* PARTE INFERIOR: MONTAÑA DE FICHAS DE CASINO QUE CRECE EN LA BASE */}
         <div className="relative mt-2 pt-2 border-t border-slate-800/80 flex flex-col items-center">
-          <CasinoChipMountain score={team.score} theme={theme} className="w-full mb-1.5" />
+          <CasinoChipMountain
+            score={team.score}
+            theme={theme}
+            isLobby={variant === 'lobby'}
+            maxRoomScore={maxRoomScore}
+            className="w-full mb-1.5"
+          />
 
           {/* PIE DE TARJETA: TOTAL JUGADORES */}
           <div className="w-full text-center">

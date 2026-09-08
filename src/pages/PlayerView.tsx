@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Flame, Zap, Star, Sparkles, Orbit, Sun, Moon, Eye, EyeOff, Radio, Swords, X, Crown, ShieldAlert, Award, UserCheck, Droplets } from 'lucide-react';
+import { CheckCircle2, Flame, Zap, Star, Sparkles, Orbit, Sun, Moon, Eye, EyeOff, Radio, Swords, X, Crown, ShieldAlert, Award, UserCheck, Droplets, Lock, Skull, Target, Bomb } from 'lucide-react';
+import { soundFX } from '../lib/audio';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, TeamCatalogItem } from '../lib/constants';
 import { Team, Player, Room, CaptainGamble, CaptainDuelState, TeamRepresentative } from '../lib/types';
@@ -75,6 +76,16 @@ export default function PlayerView() {
   const [targetCardId, setTargetCardId] = useState<string>('');
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
   const [isManualPlayerEntry, setIsManualPlayerEntry] = useState(false);
+  const [bannedShake, setBannedShake] = useState(false);
+
+  const handleBannedClick = () => {
+    soundFX.playFail();
+    setBannedShake(true);
+    setTimeout(() => setBannedShake(false), 500);
+    setFeedbackToast('⛓️ ¡ESTÁS BANEADO! Tu timbre ha sido sellado con cadenas.');
+    setTimeout(() => setFeedbackToast(null), 3000);
+  };
+
 
   // Estados del Sistema de Capitanes
   const [allPlayers, setAllPlayers] = useState<Player[]>(() => {
@@ -122,23 +133,34 @@ export default function PlayerView() {
     // 1. Solicitar inmediatamente el estado activo de la sala a TV/Host
     roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
 
-    let token = sessionStorage.getItem(`party_session_${roomCode}`) || localStorage.getItem(`party_session_${roomCode}`);
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceNew = urlParams.has('new') || urlParams.get('logout') === 'true';
+
+    if (forceNew) {
+      sessionStorage.removeItem(`party_session_${roomCode}`);
+      sessionStorage.removeItem(`party_nick_${roomCode}`);
+      sessionStorage.removeItem(`party_team_${roomCode}`);
+      sessionStorage.removeItem(`party_avatar_seed_${roomCode}`);
+      sessionStorage.removeItem(`party_avatar_style_${roomCode}`);
+    }
+
+    // Cada pestaña mantiene su sesión independiente para permitir múltiples jugadores en el mismo navegador o dispositivo
+    let token = sessionStorage.getItem(`party_session_${roomCode}`);
     if (!token) {
       token = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
       sessionStorage.setItem(`party_session_${roomCode}`, token);
-      localStorage.setItem(`party_session_${roomCode}`, token);
     }
     setSessionToken(token);
 
-    const savedNick = sessionStorage.getItem(`party_nick_${roomCode}`) || localStorage.getItem(`party_nick_${roomCode}`);
-    const savedTeamIndex = sessionStorage.getItem(`party_team_${roomCode}`) || localStorage.getItem(`party_team_${roomCode}`);
-    const savedAvatarSeed = sessionStorage.getItem(`party_avatar_seed_${roomCode}`) || localStorage.getItem(`party_avatar_seed_${roomCode}`);
-    const savedAvatarStyle = (sessionStorage.getItem(`party_avatar_style_${roomCode}`) || localStorage.getItem(`party_avatar_style_${roomCode}`)) as DiceBearStyle | null;
+    const savedNick = !forceNew ? sessionStorage.getItem(`party_nick_${roomCode}`) : null;
+    const savedTeamIndex = !forceNew ? sessionStorage.getItem(`party_team_${roomCode}`) : null;
+    const savedAvatarSeed = sessionStorage.getItem(`party_avatar_seed_${roomCode}`);
+    const savedAvatarStyle = (sessionStorage.getItem(`party_avatar_style_${roomCode}`)) as DiceBearStyle | null;
 
     if (savedAvatarSeed) setAvatarSeed(savedAvatarSeed);
     if (savedAvatarStyle) setAvatarStyle(savedAvatarStyle);
 
-    if (savedNick) {
+    if (savedNick && !forceNew) {
       setNickname(savedNick);
       setIsJoined(true);
 
@@ -351,6 +373,18 @@ export default function PlayerView() {
     roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem(`party_session_${roomCode}`);
+    sessionStorage.removeItem(`party_nick_${roomCode}`);
+    sessionStorage.removeItem(`party_team_${roomCode}`);
+    sessionStorage.removeItem(`party_avatar_seed_${roomCode}`);
+    sessionStorage.removeItem(`party_avatar_style_${roomCode}`);
+    setIsJoined(false);
+    setSelectedTeam(null);
+    setPlayer(null);
+    setNickname('');
+  };
+
   const handleSelectTeam = async (catalogItem: TeamCatalogItem) => {
     setSelectedTeam(catalogItem);
     sessionStorage.setItem(`party_team_${roomCode}`, catalogItem.index.toString());
@@ -419,6 +453,35 @@ export default function PlayerView() {
     );
   }, [powerCards?.activeEffects, player?.nickname]);
 
+  const isCursed = useMemo(() => {
+    if (!powerCards?.activeEffects || !myTeamId) return false;
+    return powerCards.activeEffects.some(
+      (e) =>
+        (e.cardId === 'mal_de_ojo' || e.cardId === 'maldicion_comun' || e.cardId === 'la_maldicion') &&
+        (e.targetTeamId === myTeamId || (e.targetTeamName && selectedTeam && e.targetTeamName === selectedTeam.name))
+    );
+  }, [powerCards?.activeEffects, myTeamId, selectedTeam]);
+
+  const isTargeted = useMemo(() => {
+    if (!powerCards?.activeEffects) return false;
+    const cleanNick = player?.nickname?.toLowerCase().trim();
+    return powerCards.activeEffects.some(
+      (e) =>
+        e.cardId === 'objetivo' &&
+        ((cleanNick && e.targetPlayerName && e.targetPlayerName.toLowerCase().trim() === cleanNick) ||
+          (e.targetTeamId && e.targetTeamId === myTeamId))
+    );
+  }, [powerCards?.activeEffects, player?.nickname, myTeamId]);
+
+  const isBombed = useMemo(() => {
+    if (!powerCards?.activeEffects || !myTeamId) return false;
+    return powerCards.activeEffects.some(
+      (e) =>
+        (e.cardId === 'bomba' || e.cardId === 'la_sentencia') &&
+        (e.targetTeamId === myTeamId || (e.targetTeamName && selectedTeam && e.targetTeamName === selectedTeam.name))
+    );
+  }, [powerCards?.activeEffects, myTeamId, selectedTeam]);
+
   const myLimitation = useMemo(() => {
     if (!powerCards?.activeEffects) return null;
     const cleanNick = player?.nickname?.toLowerCase().trim();
@@ -452,6 +515,7 @@ export default function PlayerView() {
     if (!powerCards?.activeEffects || !myTeamId) return false;
     return powerCards.activeEffects.some((e) => e.cardId === 'escudo' && e.sourceTeamId === myTeamId);
   }, [powerCards?.activeEffects, myTeamId]);
+
 
   const handleBuzzerClick = async () => {
     if (isLocked || !selectedTeam || isBanned) return;
@@ -498,6 +562,26 @@ export default function PlayerView() {
       setTimeout(() => setFeedbackToast(null), 3500);
       return;
     }
+
+    if (card.id === 'ave_fenix') {
+      const currentGameIndex = GAMES_CATALOG.findIndex((g) => g.id === (room.active_game_id || 'music'));
+      const sortedTeams = [...activeTeams].sort((a, b) => b.score - a.score);
+      const teamRank = sortedTeams.findIndex((t) => t.id === myTeamId) + 1;
+
+      if (currentGameIndex >= 0 && currentGameIndex < 4) {
+        soundFX.playSound('buzz');
+        setFeedbackToast(`🔥 El Ave Fénix solo puede jugarse a partir de la 5.ª prueba (estáis en la ${currentGameIndex + 1}.ª).`);
+        setTimeout(() => setFeedbackToast(null), 4500);
+        return;
+      }
+      if (teamRank > 0 && teamRank < 4) {
+        soundFX.playSound('buzz');
+        setFeedbackToast(`🔥 El Ave Fénix solo se activa si vais 4.º o peor en el marcador (vais ${teamRank}.º).`);
+        setTimeout(() => setFeedbackToast(null), 4500);
+        return;
+      }
+    }
+
     if (card.requiresTarget !== 'none') {
       setSelectedCardToPlay(card);
       setTargetTeamId('');
@@ -587,7 +671,9 @@ export default function PlayerView() {
 
   return (
     <main
-      className="min-h-[100dvh] w-full bg-[#08080c] text-white font-sans flex flex-col justify-between p-5 transition-colors duration-500 relative overflow-hidden select-none"
+      className={`min-h-[100dvh] w-full bg-[#08080c] text-white font-sans flex flex-col justify-between p-5 transition-all duration-500 relative overflow-hidden select-none ${
+        isCursed ? 'cursed-screen-glow' : hasTeamShield ? 'shield-screen-glow' : ''
+      }`}
       style={{
         backgroundColor: selectedTeam ? '#090910' : '#07070a',
       }}
@@ -726,12 +812,21 @@ export default function PlayerView() {
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             Esperando al Gran Anfitrión
           </div>
-          <button
-            onClick={() => setSelectedTeam(null)}
-            className="mt-4 text-xs font-vintage text-amber-300/70 underline hover:text-white"
-          >
-            Cambiar de bando
-          </button>
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={() => setSelectedTeam(null)}
+              className="text-xs font-vintage text-amber-300/70 underline hover:text-white"
+            >
+              Cambiar de bando
+            </button>
+            <span className="text-amber-500/40">•</span>
+            <button
+              onClick={handleLogout}
+              className="text-xs font-vintage text-amber-300/70 underline hover:text-red-400"
+            >
+              Cambiar de jugador
+            </button>
+          </div>
         </div>
       ) : room.status === 'presentation' ? (
         /* PASO 3B: EN PRESENTACIÓN */
@@ -818,19 +913,24 @@ export default function PlayerView() {
             </div>
 
             {/* Pastilla identificativa del juego actual */}
-            <div className="w-full bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-2xl px-3 py-2 flex items-center justify-between backdrop-blur-sm shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{activeGame.emoji}</span>
-                <div>
-                  <span className="text-[9px] uppercase font-vintage font-bold text-amber-300 tracking-wider block">
-                    {activeGame.category}
-                  </span>
-                  <span className="text-xs font-broadway text-white block truncate max-w-[190px]">
+            <div className="w-full bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-2xl px-3 py-2 flex items-center justify-between backdrop-blur-sm shadow-sm gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl shrink-0">{activeGame.emoji}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] uppercase font-vintage font-bold text-amber-300 tracking-wider">
+                      {activeGame.category}
+                    </span>
+                    <span className="text-[9px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-1.5 py-0.2 rounded-full font-bold font-vintage">
+                      {activeGame.participantsLabel}
+                    </span>
+                  </div>
+                  <span className="text-xs font-broadway text-white block truncate">
                     {activeGame.title}
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-vintage font-bold text-amber-200/90 px-2.5 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30">
+              <span className="text-[10px] font-vintage font-bold text-amber-200/90 px-2 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 shrink-0">
                 {activeGame.engine === 'buzzer' ? '⚡ Pulsador' : activeGame.engine === 'challenges' ? '🎨 Reto' : '🎲 Mesa'}
               </span>
             </div>
@@ -842,6 +942,48 @@ export default function PlayerView() {
                 <span className="text-xs font-vintage font-black uppercase text-blue-200">
                   ¡Escudo Protector Activo! Tu mesa está blindada contra ataques rivales.
                 </span>
+              </div>
+            )}
+
+            {isCursed && (
+              <div className="w-full bg-[#1e0a2e]/95 border-2 border-purple-500 rounded-2xl px-3.5 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
+                <Skull className="w-5 h-5 text-purple-400 animate-bounce" />
+                <div className="text-left">
+                  <span className="text-[10px] font-broadway uppercase tracking-wider text-purple-300 block">
+                    ¡MESA BAJO LA MALDICIÓN!
+                  </span>
+                  <span className="text-[11px] font-vintage text-purple-200 font-bold block leading-tight">
+                    Tu cuadrilla tiene penalización de puntos aplicada por un rival.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {isTargeted && (
+              <div className="w-full bg-[#2a1305]/95 border-2 border-amber-500 rounded-2xl px-3.5 py-2 text-center shadow-lg flex items-center justify-center gap-2">
+                <Target className="w-5 h-5 text-amber-400 animate-spin" />
+                <div className="text-left">
+                  <span className="text-[10px] font-broadway uppercase tracking-wider text-amber-300 block">
+                    ¡OBJETIVO EN EL PUNTO DE MIRA!
+                  </span>
+                  <span className="text-[11px] font-vintage text-amber-200 font-bold block leading-tight">
+                    Si no ganas esta prueba, tu rival sumará puntos adicionales.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {isBombed && (
+              <div className="w-full bg-[#3a0808]/95 border-2 border-red-500 rounded-2xl px-3.5 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
+                <Bomb className="w-5 h-5 text-red-400 animate-bounce" />
+                <div className="text-left">
+                  <span className="text-[10px] font-broadway uppercase tracking-wider text-red-300 block">
+                    ¡TRAMPA EXPLOSIVA ACTIVADA!
+                  </span>
+                  <span className="text-[11px] font-vintage text-red-200 font-bold block leading-tight">
+                    Si quedas por debajo del rival, perderás puntos del marcador.
+                  </span>
+                </div>
               </div>
             )}
 
@@ -883,15 +1025,43 @@ export default function PlayerView() {
             <div className="my-auto flex flex-col items-center w-full">
 
               {isBanned ? (
-                <div className="w-64 h-64 rounded-full bg-[#2a0808]/95 border-8 border-red-700 flex flex-col items-center justify-center p-6 text-center shadow-inner animate-pulse deco-card-frame">
-                  <span className="text-4xl mb-2">🚫</span>
-                  <span className="text-sm font-broadway uppercase text-red-300">
-                    ¡ESTÁS BANEADO!
-                  </span>
-                  <span className="text-[11px] font-vintage text-red-200 font-bold mt-1 max-w-[170px]">
-                    Un rival te ha sellado el timbre durante esta prueba
-                  </span>
-                </div>
+                /* PULSADOR SELLADO CON CADENAS DE HIERRO Y CANDADO DE LATÓN */
+                <motion.div
+                  animate={bannedShake ? { x: [-12, 12, -8, 8, -4, 4, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                  onClick={handleBannedClick}
+                  className="relative w-64 h-64 rounded-full bg-[#150808] border-8 border-red-900 flex flex-col items-center justify-center p-5 text-center shadow-2xl cursor-pointer select-none group active:scale-95 transition-transform overflow-hidden deco-card-frame"
+                  title="¡Toca para intentar forcejear el candado!"
+                >
+                  {/* FONDO METÁLICO CON RAYAS DE PELIGRO */}
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(185,28,28,0.15)_0px,rgba(185,28,28,0.15)_15px,transparent_15px,transparent_30px)]" />
+
+                  {/* CADENAS DE HIERRO CRUZADAS */}
+                  <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-7 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-900 border-y-2 border-stone-950 rotate-45 shadow-2xl flex items-center justify-around px-2 z-10">
+                    <span className="text-xs opacity-70">⛓️</span>
+                    <span className="text-[9px] font-broadway uppercase tracking-widest text-stone-300 font-black">BLOQUEADO</span>
+                    <span className="text-xs opacity-70">⛓️</span>
+                  </div>
+                  <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-7 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-900 border-y-2 border-stone-950 -rotate-45 shadow-2xl flex items-center justify-around px-2 z-10">
+                    <span className="text-xs opacity-70">⛓️</span>
+                    <span className="text-[9px] font-broadway uppercase tracking-widest text-stone-300 font-black">CLAUSURA</span>
+                    <span className="text-xs opacity-70">⛓️</span>
+                  </div>
+
+                  {/* CANDADO DE LATÓN MACIZO EN RELIEVE */}
+                  <div className="relative z-20 w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-400 via-[#b38f2a] to-amber-900 border-4 border-[#f5eedb] flex flex-col items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform">
+                    <Lock className="w-10 h-10 text-slate-950 fill-slate-950" />
+                    <span className="text-[9px] font-broadway uppercase tracking-widest text-slate-950 font-black mt-0.5">
+                      SELLADO
+                    </span>
+                  </div>
+
+                  <div className="relative z-20 mt-3 bg-black/90 px-3 py-1 rounded-full border border-red-500/60 shadow-md">
+                    <span className="text-[10px] font-broadway uppercase text-red-300 tracking-wider">
+                      ¡TOCA PARA FORCEJEAR!
+                    </span>
+                  </div>
+                </motion.div>
               ) : captainDuel?.isActive && !player?.is_captain ? (
                 <div className="w-64 h-64 rounded-full bg-[#0c0c14]/95 border-8 border-[#d4af37]/50 flex flex-col items-center justify-center p-6 text-center shadow-deco-gold opacity-85 deco-card-frame">
                   <ShieldAlert className="w-12 h-12 text-[#d4af37] mb-2" />

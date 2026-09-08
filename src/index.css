@@ -267,3 +267,108 @@ body {
 .animate-beam-rotate {
   animation: borderBeamRotate var(--beam-duration, 8s) linear infinite;
 }
+
+/* ==========================================================================
+   1930s SILENT FILM & CELLULOID PROJECTOR OVERLAY
+   ========================================================================== */
+@keyframes projectorFlicker {
+  0% { opacity: 0.96; filter: brightness(1) contrast(1.05); }
+  25% { opacity: 0.92; filter: brightness(0.97) contrast(1.08); }
+  50% { opacity: 0.98; filter: brightness(1.03) contrast(1.03); }
+  75% { opacity: 0.94; filter: brightness(0.96) contrast(1.1); }
+  100% { opacity: 0.96; filter: brightness(1) contrast(1.05); }
+}
+
+@keyframes filmScratchMove {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { transform: translateX(12vw); opacity: 0.7; }
+  15% { transform: translateX(18vw); opacity: 0.2; }
+  20% { transform: translateX(45vw); opacity: 0.8; }
+  25% { opacity: 0; }
+  45% { transform: translateX(78vw); opacity: 0.6; }
+  50% { transform: translateX(82vw); opacity: 0; }
+  70% { transform: translateX(28vw); opacity: 0.75; }
+  75% { opacity: 0; }
+  90% { transform: translateX(62vw); opacity: 0.5; }
+  100% { transform: translateX(95vw); opacity: 0; }
+}
+
+@keyframes filmDustFloat {
+  0% { transform: translateY(-5%) translateX(0); }
+  50% { transform: translateY(50%) translateX(15px); }
+  100% { transform: translateY(105%) translateX(-10px); }
+}
+
+.celluloid-projector-active {
+  animation: projectorFlicker 0.14s infinite steps(2);
+}
+
+.celluloid-vignette {
+  box-shadow: inset 0 0 100px 30px rgba(0, 0, 0, 0.85), inset 0 0 40px rgba(120, 80, 20, 0.25);
+}
+
+/* ==========================================================================
+   THE SPEAKEASY GAZETTE: 1930s BROADSHEET & ART DÉCO LUXE STYLES
+   ========================================================================== */
+.vintage-newsprint {
+  background-color: #f5eedb;
+  background-image: 
+    radial-gradient(ellipse at 50% 20%, rgba(255, 250, 240, 0.6) 0%, transparent 70%),
+    radial-gradient(circle at 10% 90%, rgba(180, 150, 100, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 90% 90%, rgba(160, 130, 80, 0.15) 0%, transparent 60%),
+    linear-gradient(rgba(45, 30, 15, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 30, 15, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 16px 16px, 16px 16px;
+  color: #1b1510;
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.95),
+    inset 0 0 80px rgba(120, 85, 35, 0.18),
+    0 0 0 2px #3a2816,
+    0 0 0 6px #1a1208,
+    0 0 0 8px #c59b27;
+}
+
+.newsprint-ink {
+  color: #1a130e;
+  text-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.25);
+}
+
+.wanted-border {
+  border: 4px double #342211;
+  box-shadow: 
+    inset 0 0 20px rgba(90, 60, 20, 0.12),
+    0 4px 15px rgba(0, 0, 0, 0.35);
+  background-color: #eee3cc;
+}
+
+.deco-press-header {
+  border-top: 3px solid #1a130e;
+  border-bottom: 3px double #1a130e;
+}
+
+.deco-paper-divider {
+  background-image: linear-gradient(90deg, transparent, #3a2816, transparent);
+  height: 1px;
+}
+
+/* ==========================================================================
+   DEBUFF STATUS EFFECTS ON MOBILE (MALEDICIÓN, BANEO, LIMITACIONES)
+   ========================================================================== */
+@keyframes cursedPulse {
+  0%, 100% { box-shadow: inset 0 0 35px rgba(168, 85, 247, 0.5), 0 0 25px rgba(168, 85, 247, 0.3); }
+  50% { box-shadow: inset 0 0 60px rgba(168, 85, 247, 0.75), 0 0 45px rgba(168, 85, 247, 0.5); }
+}
+
+.cursed-screen-glow {
+  animation: cursedPulse 2s ease-in-out infinite;
+}
+
+@keyframes shieldGlowPulse {
+  0%, 100% { box-shadow: inset 0 0 35px rgba(212, 175, 55, 0.45), 0 0 30px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: inset 0 0 55px rgba(212, 175, 55, 0.7), 0 0 50px rgba(212, 175, 55, 0.5); }
+}
+
+.shield-screen-glow {
+  animation: shieldGlowPulse 2.5s ease-in-out infinite;
+}
+

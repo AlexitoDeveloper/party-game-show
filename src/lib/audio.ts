@@ -94,6 +94,9 @@ class SoundFX {
     if (typeof window === 'undefined') return;
     this.initContext();
 
+    // Atenuar música de fondo automáticamente mientras suena el efecto
+    speakeasyJukebox.duck(2600);
+
     // 1. Vía prioritaria: AudioBuffer WebAudio (cero latencia y polifonía perfecta)
     const ctx = this.audioContext;
     const buffer = this.audioBuffers.get(key);
@@ -519,4 +522,339 @@ class SoundFX {
 }
 
 export const soundFX = new SoundFX();
+
+// ============================================================================
+// 🎷 SPEAKEASY JUKEBOX: HILO MUSICAL DE LOS AÑOS 20/30 CON AUDIO DUCKING
+// ============================================================================
+export interface JukeboxTrack {
+  id: string;
+  title: string;
+  artist: string;
+  year: number;
+  url: string;
+}
+
+export const JUKEBOX_PLAYLIST: JukeboxTrack[] = [
+  {
+    id: 'charleston_crazy',
+    title: "Everybody's Charleston Crazy",
+    artist: 'The Georgia Melodians',
+    year: 1926,
+    url: '/sounds/jukebox/charleston_crazy.mp3',
+  },
+  {
+    id: 'charleston_ball',
+    title: 'Charleston Ball',
+    artist: 'The Six Jumping Jacks',
+    year: 1926,
+    url: '/sounds/jukebox/charleston_ball.mp3',
+  },
+];
+
+export interface JukeboxState {
+  isPlaying: boolean;
+  currentTrackIndex: number;
+  currentTrack: JukeboxTrack;
+  volume: number;
+  isMuted: boolean;
+  isDucked: boolean;
+  autoplayBlocked?: boolean;
+  contextFactor?: number;
+  contextReason?: string;
+}
+
+export class SpeakeasyJukebox {
+  private audioElement: HTMLAudioElement | null = null;
+  private currentTrackIndex = 0;
+  private isPlaying = true; // Por defecto el hilo musical está concebido para sonar siempre
+  private isEnabled = true; // Habilitado globalmente salvo que el host lo pause
+  private isMuted = false;
+  private userVolume = 0.45; // Volumen de fiesta por defecto
+  private isDucked = false;
+  private autoplayBlocked = false;
+  private contextFactor = 1.0;
+  private contextReason = 'Salón / Fiesta';
+  private duckTimer: any = null;
+  private listeners: ((state: JukeboxState) => void)[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      this.initAudio();
+    }
+  }
+
+  private initAudio() {
+    if (this.audioElement || typeof window === 'undefined') return;
+    const track = JUKEBOX_PLAYLIST[this.currentTrackIndex];
+    this.audioElement = new Audio();
+    this.audioElement.src = track.url;
+    this.audioElement.preload = 'auto';
+    this.audioElement.autoplay = false;
+    this.audioElement.volume = this.getEffectiveVolume();
+    this.audioElement.loop = false;
+
+    this.audioElement.addEventListener('ended', () => {
+      this.next();
+    });
+
+    this.audioElement.addEventListener('error', (e) => {
+      console.warn('Error en SpeakeasyJukebox:', e);
+    });
+  }
+
+  // Modula el volumen según el estado de la sala y el juego activo
+  setGameContext(status: string, gameId?: string | null, isMusicPreviewPlaying?: boolean) {
+    if (status === 'lobby') {
+      // 1. En el Lobby de convocatoria: ambientación festiva a pleno volumen
+      this.contextFactor = 1.0;
+      this.contextReason = 'Salón / Fiesta';
+    } else if (status === 'presentation') {
+      // 2. En la presentación de pruebas o cartas: música lounge agradable de fondo
+      this.contextFactor = 0.75;
+      this.contextReason = 'Presentación';
+    } else if (status === 'podium' || status === 'ended') {
+      // 3. Podio final y periódico The Speakeasy Gazette: celebración a pleno volumen
+      this.contextFactor = 1.0;
+      this.contextReason = 'Speakeasy Gazette';
+    } else if (status === 'playing') {
+      // 4. Pruebas en curso: silenciar solo en las que pueda molestar a los participantes
+      if (gameId === 'music') {
+        // Adivina la Canción: SILENCIO TOTAL (deben escuchar exclusivamente el tema musical/Spotify)
+        this.contextFactor = 0.0;
+        this.contextReason = isMusicPreviewPlaying ? 'Canción en curso' : 'Adivina la Canción (Silencio)';
+      } else if (gameId === 'un_dos_tres') {
+        // 1, 2, 3 ¿Ya?: SILENCIO TOTAL (cuenta atrás de 5 segundos de máxima tensión verbal)
+        this.contextFactor = 0.0;
+        this.contextReason = '1, 2, 3 ¿Ya? (Silencio)';
+      } else if (gameId === 'trivial' || gameId === 'mimica') {
+        // Concentración, preguntas o actuación: música sutil que no compita con la voz
+        this.contextFactor = 0.20;
+        this.contextReason = 'Prueba en curso';
+      } else if (gameId === 'movies' || gameId === 'fotos_proyector') {
+        // Pruebas visuales de proyección
+        this.contextFactor = 0.35;
+        this.contextReason = 'Prueba Visual';
+      } else {
+        // Juegos de fiesta, dibujo, beer pong, juegos de mesa (torneo_juegos, drawing, bingo...)
+        this.contextFactor = 0.60;
+        this.contextReason = 'Juego de Fiesta';
+      }
+    } else {
+      this.contextFactor = 1.0;
+      this.contextReason = 'Salón / Fiesta';
+    }
+
+    if (this.audioElement) {
+      const effVol = this.getEffectiveVolume();
+      this.audioElement.volume = effVol;
+
+      if (this.contextFactor === 0.0) {
+        if (!this.audioElement.paused) {
+          this.audioElement.pause();
+        }
+      } else if (this.isEnabled) {
+        if (this.audioElement.paused) {
+          this.audioElement.play().then(() => {
+            this.isPlaying = true;
+            this.autoplayBlocked = false;
+            this.notify();
+          }).catch(() => {
+            // El navegador esperará una interacción pasiva si aún no hubo gesto
+          });
+        }
+      }
+    }
+    this.notify();
+  }
+
+  private getEffectiveVolume(): number {
+    if (this.isMuted) return 0;
+    let vol = this.userVolume * this.contextFactor;
+    if (this.isDucked) {
+      vol = vol * 0.22;
+    }
+    return Math.max(0, Math.min(1, vol));
+  }
+
+  private notify() {
+    const state = this.getState();
+    this.listeners.forEach((l) => l(state));
+  }
+
+  getState(): JukeboxState {
+    return {
+      isPlaying: this.isPlaying && this.isEnabled && this.contextFactor > 0.0,
+      currentTrackIndex: this.currentTrackIndex,
+      currentTrack: JUKEBOX_PLAYLIST[this.currentTrackIndex],
+      volume: this.userVolume,
+      isMuted: this.isMuted,
+      isDucked: this.isDucked,
+      autoplayBlocked: this.autoplayBlocked,
+      contextFactor: this.contextFactor,
+      contextReason: this.contextReason,
+    };
+  }
+
+  subscribe(listener: (state: JukeboxState) => void): () => void {
+    this.listeners.push(listener);
+    listener(this.getState());
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  // Arranque automático: reproduce de inmediato y, si la política del navegador lo retiene,
+  // se activa de manera totalmente transparente ante cualquier tecla, mando o toque
+  async autoStart() {
+    this.isEnabled = true;
+    this.initAudio();
+    if (!this.audioElement) return;
+
+    if (this.contextFactor === 0.0) {
+      this.isPlaying = true;
+      this.notify();
+      return;
+    }
+
+    try {
+      this.audioElement.volume = this.getEffectiveVolume();
+      await this.audioElement.play();
+      this.isPlaying = true;
+      this.autoplayBlocked = false;
+      this.notify();
+    } catch (err: any) {
+      this.autoplayBlocked = true;
+      this.notify();
+
+      // Desbloqueo pasivo transparente (mandos a distancia, teclado del proyector, cualquier clic/toque)
+      const unlockAudio = async () => {
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('keydown', unlockAudio);
+          window.removeEventListener('keyup', unlockAudio);
+          window.removeEventListener('pointerdown', unlockAudio);
+          window.removeEventListener('click', unlockAudio);
+          window.removeEventListener('touchstart', unlockAudio);
+          window.removeEventListener('focus', unlockAudio);
+          window.removeEventListener('visibilitychange', unlockAudio);
+        }
+        this.autoplayBlocked = false;
+        if (this.isEnabled && this.contextFactor > 0.0) {
+          await this.play();
+        }
+      };
+
+      if (typeof window !== 'undefined') {
+        window.addEventListener('keydown', unlockAudio, { once: true });
+        window.addEventListener('keyup', unlockAudio, { once: true });
+        window.addEventListener('pointerdown', unlockAudio, { once: true });
+        window.addEventListener('click', unlockAudio, { once: true });
+        window.addEventListener('touchstart', unlockAudio, { once: true });
+        window.addEventListener('focus', unlockAudio, { once: true });
+        window.addEventListener('visibilitychange', unlockAudio, { once: true });
+      }
+    }
+  }
+
+  async play() {
+    this.isEnabled = true;
+    this.initAudio();
+    if (!this.audioElement) return;
+
+    if (this.contextFactor === 0.0) {
+      this.isPlaying = true;
+      this.notify();
+      return;
+    }
+
+    try {
+      this.audioElement.volume = this.getEffectiveVolume();
+      await this.audioElement.play();
+      this.isPlaying = true;
+      this.autoplayBlocked = false;
+      this.notify();
+    } catch (err) {
+      this.autoplayBlocked = true;
+      this.notify();
+    }
+  }
+
+  pause() {
+    this.isEnabled = false;
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+    this.isPlaying = false;
+    this.notify();
+  }
+
+  toggle() {
+    if (this.isPlaying && this.isEnabled) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
+  next() {
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % JUKEBOX_PLAYLIST.length;
+    this.switchTrack();
+  }
+
+  prev() {
+    this.currentTrackIndex =
+      (this.currentTrackIndex - 1 + JUKEBOX_PLAYLIST.length) % JUKEBOX_PLAYLIST.length;
+    this.switchTrack();
+  }
+
+  private switchTrack() {
+    const track = JUKEBOX_PLAYLIST[this.currentTrackIndex];
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = track.url;
+      this.audioElement.currentTime = 0;
+      this.audioElement.volume = this.getEffectiveVolume();
+      if (this.isPlaying) {
+        this.audioElement.play().catch(() => {});
+      }
+    }
+    this.notify();
+  }
+
+  setVolume(volume: number) {
+    this.userVolume = Math.max(0, Math.min(1, volume));
+    if (this.audioElement) {
+      this.audioElement.volume = this.getEffectiveVolume();
+    }
+    this.notify();
+  }
+
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    if (this.audioElement) {
+      this.audioElement.volume = this.getEffectiveVolume();
+    }
+    this.notify();
+  }
+
+  // Audio ducking automático al reproducir cualquier efecto importante
+  duck(durationMs = 2600) {
+    if (!this.isPlaying || !this.audioElement) return;
+    this.isDucked = true;
+    this.audioElement.volume = this.getEffectiveVolume();
+    this.notify();
+
+    if (this.duckTimer) clearTimeout(this.duckTimer);
+    this.duckTimer = setTimeout(() => {
+      this.isDucked = false;
+      if (this.audioElement) {
+        // Recuperación gradual del volumen
+        this.audioElement.volume = this.getEffectiveVolume();
+      }
+      this.notify();
+    }, durationMs);
+  }
+}
+
+export const speakeasyJukebox = new SpeakeasyJukebox();
+
 
