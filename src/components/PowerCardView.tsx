@@ -13,6 +13,7 @@ interface PowerCardViewProps {
   className?: string;
   enable3dInspect?: boolean;
   priority?: boolean;
+  disableTilt?: boolean;
 }
 
 export default function PowerCardView({
@@ -24,6 +25,7 @@ export default function PowerCardView({
   className = '',
   enable3dInspect = false,
   priority = false,
+  disableTilt = false,
 }: PowerCardViewProps) {
   const [imageError, setImageError] = useState(false);
   const [show3dModal, setShow3dModal] = useState(false);
@@ -34,13 +36,14 @@ export default function PowerCardView({
   }, [card.id]);
 
   const imageSrc = getCardImageUrl(card.id);
+  const shouldTilt = !disableTilt && size !== 'presentation';
 
   // Proporción estándar de naipe 2:3 optimizada para móvil y TV
   const sizeClasses =
     size === 'sm'
       ? 'w-28 h-[168px] sm:w-32 sm:h-[192px] rounded-xl'
       : size === 'presentation'
-      ? 'w-44 sm:w-52 md:w-56 h-[264px] sm:h-[312px] md:h-[336px] rounded-2xl'
+      ? 'w-56 sm:w-64 md:w-72 lg:w-[310px] h-[336px] sm:h-[384px] md:h-[432px] lg:h-[465px] rounded-2xl'
       : size === 'lg'
       ? 'w-72 sm:w-88 h-[440px] sm:h-[530px] rounded-3xl'
       : 'w-48 sm:w-60 h-[300px] sm:h-[370px] rounded-2xl';
@@ -51,6 +54,7 @@ export default function PowerCardView({
       : `0 16px 36px -8px rgba(0,0,0,0.85), 0 0 30px ${card.glowColorHex}44, inset 0 0 0 1px #d4af37`;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!shouldTilt) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -67,6 +71,7 @@ export default function PowerCardView({
   };
 
   const handleMouseLeave = () => {
+    if (!shouldTilt) return;
     setTilt({ x: 0, y: 0, shineX: 50, shineY: 50 });
   };
 
@@ -76,17 +81,21 @@ export default function PowerCardView({
       onClick={isClickable ? onClick : undefined}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      animate={{
-        rotateX: tilt.x,
-        rotateY: tilt.y,
-        transition: { type: 'spring', stiffness: 300, damping: 20 },
-      }}
+      animate={
+        shouldTilt
+          ? {
+              rotateX: tilt.x,
+              rotateY: tilt.y,
+              transition: { type: 'spring', stiffness: 300, damping: 20 },
+            }
+          : undefined
+      }
       className={`relative select-none flex-shrink-0 cursor-${
         isClickable ? 'pointer' : 'default'
       } ${sizeClasses} ${className}`}
       style={{
-        perspective: 1000,
-        transformStyle: 'preserve-3d',
+        perspective: shouldTilt ? 1000 : undefined,
+        transformStyle: shouldTilt ? 'preserve-3d' : undefined,
         boxShadow: glowShadow,
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
@@ -109,9 +118,7 @@ export default function PowerCardView({
             loading={priority ? 'eager' : 'lazy'}
             decoding={priority ? 'sync' : 'async'}
             style={{
-              imageRendering: '-webkit-optimize-contrast',
               backfaceVisibility: 'hidden',
-              transform: 'translateZ(0)',
             }}
           />
         ) : (

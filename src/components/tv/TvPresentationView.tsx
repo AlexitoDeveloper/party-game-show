@@ -14,7 +14,7 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
   currentSlide,
 }) => {
   return (
-    <section className="flex-1 flex flex-col justify-center items-center my-1.5 z-10 w-full max-w-7xl mx-auto px-2 min-h-0">
+    <section className="flex-1 flex flex-col justify-center items-center my-1.5 z-10 w-full max-w-[1720px] mx-auto px-4 min-h-0">
       {/* CABECERA PRESENTACIÓN TEATRAL 1930s */}
       <div className="w-full flex items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/40 px-5 py-2 rounded-2xl mb-2.5 backdrop-blur-xl shadow-deco-gold">
         <div className="flex items-center gap-3">
