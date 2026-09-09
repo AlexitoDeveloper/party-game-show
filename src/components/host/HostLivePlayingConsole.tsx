@@ -11,6 +11,7 @@ import { HostUnDosTresControls } from './minigames/HostUnDosTresControls';
 import { HostBingoControls } from './minigames/HostBingoControls';
 import { HostMimicaControls } from './minigames/HostMimicaControls';
 import { HostDrawingControls } from './minigames/HostDrawingControls';
+import { HostBeerPongControls } from './minigames/HostBeerPongControls';
 
 export interface HostLivePlayingConsoleProps {
   activeGame: GameDefinition;
@@ -28,6 +29,8 @@ export interface HostLivePlayingConsoleProps {
   onResetBuzzer: () => void;
   onApplyScoreAction: (opt: any) => void;
   onScoreChange: (teamId: string, delta: number) => void;
+  roundHits?: Record<string, number>;
+  setRoundHits?: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   musicState: any;
   moviesState: any;
   babyPhotosState: any;
@@ -53,6 +56,8 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   onResetBuzzer,
   onApplyScoreAction,
   onScoreChange,
+  roundHits,
+  setRoundHits,
   musicState,
   moviesState,
   babyPhotosState,
@@ -384,7 +389,23 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
 
       {/* MINIJUEGO: TELÉFONO DIBUJADO */}
       {activeGame.id === 'drawing' && (
-        <HostDrawingControls />
+        <HostDrawingControls
+          activeTeams={activeTeams}
+          selectedTeamForPoints={selectedTeamForPoints}
+          onSelectTeamForPoints={onSelectTeamForPoints}
+          roundHits={roundHits || {}}
+          onApplyScoreAction={onApplyScoreAction}
+        />
+      )}
+
+      {/* MINIJUEGO: BEER PONG */}
+      {activeGame.id === 'beer_pong' && (
+        <HostBeerPongControls
+          activeTeams={activeTeams}
+          roundHits={roundHits || {}}
+          onScoreChange={onScoreChange}
+          setRoundHits={setRoundHits || (() => {})}
+        />
       )}
     </section>
   );

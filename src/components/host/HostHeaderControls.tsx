@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Tv,
   Users,
   CheckCircle2,
   Trophy,
+  LogOut,
   ArrowLeft,
   Crown,
   Award,
@@ -40,17 +41,21 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
   onSelectGame,
   onSetPresentationSlide,
 }) => {
+  const navigate = useNavigate();
+
+  const handleExitRoom = () => {
+    const confirmed = window.confirm(
+      '¿Seguro que deseas salir de la sala de control del anfitrión y volver al menú principal? La sesión permanecerá activa en la TV.'
+    );
+    if (confirmed) {
+      navigate('/');
+    }
+  };
+
   return (
     <>
       <header className="flex items-center justify-between border-b border-[#d4af37]/30 pb-3 gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Link
-            to="/"
-            className="p-2 rounded-xl bg-[#0c0c14] border border-[#d4af37]/40 text-amber-200 hover:text-white transition-all shadow-sm shrink-0"
-            title="Volver a la portada de selección de vistas"
-          >
-            <ArrowLeft className="w-4 h-4 text-amber-400" />
-          </Link>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-broadway uppercase tracking-wider text-gold-gradient truncate">
               Sala {roomCode}
@@ -85,6 +90,13 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
             <span className="font-broadway">{playersCount}</span>
             <span className="hidden sm:inline font-vintage">conectados</span>
           </div>
+          <button
+            onClick={handleExitRoom}
+            className="p-2 rounded-xl bg-[#0c0c14] hover:bg-red-950/40 border border-[#d4af37]/40 hover:border-red-500/50 text-amber-200/60 hover:text-red-300 transition-all shadow-sm shrink-0"
+            title="Salir de la sala (pedirá confirmación)"
+          >
+            <LogOut className="w-3.5 h-3.5 text-amber-400/80 hover:text-red-400" />
+          </button>
         </div>
       </header>
 

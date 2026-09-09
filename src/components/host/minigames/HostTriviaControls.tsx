@@ -119,7 +119,7 @@ export const HostTriviaControls: React.FC<HostTriviaControlsProps> = ({
               className="flex-1 sm:flex-none px-4 py-2.5 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-deco-gold border border-[#f5eedb]/40 active:scale-95"
             >
               <Check className="w-4 h-4" />
-              <span>Validar Rebote (+1 pt)</span>
+              <span>Validar Rebote (+2 pts)</span>
             </button>
           ) : (
             <>

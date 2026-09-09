@@ -37,10 +37,14 @@ import { HostTeamsScoreboard } from '../components/host/HostTeamsScoreboard';
 import { HostSoundboardTab } from '../components/host/HostSoundboardTab';
 import { HostPowerCardModals } from '../components/host/HostPowerCardModals';
 import { HostTestVerdictModal } from '../components/host/HostTestVerdictModal';
+import { usePreventAccidentalNavigation } from '../hooks/usePreventAccidentalNavigation';
 
 export default function HostView() {
   const { code } = useParams<{ code: string }>();
   const roomCode = (code || '').toUpperCase();
+
+  // Bloquear salida accidental por botón "Atrás" físico o gestual en móviles
+  usePreventAccidentalNavigation();
 
   const [room, setRoom] = useState<Room>(() => {
     const saved = localStorage.getItem(`party_room_${roomCode}`);
@@ -640,10 +644,11 @@ export default function HostView() {
     if (!targetTeamId) return;
 
     handleScoreChange(targetTeamId, option.delta);
-    if (option.delta > 0) {
+    const hitsToAdd = option.hitsDelta !== undefined ? option.hitsDelta : (option.delta > 0 ? 1 : 0);
+    if (hitsToAdd !== 0) {
       setRoundHits((prev) => ({
         ...prev,
-        [targetTeamId]: (prev[targetTeamId] || 0) + 1,
+        [targetTeamId]: Math.max(0, (prev[targetTeamId] || 0) + hitsToAdd),
       }));
     }
 
@@ -886,6 +891,8 @@ export default function HostView() {
               onResetBuzzer={resetBuzzer}
               onApplyScoreAction={handleApplyScoreAction}
               onScoreChange={handleScoreChange}
+              roundHits={roundHits}
+              setRoundHits={setRoundHits}
               musicState={musicState}
               moviesState={moviesState}
               babyPhotosState={babyPhotosState}

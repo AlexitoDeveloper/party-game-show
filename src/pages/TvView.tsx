@@ -1199,16 +1199,20 @@ export default function TvView() {
                     TORNEO DE TIROS Y VASOS
                   </h2>
                   <p className="text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-6">
-                    Prueba presencial con vasos de colores y pelotas de ping pong. ¡Cada vaso encestado suma +1 pt y el último vaso +5 pts!
+                    Prueba presencial con vasos y pelotas de ping pong. ¡Cada vaso encestado suma +1 acierto al marcador!
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 my-4">
                     {activeTeams.map((team) => {
                       const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
+                      const cups = roundHits[team.id] || 0;
                       return (
                         <div key={team.id} className="p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 flex flex-col items-center shadow-md">
                           <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2 shadow`} />
                           <span className="text-sm font-broadway text-white">{team.name}</span>
-                          <span className="text-2xl font-broadway text-gold-gradient mt-1">{team.score} pts</span>
+                          <span className="text-3xl font-broadway text-gold-gradient mt-1">{cups} 🥤</span>
+                          <span className="text-[11px] font-vintage text-amber-300/80 uppercase tracking-wide">
+                            {cups === 1 ? 'Vaso encestado' : 'Vasos encestados'}
+                          </span>
                         </div>
                       );
                     })}
@@ -1226,9 +1230,20 @@ export default function TvView() {
                   <div className="inline-block px-4 py-1.5 bg-[#14141e] border border-[#d4af37]/40 rounded-full text-xs font-vintage font-bold text-amber-300 mb-3 shadow-sm">
                     💡 El Jugador 1 decide qué dibujar para iniciar la cadena
                   </div>
-                  <p className="text-xs sm:text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-6">
+                  <p className="text-xs sm:text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-4">
                     J1 piensa y dibuja en su folio ➔ J2 adivina y escribe ➔ J3 dibuja lo escrito ➔ J4 adivina ➔ J5 dibuja la obra final. ¡Al terminar, se revelan los folios!
                   </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto mb-4">
+                    <span className="text-xs bg-[#14141e] border border-amber-500/40 text-amber-200 px-3 py-1.5 rounded-xl font-vintage font-bold shadow-sm">
+                      🎯 Cadena intacta J1 ➔ J5: <strong className="text-amber-400 font-broadway">+5 aciertos</strong>
+                    </span>
+                    <span className="text-xs bg-[#14141e] border border-emerald-500/40 text-emerald-200 px-3 py-1.5 rounded-xl font-vintage font-bold shadow-sm">
+                      🎨 Mejor dibujo: <strong className="text-emerald-400 font-broadway">+2 aciertos</strong>
+                    </span>
+                    <span className="text-xs bg-[#14141e] border border-purple-500/40 text-purple-200 px-3 py-1.5 rounded-xl font-vintage font-bold shadow-sm">
+                      🤪 Peor dibujo: <strong className="text-purple-400 font-broadway">+1 acierto</strong>
+                    </span>
+                  </div>
                   <div className="my-4">
                     <div className={`text-7xl font-broadway drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-gold-gradient'}`}>
                       {timerSeconds !== null ? `${timerSeconds}s` : '--'}
@@ -1340,8 +1355,10 @@ export default function TvView() {
 
                   const roundScore = roundHits[team.id] || 0;
                   const scoreSuffix = isRoundScoreGame
-                    ? (activeGame.id === 'music' || activeGame.id === 'trivial' || activeGame.id === 'mimica'
+                    ? (activeGame.id === 'music' || activeGame.id === 'trivial' || activeGame.id === 'mimica' || activeGame.id === 'drawing'
                         ? (roundScore === 1 ? ' ACIERTO' : ' ACIERTOS')
+                        : activeGame.id === 'beer_pong'
+                        ? (roundScore === 1 ? ' VASO' : ' VASOS')
                         : ' PTS')
                     : ' PTS';
 

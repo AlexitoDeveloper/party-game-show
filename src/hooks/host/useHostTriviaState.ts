@@ -131,7 +131,7 @@ export function useHostTriviaState({
       : teams.find((t) => t.is_active);
 
     if (targetTeam) {
-      handleScoreChange(targetTeam.id, 1);
+      handleScoreChange(targetTeam.id, 2);
       setRoundHits((prev) => ({
         ...prev,
         [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,

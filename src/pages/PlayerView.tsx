@@ -24,10 +24,14 @@ import { TwemojiText } from '../components/TwemojiText';
 import { DiceBearStyle, generateAvatarDataUri, generateRandomSeed } from '../lib/dicebear';
 import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
+import { usePreventAccidentalNavigation } from '../hooks/usePreventAccidentalNavigation';
 
 export default function PlayerView() {
   const { code } = useParams<{ code: string }>();
   const roomCode = (code || '').toUpperCase();
+
+  // Prevenir que el jugador salga de la partida al pulsar Atrás en su móvil
+  usePreventAccidentalNavigation();
 
   const [room, setRoom] = useState<Room>(() => {
     const saved = localStorage.getItem(`party_room_${roomCode}`);
