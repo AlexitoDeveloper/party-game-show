@@ -29,6 +29,19 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
 
   const state = externalState || internalState;
 
+  // Track seguro con fallback exhaustivo (nunca falla incluso si el estado local o sincronizado está incompleto)
+  const currentTrack: JukeboxTrack =
+    state?.currentTrack ||
+    (typeof (state as any)?.currentTrackIndex === 'number' && JUKEBOX_PLAYLIST[(state as any).currentTrackIndex]) ||
+    (typeof (state as any)?.trackIndex === 'number' && JUKEBOX_PLAYLIST[(state as any).trackIndex]) ||
+    (state as any)?.track ||
+    JUKEBOX_PLAYLIST[0];
+
+  const isPlaying = !!state?.isPlaying;
+  const isMuted = !!state?.isMuted;
+  const isDucked = !!state?.isDucked;
+  const effectiveVolume = typeof state?.volume === 'number' ? state.volume : 0.35;
+
   const handleAction = (
     action: 'play' | 'pause' | 'toggle' | 'next' | 'prev' | 'volume' | 'mute',
     volume?: number,
@@ -53,7 +66,7 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
         {/* DISCO DE VINILO GIRATORIO VINTAGE 1920s */}
         <div
           className={`w-6 h-6 rounded-full bg-slate-950 border border-[#d4af37]/60 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden ${
-            state.isPlaying && !isSilenced ? 'animate-spin' : 'opacity-70'
+            isPlaying && !isSilenced ? 'animate-spin' : 'opacity-70'
           }`}
           style={{ animationDuration: '4s' }}
         >
@@ -70,11 +83,11 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
               <span className="text-[8px] bg-amber-500/20 text-amber-300/90 border border-amber-400/30 px-1 rounded font-bold">
                 (Pausa en prueba)
               </span>
-            ) : state.isDucked ? (
+            ) : isDucked ? (
               <span className="text-[8px] text-amber-400 font-bold animate-pulse">
                 (Atenuado)
               </span>
-            ) : state.isPlaying ? (
+            ) : isPlaying ? (
               <span className="inline-flex items-end gap-0.5 h-2">
                 <span className="w-0.5 h-2 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.6s' }} />
                 <span className="w-0.5 h-1 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.9s' }} />
@@ -86,7 +99,7 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
           <span className="text-[11px] font-broadway text-amber-100 max-w-[180px] truncate leading-tight">
             {isSilenced
               ? 'Silencio para prueba'
-              : state.currentTrack?.title || 'Hilo Musical 1920s'}
+              : currentTrack.title || 'Hilo Musical 1920s'}
           </span>
         </div>
       </div>
@@ -102,7 +115,7 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className={`w-8 h-8 rounded-full bg-slate-950 border border-[#d4af37]/70 flex items-center justify-center shadow-inner shrink-0 ${
-              state.isPlaying ? 'animate-spin' : ''
+              isPlaying ? 'animate-spin' : ''
             }`}
             style={{ animationDuration: '4s' }}
           >
@@ -113,11 +126,11 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
               <span className="text-[10px] uppercase font-vintage tracking-wider text-amber-300 font-bold">
                 Mando Jukebox (Suena en TV)
               </span>
-              {state.isDucked ? (
+              {isDucked ? (
                 <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-vintage animate-pulse">
                   Ducking Activo
                 </span>
-              ) : state.contextReason ? (
+              ) : state?.contextReason ? (
                 <span className={`text-[9px] px-1.5 py-0.2 rounded font-vintage border ${
                   state.contextFactor === 0 ? 'bg-red-500/20 text-red-300 border-red-500/30' :
                   state.contextFactor && state.contextFactor < 0.5 ? 'bg-amber-500/20 text-amber-300 border-amber-400/30' :
@@ -128,7 +141,7 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
               ) : null}
             </div>
             <h4 className="text-xs font-broadway text-white truncate">
-              {state.currentTrack.title} - {state.currentTrack.artist} ({state.currentTrack.year})
+              {currentTrack.title} - {currentTrack.artist} ({currentTrack.year})
             </h4>
           </div>
         </div>
@@ -146,10 +159,10 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
             type="button"
             onClick={() => handleAction('toggle')}
             className="px-3 py-1 rounded-xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway text-xs font-black shadow-deco-gold flex items-center gap-1.5 active:scale-95 transition-all border border-[#f5eedb]/40"
-            title={state.isPlaying ? 'Pausar música en la TV' : 'Reproducir música en la TV'}
+            title={isPlaying ? 'Pausar música en la TV' : 'Reproducir música en la TV'}
           >
-            {state.isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            <span>{state.isPlaying ? 'PAUSAR' : 'REPRODUCIR'}</span>
+            {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+            <span>{isPlaying ? 'PAUSAR' : 'REPRODUCIR'}</span>
           </button>
           <button
             type="button"
@@ -168,9 +181,9 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
           type="button"
           onClick={() => handleAction('mute')}
           className="text-amber-300 hover:text-white"
-          title={state.isMuted ? 'Desactivar silencio' : 'Silenciar música en TV'}
+          title={isMuted ? 'Desactivar silencio' : 'Silenciar música en TV'}
         >
-          {state.isMuted ? (
+          {isMuted ? (
             <VolumeX className="w-4 h-4 text-red-400" />
           ) : (
             <Volume2 className="w-4 h-4" />
@@ -181,13 +194,13 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
           min="0"
           max="1"
           step="0.05"
-          value={state.isMuted ? 0 : state.volume}
+          value={isMuted ? 0 : effectiveVolume}
           onChange={(e) => handleAction('volume', parseFloat(e.target.value))}
           className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#d4af37]"
           title="Volumen del hilo musical en la TV"
         />
         <span className="text-[11px] font-vintage text-amber-200 w-8 text-right">
-          {state.isMuted ? '0%' : `${Math.round(state.volume * 100)}%`}
+          {isMuted ? '0%' : `${Math.round(effectiveVolume * 100)}%`}
         </span>
       </div>
     </div>

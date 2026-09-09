@@ -443,7 +443,8 @@ export default function TvView() {
         setRoom((prev) => ({ ...prev, status: 'presentation', presentation_slide: event.payload.slide }));
       } else if (event.type === 'TEST_FINISHED') {
         setTestFinishedNotification(event.payload);
-        triggerVictoryConfetti();
+        soundFX.playVictory();
+        triggerVictoryConfetti(false);
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
@@ -455,7 +456,8 @@ export default function TvView() {
           gameTitle: event.payload.gameTitle,
           results: event.payload.results,
         });
-        triggerVictoryConfetti();
+        soundFX.playVictory();
+        triggerVictoryConfetti(false);
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
@@ -484,7 +486,7 @@ export default function TvView() {
           setRemoteMusicTrack(event.payload.trackData || null);
         }
         if (event.payload.isRevealed) {
-          triggerVictoryConfetti();
+          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'MOVIE_STATE_UPDATE') {
         setMovieIndex(event.payload.movieIndex);
@@ -497,7 +499,7 @@ export default function TvView() {
           setRemoteMovie(event.payload.movieData);
         }
         if (event.payload.isRevealed) {
-          triggerVictoryConfetti();
+          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'POWER_CARDS_STATE_UPDATE') {
         setPowerCards(event.payload);
@@ -516,7 +518,7 @@ export default function TvView() {
           setRemoteBabyPhoto(event.payload.photoData);
         }
         if (event.payload.isRevealed) {
-          triggerVictoryConfetti();
+          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'SET_CAPTAIN') {
         setPlayers((prev) =>
@@ -554,7 +556,7 @@ export default function TvView() {
           setRemoteTriviaQuestion(event.payload.questionData);
         }
         if (event.payload.isRevealed) {
-          triggerVictoryConfetti();
+          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'UN_DOS_TRES_STATE') {
         setUdtPromptIndex(event.payload.promptIndex);
@@ -675,8 +677,10 @@ export default function TvView() {
     setTimerSeconds(null);
   };
 
-  const triggerVictoryConfetti = () => {
-    soundFX.playSuccess();
+  const triggerVictoryConfetti = (playSound: boolean = true) => {
+    if (playSound) {
+      soundFX.playSuccess();
+    }
     setShowTvCoinBurst(true);
     setTimeout(() => setShowTvCoinBurst(false), 2400);
     confetti({
@@ -1463,7 +1467,7 @@ export default function TvView() {
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
-                              {res.cardImpacts.map((imp, impIdx) => (
+                              {(res.cardImpacts || []).map((imp, impIdx) => (
                                 <span
                                   key={impIdx}
                                   className={`text-xs font-broadway px-2 py-0.5 rounded-lg border flex items-center gap-1 ${

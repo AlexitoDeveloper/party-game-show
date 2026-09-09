@@ -41,8 +41,8 @@ export const HostSoundboardTab: React.FC<HostSoundboardTabProps> = ({
               </p>
             </div>
           </div>
-          <span className="text-[10px] text-amber-200/60 font-mono hidden sm:inline">
-            Audio WebAPI • Suena en Host y TV
+          <span className="text-[10px] text-amber-200/80 font-mono hidden sm:inline bg-black/40 px-2 py-1 rounded-lg border border-[#d4af37]/30">
+            Audio WebAPI • Suena exclusivamente en la TV
           </span>
         </div>
 

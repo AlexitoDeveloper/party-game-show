@@ -49,6 +49,15 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
   onSelectNextGame,
   onReturnToLobby,
 }) => {
+  const results = currentVerdict?.results || [];
+  const safeActiveTeams = activeTeams || [];
+  const safeTeams = teams || [];
+  const safeManualRanks = manualPodiumRanks || {};
+  const safePowerCards = powerCards || { discardPile: [], teamHands: {}, activeEffects: [] };
+  const safeTeamHands = safePowerCards.teamHands || {};
+  const safeActiveEffects = safePowerCards.activeEffects || [];
+  const consumedCount = (currentVerdict?.consumedEffectIds || []).length;
+
   return (
     <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
       <div className="bg-[#0c0c14]/98 border-2 border-[#d4af37] rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-deco-gold space-y-4 max-h-[90vh] overflow-y-auto hell-card-frame">
@@ -60,11 +69,11 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
               <h3 className="text-base sm:text-lg font-broadway uppercase tracking-wide text-gold-gradient flex items-center gap-2">
                 <span>Veredicto de la Prueba</span>
                 <span className="px-2.5 py-0.5 rounded-full bg-[#14141e] text-amber-300 border border-[#d4af37]/40 text-[10px] font-vintage font-bold">
-                  {testFinishedModal.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
+                  {testFinishedModal?.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
                 </span>
               </h3>
               <p className="text-xs text-amber-200/90 font-vintage font-bold">
-                {testFinishedModal.gameTitle}
+                {testFinishedModal?.gameTitle || 'Prueba Finalizada'}
               </p>
             </div>
           </div>
@@ -89,51 +98,59 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            {currentVerdict.results.map((res) => {
-              const cat = TEAMS_CATALOG.find((c) => c.index === res.teamIndex) || TEAMS_CATALOG[0];
-              const rankEmoji = res.rank === 1 ? '🥇' : res.rank === 2 ? '🥈' : res.rank === 3 ? '🥉' : '🎖️';
-              return (
-                <div
-                  key={res.teamId}
-                  className={`p-3.5 rounded-2xl border transition-all ${
-                    res.rank === 1
-                      ? 'bg-amber-500/15 border-[#d4af37] shadow-deco-gold'
-                      : 'bg-[#07070a]/90 border-[#d4af37]/30'
-                  } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
-                >
-                  {/* POSICIÓN Y EQUIPO */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-base">{rankEmoji}</span>
-                      <select
-                        value={manualPodiumRanks[res.teamId] !== undefined ? manualPodiumRanks[res.teamId] : res.rank}
-                        onChange={(e) => {
-                          const newRank = parseInt(e.target.value, 10);
-                          onSetManualPodiumRanks((prev) => ({ ...prev, [res.teamId]: newRank }));
-                        }}
-                        className="bg-[#14141e] border border-[#d4af37]/40 text-amber-300 text-xs font-broadway rounded-lg px-1.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
-                        title="Cambiar posición en el podio manualmente"
-                      >
-                        <option value={1}>1.º</option>
-                        <option value={2}>2.º</option>
-                        <option value={3}>3.º</option>
-                        <option value={4}>4.º</option>
-                        <option value={5}>5.º</option>
-                      </select>
-                    </div>
+            {results.length === 0 ? (
+              <div className="p-4 rounded-2xl bg-[#14141e]/70 border border-[#d4af37]/30 text-center text-xs font-vintage text-amber-200/70">
+                No hay equipos activos registrados para esta prueba.
+              </div>
+            ) : (
+              results.map((res) => {
+                const cat = TEAMS_CATALOG.find((c) => c.index === res.teamIndex) || TEAMS_CATALOG[0] || {
+                  twBg: 'bg-amber-500',
+                  twText: 'text-amber-400',
+                };
+                const rankEmoji = res.rank === 1 ? '🥇' : res.rank === 2 ? '🥈' : res.rank === 3 ? '🥉' : '🎖️';
+                return (
+                  <div
+                    key={res.teamId}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      res.rank === 1
+                        ? 'bg-amber-500/15 border-[#d4af37] shadow-deco-gold'
+                        : 'bg-[#07070a]/90 border-[#d4af37]/30'
+                    } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
+                  >
+                    {/* POSICIÓN Y EQUIPO */}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-base">{rankEmoji}</span>
+                        <select
+                          value={safeManualRanks[res.teamId] !== undefined ? safeManualRanks[res.teamId] : res.rank}
+                          onChange={(e) => {
+                            const newRank = parseInt(e.target.value, 10);
+                            onSetManualPodiumRanks((prev) => ({ ...prev, [res.teamId]: newRank }));
+                          }}
+                          className="bg-[#14141e] border border-[#d4af37]/40 text-amber-300 text-xs font-broadway rounded-lg px-1.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
+                          title="Cambiar posición en el podio manualmente"
+                        >
+                          <option value={1}>1.º</option>
+                          <option value={2}>2.º</option>
+                          <option value={3}>3.º</option>
+                          <option value={4}>4.º</option>
+                          <option value={5}>5.º</option>
+                        </select>
+                      </div>
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg} shrink-0`} />
-                        <span className={`text-xs font-broadway uppercase truncate ${cat.twText}`}>
-                          {res.teamName}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-amber-200/60 font-vintage">
-                        Marcador actual: {teams.find((t) => t.id === res.teamId)?.score || 0} pts
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg || 'bg-amber-500'} shrink-0`} />
+                          <span className={`text-xs font-broadway uppercase truncate ${cat.twText || 'text-amber-300'}`}>
+                            {res.teamName}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-amber-200/60 font-vintage">
+                          Marcador actual: {safeTeams.find((t) => t.id === res.teamId)?.score || 0} pts
+                        </div>
                       </div>
                     </div>
-                  </div>
 
                   {/* CONTADOR DE ACIERTOS (CON + Y -) */}
                   <div className="flex items-center gap-3 shrink-0">
@@ -202,9 +219,9 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                   </div>
 
                   {/* BADGES DE CARTAS ACTIVAS QUE IMPACTAN A ESTE EQUIPO */}
-                  {res.cardImpacts.length > 0 && (
+                  {(res.cardImpacts || []).length > 0 && (
                     <div className="w-full pt-2 border-t border-[#d4af37]/25 flex flex-wrap gap-1.5">
-                      {res.cardImpacts.map((impact, impIdx) => (
+                      {(res.cardImpacts || []).map((impact, impIdx) => (
                         <span
                           key={impIdx}
                           title={impact.explanation}
@@ -225,7 +242,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                   )}
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
 
@@ -237,7 +254,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
           <Trophy className="w-5 h-5 fill-slate-950" />
           <span>
             🚀 Aplicar Veredicto al Marcador
-            {currentVerdict.consumedEffectIds.length > 0 && ` (${currentVerdict.consumedEffectIds.length} cartas resueltas)`}
+            {consumedCount > 0 && ` (${consumedCount} cartas resueltas)`}
           </span>
         </button>
 
@@ -258,7 +275,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                 className="bg-[#14141e] border border-[#d4af37]/30 text-amber-200 text-xs font-vintage rounded-lg px-2 py-1 flex-1 min-w-0 outline-none"
               >
                 <option value="random">Equipo al azar</option>
-                {activeTeams.map((t) => (
+                {safeActiveTeams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -272,22 +289,22 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
               </button>
             </div>
 
-            {powerCards.activeEffects.length > 0 && (
+            {safeActiveEffects.length > 0 && (
               <button
                 onClick={onClearAllActiveEffects}
                 className="px-3 py-1.5 bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 font-vintage font-bold text-xs rounded-xl border border-[#d4af37]/30 active:scale-95 shadow-sm"
                 title="Archivar efectos restantes"
               >
-                Archivar Efectos ({powerCards.activeEffects.length})
+                Archivar Efectos ({safeActiveEffects.length})
               </button>
             )}
           </div>
 
           {/* LA MALDICIÓN ÉPICA: PATATA CALIENTE */}
           {(() => {
-            const cursedTeams = activeTeams.filter((t) => {
-              const hand = powerCards.teamHands[t.id] || [];
-              return hand.includes('la_maldicion');
+            const cursedTeams = safeActiveTeams.filter((t) => {
+              const hand = safeTeamHands[t.id] || [];
+              return Array.isArray(hand) && hand.includes('la_maldicion');
             });
             if (cursedTeams.length === 0) return null;
             return (
@@ -300,7 +317,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                     <button
                       key={cTeam.id}
                       onClick={() => {
-                        const rivals = activeTeams.filter((t) => t.id !== cTeam.id);
+                        const rivals = safeActiveTeams.filter((t) => t.id !== cTeam.id);
                         const promptText = `¿A qué rival le pasa ${cTeam.name} La Maldición?\n${rivals.map((r, i) => `${i + 1}. ${r.name}`).join('\n')}`;
                         const chosen = prompt(promptText);
                         const idx = parseInt(chosen || '0', 10) - 1;

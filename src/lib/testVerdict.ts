@@ -60,21 +60,40 @@ export function calculateTestVerdict(params: {
   teams: Team[];
   roundHits?: Record<string, number>;
   manualRanks?: Record<string, number>;
-  activeEffects: ActivePowerEffect[];
+  activeEffects?: ActivePowerEffect[];
 }): TestVerdictCalculation {
-  const { gameId, gameTitle, teams, roundHits = {}, manualRanks = {}, activeEffects } = params;
+  const {
+    gameId = '',
+    gameTitle = '',
+    teams = [],
+    roundHits = {},
+    manualRanks = {},
+    activeEffects = [],
+  } = params || {};
+
+  const safeTeams = Array.isArray(teams) ? teams : [];
+  const safeEffects = Array.isArray(activeEffects) ? activeEffects : [];
   const isBingo = gameId === 'bingo';
+
+  if (safeTeams.length === 0) {
+    return {
+      gameId,
+      gameTitle,
+      results: [],
+      consumedEffectIds: [],
+    };
+  }
 
   // 1. Determinar puestos (Ranks)
   // Si se proporcionaron puestos manuales, usarlos; de lo contrario, ordenar por aciertos de la ronda
-  const sortedTeams = [...teams].sort((a, b) => {
+  const sortedTeams = [...safeTeams].sort((a, b) => {
     if (manualRanks[a.id] !== undefined && manualRanks[b.id] !== undefined) {
       return manualRanks[a.id] - manualRanks[b.id];
     }
     const hitsA = roundHits[a.id] || 0;
     const hitsB = roundHits[b.id] || 0;
     if (hitsB !== hitsA) return hitsB - hitsA;
-    return b.score - a.score;
+    return (b.score || 0) - (a.score || 0);
   });
 
   const teamRanks: Record<string, number> = {};
@@ -85,20 +104,29 @@ export function calculateTestVerdict(params: {
   // 2. Asignar puntos base por posición
   const basePointsMap: Record<string, number> = {};
   const impactsMap: Record<string, TeamCardImpact[]> = {};
-  teams.forEach((t) => {
+  safeTeams.forEach((t) => {
     basePointsMap[t.id] = getBasePointsForRank(teamRanks[t.id] || 4, isBingo);
     impactsMap[t.id] = [];
   });
 
+  const addImpact = (teamId: string, impact: TeamCardImpact) => {
+    if (!teamId) return;
+    if (!impactsMap[teamId]) {
+      impactsMap[teamId] = [];
+    }
+    impactsMap[teamId].push(impact);
+  };
+
   const consumedEffectIds: string[] = [];
 
   // Encontrar el equipo en 1.er puesto
-  const winnerTeam = teams.find((t) => teamRanks[t.id] === 1);
+  const winnerTeam = safeTeams.find((t) => teamRanks[t.id] === 1);
 
   // 3. Evaluar cada efecto activo de carta
-  for (const eff of activeEffects) {
-    const sourceTeam = teams.find((t) => t.id === eff.sourceTeamId);
-    const targetTeam = eff.targetTeamId ? teams.find((t) => t.id === eff.targetTeamId) : undefined;
+  for (const eff of safeEffects) {
+    if (!eff || !eff.cardId) continue;
+    const sourceTeam = safeTeams.find((t) => t.id === eff.sourceTeamId);
+    const targetTeam = eff.targetTeamId ? safeTeams.find((t) => t.id === eff.targetTeamId) : undefined;
     const sourceRank = sourceTeam ? teamRanks[sourceTeam.id] || 99 : 99;
     const targetRank = targetTeam ? teamRanks[targetTeam.id] || 99 : 99;
 
@@ -108,7 +136,7 @@ export function calculateTestVerdict(params: {
         if (sourceTeam) {
           const base = basePointsMap[sourceTeam.id] || 0;
           if (base > 0) {
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'Doble',
               cardEmoji: '💰',
@@ -127,7 +155,7 @@ export function calculateTestVerdict(params: {
           const base = basePointsMap[sourceTeam.id] || 0;
           if (base > 0) {
             const extra = base * 2;
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'El Ave Fénix',
               cardEmoji: '🔥',
@@ -144,7 +172,7 @@ export function calculateTestVerdict(params: {
       case 'ruleta_rusa': {
         if (sourceTeam) {
           if (sourceRank <= 2) {
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'Ruleta Rusa',
               cardEmoji: '🎰',
@@ -152,7 +180,7 @@ export function calculateTestVerdict(params: {
               explanation: `Victoria en 1.º/2.º puesto (+6 pts extra)`,
             });
           } else {
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'Ruleta Rusa',
               cardEmoji: '🎰',
@@ -169,7 +197,7 @@ export function calculateTestVerdict(params: {
       case 'bomba': {
         if (sourceTeam && targetTeam) {
           if (targetRank > sourceRank) {
-            impactsMap[targetTeam.id].push({
+            addImpact(targetTeam.id, {
               cardId: eff.cardId,
               cardName: 'Bomba',
               cardEmoji: '💣',
@@ -186,7 +214,7 @@ export function calculateTestVerdict(params: {
       case 'la_sentencia': {
         if (sourceTeam && targetTeam) {
           if (targetRank > sourceRank) {
-            impactsMap[targetTeam.id].push({
+            addImpact(targetTeam.id, {
               cardId: eff.cardId,
               cardName: 'La Sentencia',
               cardEmoji: '💀',
@@ -202,19 +230,18 @@ export function calculateTestVerdict(params: {
       // 👑 CAZA AL LÍDER (Roba 3 pts si superas al líder)
       case 'caza_lider': {
         if (sourceTeam) {
-          // El líder objetivo es el que iba primero en la general o targetTeam
-          const leader = targetTeam || [...teams].sort((a, b) => b.score - a.score)[0];
-          if (leader && leader.id !== sourceTeam.id) {
+          const leader = targetTeam || [...safeTeams].sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+          if (leader && leader.id && leader.id !== sourceTeam.id) {
             const leaderRank = teamRanks[leader.id] || 99;
             if (sourceRank < leaderRank) {
-              impactsMap[sourceTeam.id].push({
+              addImpact(sourceTeam.id, {
                 cardId: eff.cardId,
                 cardName: 'Caza al Líder',
                 cardEmoji: '👑',
                 delta: 3,
                 explanation: `Robas 3 pts a ${leader.name} al superarlo`,
               });
-              impactsMap[leader.id].push({
+              addImpact(leader.id, {
                 cardId: eff.cardId,
                 cardName: 'Caza al Líder',
                 cardEmoji: '👑',
@@ -232,7 +259,7 @@ export function calculateTestVerdict(params: {
       case 'objetivo': {
         if (sourceTeam) {
           if (targetRank > 1) {
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'Objetivo',
               cardEmoji: '🎯',
@@ -247,17 +274,17 @@ export function calculateTestVerdict(params: {
 
       // 🎩 EL IMPUESTO DEL PADRINO (50% de los puntos del 1.er puesto al equipo del Padrino)
       case 'impuesto_padrino': {
-        if (sourceTeam && winnerTeam && winnerTeam.id !== sourceTeam.id) {
+        if (sourceTeam && winnerTeam && winnerTeam.id && winnerTeam.id !== sourceTeam.id) {
           const winnerBase = basePointsMap[winnerTeam.id] || 0;
           const tax = Math.max(1, Math.round(winnerBase * 0.5));
-          impactsMap[sourceTeam.id].push({
+          addImpact(sourceTeam.id, {
             cardId: eff.cardId,
             cardName: 'El Impuesto del Padrino',
             cardEmoji: '🎩',
             delta: tax,
             explanation: `Comisión del 50% cobrada a ${winnerTeam.name} (+${tax} pts)`,
           });
-          impactsMap[winnerTeam.id].push({
+          addImpact(winnerTeam.id, {
             cardId: eff.cardId,
             cardName: 'El Impuesto del Padrino',
             cardEmoji: '🎩',
@@ -275,14 +302,14 @@ export function calculateTestVerdict(params: {
           const targetBase = basePointsMap[targetTeam.id] || 0;
           if (targetBase > 0) {
             const steal = Math.max(1, Math.round(targetBase * 0.5));
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'El Robo del Siglo',
               cardEmoji: '👑',
               delta: steal,
               explanation: `Robo del 50% de los puntos de ${targetTeam.name} (+${steal} pts)`,
             });
-            impactsMap[targetTeam.id].push({
+            addImpact(targetTeam.id, {
               cardId: eff.cardId,
               cardName: 'El Robo del Siglo',
               cardEmoji: '👑',
@@ -299,10 +326,10 @@ export function calculateTestVerdict(params: {
       case 'golpe_maestro': {
         if (sourceTeam && sourceRank === 1) {
           let totalStolen = 0;
-          teams.forEach((rival) => {
-            if (rival.id !== sourceTeam.id && rival.score > 0) {
+          safeTeams.forEach((rival) => {
+            if (rival.id !== sourceTeam.id && (rival.score || 0) > 0) {
               totalStolen += 1;
-              impactsMap[rival.id].push({
+              addImpact(rival.id, {
                 cardId: eff.cardId,
                 cardName: 'El Golpe Maestro',
                 cardEmoji: '💥',
@@ -312,7 +339,7 @@ export function calculateTestVerdict(params: {
             }
           });
           if (totalStolen > 0) {
-            impactsMap[sourceTeam.id].push({
+            addImpact(sourceTeam.id, {
               cardId: eff.cardId,
               cardName: 'El Golpe Maestro',
               cardEmoji: '💥',
@@ -346,14 +373,14 @@ export function calculateTestVerdict(params: {
     const hits = roundHits[t.id] || 0;
     const base = basePointsMap[t.id] || 0;
     const impacts = impactsMap[t.id] || [];
-    const cardDelta = impacts.reduce((acc, curr) => acc + curr.delta, 0);
+    const cardDelta = impacts.reduce((acc, curr) => acc + (curr.delta || 0), 0);
     const finalPoints = Math.max(0, base + cardDelta);
 
     return {
       teamId: t.id,
-      teamName: t.name,
+      teamName: t.name || `Equipo ${t.team_index}`,
       teamIndex: t.team_index,
-      colorHex: t.color_hex,
+      colorHex: t.color_hex || '#d4af37',
       rank,
       hits,
       basePoints: base,

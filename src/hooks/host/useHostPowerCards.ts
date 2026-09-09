@@ -330,15 +330,30 @@ export function useHostPowerCards({
       return;
     }
 
-    // Caso Especial 3: INTERCAMBIO DE CARTAS
-    if (cardId === 'intercambio_cartas' && targetTeamId) {
-      const { nextState } = executeSwapCard(
-        powerCards,
-        sourceTeamId,
-        targetTeamId,
-        cardId
-      );
-      const finalState = executePlayCard(nextState, sourceTeamId, cardId, targetTeamId);
+    // Caso Especial 3: INTERCAMBIO DE CARTAS / EL TRUEQUE
+    if ((cardId === 'el_trueque' || cardId === 'intercambio_cartas') && targetTeamId) {
+      const targetHand = powerCards.teamHands[targetTeamId] || [];
+      if (targetHand.length === 0) {
+        alert(`¡El equipo ${targetTeam?.name || 'rival'} no tiene cartas para intercambiar!`);
+        return;
+      }
+
+      // Descartar la carta jugada del origen
+      const stateAfterPlay = executePlayCard(powerCards, sourceTeamId, cardId, targetTeamId);
+      const remainingSourceHand = stateAfterPlay.teamHands[sourceTeamId] || [];
+
+      let finalState = stateAfterPlay;
+      if (remainingSourceHand.length > 0) {
+        // Intercambiar una carta de la mano restante por una aleatoria del rival
+        const randomSourceCard = remainingSourceHand[Math.floor(Math.random() * remainingSourceHand.length)];
+        const { nextState } = executeSwapCard(stateAfterPlay, sourceTeamId, targetTeamId, randomSourceCard);
+        finalState = nextState;
+      } else {
+        // Si no le quedan más cartas al origen tras jugar El Trueque, roba 1 carta del rival
+        const { nextState } = executeStealCard(stateAfterPlay, sourceTeamId, targetTeamId);
+        finalState = nextState;
+      }
+
       setPowerCards(finalState);
       localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(finalState));
       roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: finalState });

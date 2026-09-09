@@ -16,7 +16,7 @@ export interface PowerCard {
   rarityColorHex: string; // Color primario de la rareza
 }
 
-// Mapeo exacto de IDs de carta a los archivos oficiales en public/new_cards (18 cartas maestras)
+// Mapeo exacto de IDs de carta a los archivos oficiales en public/new_cards (19 cartas maestras)
 export const CARD_IMAGE_MAP: Record<string, string> = {
   // 🟢 COMUNES (4)
   mal_de_ojo: 'mal_de_ojo.jpeg',
@@ -24,16 +24,17 @@ export const CARD_IMAGE_MAP: Record<string, string> = {
   objetivo: 'objetivo.jpeg',
   bomba: 'bomba.jpeg',
 
-  // 🔵 RARAS (3)
+  // 🔵 RARAS (4)
   banco_cartas: 'banco_de_cartas.jpeg',
   cambio_forzoso: 'cambio_forzoso.jpeg',
+  el_trueque: 'el_trueque.jpeg',
   escudo: 'escudo.jpeg',
 
   // 🟣 ÉPICAS (7)
   el_cuarto_mono: 'el_cuarto_mono.jpeg',
   caza_lider: 'caza_al_lider.jpeg',
   robo: 'robo.jpeg',
-  la_maldicion: 'maldicion_epica.jpeg',
+  la_maldicion: 'maldicion.jpeg',
   doble: 'doble.jpeg',
   ruleta_rusa: 'ruleta_rusa.jpeg',
   la_sentencia: 'la_sentencia.jpeg',
@@ -170,6 +171,19 @@ export const MASTER_POWER_CARDS: PowerCard[] = [
     tagline: 'Inmunidad de ronda',
     description: 'Protege a tu equipo de cualquier carta o sabotaje rival durante esta prueba.',
     requiresTarget: 'none',
+    badgeColor: 'blue',
+    glowColorHex: '#3b82f6',
+    rarityColorHex: '#3b82f6',
+  },
+  {
+    id: 'el_trueque',
+    name: 'El Trueque',
+    emoji: '🔄',
+    rarity: 'Rara',
+    timing: 'En cualquier momento',
+    tagline: 'Cambio clandestino',
+    description: 'Elige un equipo rival y una carta de tu mano: se la entregas a cambio de una carta al azar de su mano.',
+    requiresTarget: 'team',
     badgeColor: 'blue',
     glowColorHex: '#3b82f6',
     rarityColorHex: '#3b82f6',

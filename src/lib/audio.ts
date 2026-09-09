@@ -28,6 +28,7 @@ class SoundFX {
   private audioContext: AudioContext | null = null;
   private audioBuffers: Map<string, AudioBuffer> = new Map();
   private isPreloaded = false;
+  private lastPlayedTimestamps: Map<string, number> = new Map();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -92,6 +93,21 @@ class SoundFX {
   // Reproducción de sonido con doble vía: Web Audio Buffer (latencia 0) o Audio HTML5
   private playAudioFile(key: string, volume: number = 1.0) {
     if (typeof window === 'undefined') return;
+
+    const now = Date.now();
+    const lastPlayed = this.lastPlayedTimestamps.get(key) || 0;
+
+    // Evitar solapamiento idéntico (doble llamada o rebote en menos de 220ms)
+    if (now - lastPlayed < 220) {
+      return;
+    }
+
+    // Si suena 'victory', suprimir un 'success' casi simultáneo (dentro de 500ms)
+    if (key === 'success' && now - (this.lastPlayedTimestamps.get('victory') || 0) < 500) {
+      return;
+    }
+
+    this.lastPlayedTimestamps.set(key, now);
     this.initContext();
 
     // Atenuar música de fondo automáticamente mientras suena el efecto

@@ -2,7 +2,8 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, Trophy, Users } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { soundFX, JukeboxState, JUKEBOX_PLAYLIST } from '../lib/audio';
+import { JukeboxState, JUKEBOX_PLAYLIST } from '../lib/audio';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { TEAMS_CATALOG } from '../lib/constants';
 import { Room, Team, Player, CaptainDuelState } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
@@ -95,13 +96,30 @@ export default function HostView() {
   const [jukeboxState, setJukeboxState] = useState<JukeboxState>(() => {
     const saved = localStorage.getItem(`party_jukebox_${roomCode}`);
     if (saved) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed) {
+          const trackIdx = parsed.currentTrackIndex ?? parsed.trackIndex ?? 0;
+          return {
+            isPlaying: !!parsed.isPlaying,
+            currentTrackIndex: trackIdx,
+            currentTrack: parsed.currentTrack || parsed.track || JUKEBOX_PLAYLIST[trackIdx] || JUKEBOX_PLAYLIST[0],
+            volume: typeof parsed.volume === 'number' ? parsed.volume : 0.35,
+            isMuted: !!parsed.isMuted,
+            isDucked: !!parsed.isDucked,
+            contextReason: parsed.contextReason,
+            contextFactor: parsed.contextFactor,
+          };
+        }
+      } catch {}
     }
     return {
-      trackIndex: 0,
       isPlaying: false,
-      volume: 0.5,
-      track: JUKEBOX_PLAYLIST[0],
+      currentTrackIndex: 0,
+      currentTrack: JUKEBOX_PLAYLIST[0],
+      volume: 0.35,
+      isMuted: false,
+      isDucked: false,
     };
   });
 
@@ -122,6 +140,30 @@ export default function HostView() {
   // Instancia de sincronización multi-pantalla como anfitrión
   const roomSync = useMemo(() => getRoomSync(roomCode, 'host'), [roomCode]);
   const { resetBuzzer, isLocked, winner } = useBuzzerRace({ roomCode, isHostOrTv: true, roomSync });
+
+  // Proxy de audio silencioso para el Host:
+  // El Host es 100% silencioso y retransmite todos los sonidos y fanfarrias exclusivamente a la TV
+  const hostTvAudioProxy = useMemo(() => ({
+    playSound: (sound: string) => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound } }),
+    playVictory: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'victory' } }),
+    playFail: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'fail' } }),
+    playSuccess: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'success' } }),
+    playBuzzer: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'buzzer' } }),
+    playBuzzerWrong: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'fail' } }),
+    playDrumRoll: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'drumroll' } }),
+    playApplause: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'applause' } }),
+    playAirHorn: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'airhorn' } }),
+    playSuspense: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'suspense' } }),
+    playPowerCard: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'power_card' } }),
+    playTick: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'tick' } }),
+    playJoin: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'join' } }),
+    playDecoBell: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'deco_bell' } }),
+    playSpeakeasyBrass: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'brass' } }),
+    playWahWahFail: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'wah_wah' } }),
+    playCardSnap: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'card_snap' } }),
+    playCardSlam: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'card_slam' } }),
+    playChipClink: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'chip_clink' } }),
+  }), [roomSync]);
 
   // Juego activo según el ID seleccionado
   const activeGame: GameDefinition = useMemo(() => {
@@ -186,11 +228,11 @@ export default function HostView() {
 
     if (!silent) {
       if (delta > 0) {
-        soundFX.playVictory();
+        hostTvAudioProxy.playVictory();
         setShowCoinBurst(true);
         setTimeout(() => setShowCoinBurst(false), 2000);
       } else {
-        soundFX.playFail();
+        hostTvAudioProxy.playFail();
       }
     }
 
@@ -201,7 +243,7 @@ export default function HostView() {
     }
   };
 
-  // Minigame States (Hooks personalizados)
+  // Minigame States (Hooks personalizados con proxy de audio silencioso a TV)
   const moviesState = useHostMoviesState({
     roomCode,
     roomSync,
@@ -212,7 +254,7 @@ export default function HostView() {
     selectedTeamCatalog,
     handleScoreChange,
     setRoundHits,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
   const babyPhotosState = useHostBabyPhotosState({
@@ -225,7 +267,7 @@ export default function HostView() {
     selectedTeamCatalog,
     handleScoreChange,
     setRoundHits,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
   const musicState = useHostMusicState({
@@ -238,7 +280,7 @@ export default function HostView() {
     selectedTeamCatalog,
     handleScoreChange,
     setRoundHits,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
   const triviaState = useHostTriviaState({
@@ -249,7 +291,7 @@ export default function HostView() {
     selectedTeamCatalog,
     handleScoreChange,
     setRoundHits,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
   const unDosTresState = useHostUnDosTresState({
@@ -257,7 +299,7 @@ export default function HostView() {
     teams,
     handleScoreChange,
     setRoundHits,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
   const bingoState = useHostBingoState({ roomSync });
@@ -268,10 +310,10 @@ export default function HostView() {
     selectedTeamCatalog,
     activeTeams,
     setRoundHits,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
-  // Power Cards State (Hook personalizado)
+  // Power Cards State (Hook personalizado con proxy de audio silencioso a TV)
   const powerCardsHook = useHostPowerCards({
     roomCode,
     room,
@@ -280,7 +322,7 @@ export default function HostView() {
     players,
     activeGame,
     handleScoreChange,
-    soundFX,
+    soundFX: hostTvAudioProxy,
   });
 
   const { powerCards, setPowerCards } = powerCardsHook;
@@ -315,7 +357,7 @@ export default function HostView() {
   };
 
   const handlePlaySoundEffect = (soundName: string) => {
-    soundFX.playSound(soundName);
+    // Modo anfitrión silencioso: se delega el sonido 100% a la pantalla de TV
     roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: soundName } });
   };
 
@@ -359,6 +401,10 @@ export default function HostView() {
   useEffect(() => {
     localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(players));
   }, [players, roomCode]);
+
+  useEffect(() => {
+    localStorage.setItem(`party_jukebox_${roomCode}`, JSON.stringify(jukeboxState));
+  }, [jukeboxState, roomCode]);
 
   // Sincronizar automáticamente el equipo seleccionado para puntos con el ganador del buzzer
   useEffect(() => {
@@ -629,7 +675,7 @@ export default function HostView() {
       payload: { status: 'podium' },
     });
     roomSync.broadcast({ type: 'JUKEBOX_COMMAND', payload: { action: 'play' } });
-    soundFX.playVictory();
+    hostTvAudioProxy.playVictory();
 
     if (isSupabaseConfigured) {
       await supabase.from('rooms').update({ status: 'podium' }).eq('code', roomCode);
@@ -700,38 +746,38 @@ export default function HostView() {
       };
     }
     return calculateTestVerdict({
-      gameId: testFinishedModal.gameId,
-      gameTitle: testFinishedModal.gameTitle,
-      teams: activeTeams,
-      roundHits,
-      manualRanks: manualPodiumRanks,
-      activeEffects: powerCards.activeEffects,
+      gameId: testFinishedModal.gameId || '',
+      gameTitle: testFinishedModal.gameTitle || '',
+      teams: activeTeams || [],
+      roundHits: roundHits || {},
+      manualRanks: manualPodiumRanks || {},
+      activeEffects: powerCards?.activeEffects || [],
     });
-  }, [testFinishedModal, activeTeams, roundHits, manualPodiumRanks, powerCards.activeEffects]);
+  }, [testFinishedModal, activeTeams, roundHits, manualPodiumRanks, powerCards?.activeEffects]);
 
   const handleApplyAutomatedVerdict = () => {
-    if (!testFinishedModal || currentVerdict.results.length === 0) return;
+    if (!testFinishedModal || !currentVerdict?.results || currentVerdict.results.length === 0) return;
 
     const updatedTeams = teams.map((t) => {
       const res = currentVerdict.results.find((r) => r.teamId === t.id);
       if (!res) return t;
       return {
         ...t,
-        score: Math.max(0, t.score + res.finalPoints),
+        score: Math.max(0, (t.score || 0) + (res.finalPoints || 0)),
       };
     });
     setTeams(updatedTeams);
     localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(updatedTeams));
     roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updatedTeams });
 
-    if (currentVerdict.consumedEffectIds.length > 0) {
-      const nextEffects = powerCards.activeEffects.filter(
+    if (currentVerdict.consumedEffectIds && currentVerdict.consumedEffectIds.length > 0) {
+      const nextEffects = (powerCards?.activeEffects || []).filter(
         (eff: any) => !currentVerdict.consumedEffectIds.includes(eff.id)
       );
-      const consumedCardIds = powerCards.activeEffects
+      const consumedCardIds = (powerCards?.activeEffects || [])
         .filter((eff: any) => currentVerdict.consumedEffectIds.includes(eff.id))
         .map((eff: any) => eff.cardId);
-      const nextDiscard = [...powerCards.discardPile, ...consumedCardIds];
+      const nextDiscard = [...(powerCards?.discardPile || []), ...consumedCardIds];
       const nextPowerCards: PowerCardsState = {
         ...powerCards,
         activeEffects: nextEffects,
@@ -742,6 +788,7 @@ export default function HostView() {
       roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextPowerCards });
     }
 
+    // Retransmitir veredicto aplicado: la TV activa su propia fanfarria y animación oficial
     roomSync.broadcast({
       type: 'TEST_VERDICT_APPLIED',
       payload: {
@@ -750,7 +797,6 @@ export default function HostView() {
       },
     });
 
-    soundFX.playVictory();
     setShowCoinBurst(true);
     setTimeout(() => setShowCoinBurst(false), 2500);
 
@@ -791,7 +837,7 @@ export default function HostView() {
       />
 
       {/* BARRA DE NAVEGACIÓN POR PESTAÑAS */}
-      <nav className="sticky top-2 z-30 grid grid-cols-5 gap-1 p-1 bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-2xl shadow-deco-gold backdrop-blur-xl">
+      <nav className="sticky top-2 z-50 grid grid-cols-5 gap-1 p-1 bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-2xl shadow-deco-gold backdrop-blur-xl">
         <button
           onClick={() => setActiveTab('live')}
           className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
@@ -1032,16 +1078,21 @@ export default function HostView() {
       {/* PESTAÑA: MESA DE SONIDOS */}
       {activeTab === 'soundboard' && (
         <div className="space-y-6">
-          <HostSoundboardTab
-            jukeboxState={jukeboxState}
-            onJukeboxCommand={(cmd) => {
-              roomSync.broadcast({
-                type: 'JUKEBOX_COMMAND',
-                payload: cmd,
-              });
-            }}
-            onPlaySoundEffect={handlePlaySoundEffect}
-          />
+          <ErrorBoundary
+            fallbackTitle="Fonoteca no disponible temporalmente"
+            fallbackMessage="Se ha aislado un error al cargar los mandos de sonido. Puedes reintentar la carga de la mesa de efectos."
+          >
+            <HostSoundboardTab
+              jukeboxState={jukeboxState}
+              onJukeboxCommand={(cmd) => {
+                roomSync.broadcast({
+                  type: 'JUKEBOX_COMMAND',
+                  payload: cmd,
+                });
+              }}
+              onPlaySoundEffect={handlePlaySoundEffect}
+            />
+          </ErrorBoundary>
         </div>
       )}
 
@@ -1074,50 +1125,56 @@ export default function HostView() {
 
       {/* MODAL: VEREDICTO AUTOMÁTICO DE PRUEBA FINALIZADA */}
       {testFinishedModal && (
-        <HostTestVerdictModal
-          testFinishedModal={testFinishedModal}
-          onClose={() => setTestFinishedModal(null)}
-          currentVerdict={currentVerdict}
-          teams={teams}
-          activeTeams={activeTeams}
-          manualPodiumRanks={manualPodiumRanks}
-          onSetManualPodiumRanks={setManualPodiumRanks}
-          onSetRoundHits={setRoundHits}
-          onApplyVerdict={handleApplyAutomatedVerdict}
-          selectedBonusTeam={powerCardsHook.selectedBonusTeam}
-          onSetSelectedBonusTeam={powerCardsHook.setSelectedBonusTeam}
-          onDealBonusCard={powerCardsHook.handleDealBonusCard}
-          powerCards={powerCards}
-          onClearAllActiveEffects={powerCardsHook.handleClearAllActiveEffects}
-          onTransferMaldicion={(sourceTeam, targetTeam) => {
-            const fromH = [...(powerCards.teamHands[sourceTeam.id] || [])];
-            const cardIdx = fromH.indexOf('la_maldicion');
-            if (cardIdx !== -1) fromH.splice(cardIdx, 1);
-            const targetHand = powerCards.teamHands[targetTeam.id] || [];
-            const wasFull = targetHand.length >= 3;
-            const toH = [...targetHand, 'la_maldicion'];
-            const nextState = {
-              ...powerCards,
-              teamHands: {
-                ...powerCards.teamHands,
-                [sourceTeam.id]: fromH,
-                [targetTeam.id]: toH,
-              },
-            };
-            setPowerCards(nextState);
-            localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
-            roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
-            alert(`☠️ ¡La Maldición ha sido transferida de ${sourceTeam.name} a ${targetTeam.name}!${wasFull ? `\n\n⚠️ ${targetTeam.name} ya tenía ${targetHand.length} cartas: La Maldición entra como carga parásita bloqueando cualquier nuevo robo de cartas hasta que jueguen cartas de su mano.` : ''}`);
-          }}
-          onSelectNextGame={(game) => {
-            setTestFinishedModal(null);
-            handleSelectGame(game);
-          }}
-          onReturnToLobby={() => {
-            setTestFinishedModal(null);
-            handleReturnToLobby();
-          }}
-        />
+        <ErrorBoundary
+          fallbackTitle="Aviso de Veredicto de Prueba"
+          fallbackMessage="Se ha presentado una incidencia al desplegar la ventana de veredicto. Puedes cerrar este aviso y continuar la partida normalmente."
+          onReset={() => setTestFinishedModal(null)}
+        >
+          <HostTestVerdictModal
+            testFinishedModal={testFinishedModal}
+            onClose={() => setTestFinishedModal(null)}
+            currentVerdict={currentVerdict}
+            teams={teams}
+            activeTeams={activeTeams}
+            manualPodiumRanks={manualPodiumRanks}
+            onSetManualPodiumRanks={setManualPodiumRanks}
+            onSetRoundHits={setRoundHits}
+            onApplyVerdict={handleApplyAutomatedVerdict}
+            selectedBonusTeam={powerCardsHook.selectedBonusTeam}
+            onSetSelectedBonusTeam={powerCardsHook.setSelectedBonusTeam}
+            onDealBonusCard={powerCardsHook.handleDealBonusCard}
+            powerCards={powerCards}
+            onClearAllActiveEffects={powerCardsHook.handleClearAllActiveEffects}
+            onTransferMaldicion={(sourceTeam, targetTeam) => {
+              const fromH = [...(powerCards?.teamHands?.[sourceTeam.id] || [])];
+              const cardIdx = fromH.indexOf('la_maldicion');
+              if (cardIdx !== -1) fromH.splice(cardIdx, 1);
+              const targetHand = powerCards?.teamHands?.[targetTeam.id] || [];
+              const wasFull = targetHand.length >= 3;
+              const toH = [...targetHand, 'la_maldicion'];
+              const nextState = {
+                ...powerCards,
+                teamHands: {
+                  ...(powerCards?.teamHands || {}),
+                  [sourceTeam.id]: fromH,
+                  [targetTeam.id]: toH,
+                },
+              };
+              setPowerCards(nextState);
+              localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(nextState));
+              roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: nextState });
+              alert(`☠️ ¡La Maldición ha sido transferida de ${sourceTeam.name} a ${targetTeam.name}!${wasFull ? `\n\n⚠️ ${targetTeam.name} ya tenía ${targetHand.length} cartas: La Maldición entra como carga parásita bloqueando cualquier nuevo robo de cartas hasta que jueguen cartas de su mano.` : ''}`);
+            }}
+            onSelectNextGame={(game) => {
+              setTestFinishedModal(null);
+              handleSelectGame(game);
+            }}
+            onReturnToLobby={() => {
+              setTestFinishedModal(null);
+              handleReturnToLobby();
+            }}
+          />
+        </ErrorBoundary>
       )}
       </main>
     </HellCasinoBackground>
