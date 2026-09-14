@@ -85,7 +85,11 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
     setManualLandscapeEntered(true);
   };
 
-  const handleExitFullscreen = async () => {
+  const handleExitFullscreen = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     await exitFullscreen();
     setManualLandscapeEntered(false);
   };
@@ -440,6 +444,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
         {/* BOTÓN PARA SALIR DE PANTALLA COMPLETA */}
         <button
           onClick={handleExitFullscreen}
+          onPointerDown={(e) => e.stopPropagation()}
           className="w-full py-1 text-[9px] font-vintage text-amber-300/70 hover:text-amber-200 flex items-center justify-center gap-1 border border-[#d4af37]/25 rounded-lg bg-[#101018]"
           title="Salir de pantalla completa y volver"
         >

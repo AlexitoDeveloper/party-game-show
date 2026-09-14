@@ -18,7 +18,9 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
   const { isFullscreen, isSupported, isStandalone, toggleFullscreen } = useFullscreen();
   const [showIosModal, setShowIosModal] = useState(false);
 
-  const handleClick = async () => {
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     // Si la API no está soportada (típico en iPhone Safari), mostramos el modal explicativo
     if (!isSupported && !isStandalone) {
       setShowIosModal(true);
@@ -49,6 +51,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
       <button
         type="button"
         onClick={handleClick}
+        onPointerDown={(e) => e.stopPropagation()}
         className={`rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 select-none ${
           isFullscreen
             ? 'bg-amber-400/20 text-amber-300 border border-amber-400/60 shadow-[0_0_10px_rgba(212,175,55,0.3)]'

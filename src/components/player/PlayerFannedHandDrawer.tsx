@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, X } from 'lucide-react';
 import { PowerCard, PowerCardsState, getPowerCardById } from '../../lib/powerCards';
@@ -7,6 +7,7 @@ import { TEAMS_CATALOG, TeamCatalogItem } from '../../lib/constants';
 import PowerCardView from '../PowerCardView';
 import { FannedHandDeck } from '../cards/FannedHandDeck';
 import { playerHaptics } from '../../lib/playerHaptics';
+import { isRecentFullscreenTransition } from '../../hooks/useFullscreen';
 
 interface PlayerFannedHandDrawerProps {
   myTeamCards: PowerCard[];
@@ -50,7 +51,14 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
   const [targetCardId, setTargetCardId] = useState<string | undefined>(undefined);
   const [isManualPlayerEntry, setIsManualPlayerEntry] = useState(false);
 
-  const toggleDrawer = () => {
+  const toggleDrawer = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    // Evitar que toques o clics accidentales/fantasmas durante o justo tras salir de pantalla completa abran la mano
+    if (isRecentFullscreenTransition()) {
+      return;
+    }
     playerHaptics.cardSlide();
     setIsOpen((prev) => !prev);
     if (isOpen) {
@@ -89,11 +97,12 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
       {/* 1. BOTÓN / LENGÜETA INFERIOR (SOLO VISIBLE CUANDO EL PANEL ESTÁ CERRADO) */}
       <AnimatePresence>
         {!isOpen && (
-          <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none select-none pb-0">
+          <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none select-none pb-[max(env(safe-area-inset-bottom,0px),4px)]">
             <motion.button
               key="peek-flap-btn"
               type="button"
               onClick={toggleDrawer}
+              onPointerDown={(e) => e.stopPropagation()}
               initial={{ y: 25, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 25, opacity: 0 }}

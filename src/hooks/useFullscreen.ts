@@ -56,6 +56,16 @@ export function getIsFullscreen(): boolean {
   );
 }
 
+let lastFullscreenChangeTimestamp = 0;
+
+export function recordFullscreenTransition(): void {
+  lastFullscreenChangeTimestamp = Date.now();
+}
+
+export function isRecentFullscreenTransition(thresholdMs = 650): boolean {
+  return Date.now() - lastFullscreenChangeTimestamp < thresholdMs;
+}
+
 /**
  * Hook universal para gestionar el modo pantalla completa (Fullscreen API)
  * tanto en ordenadores como en dispositivos móviles (Android / iOS / Tablets).
@@ -66,6 +76,7 @@ export function useFullscreen(): FullscreenState {
   const [isStandalone] = useState<boolean>(isRunningStandalone);
 
   const checkState = useCallback(() => {
+    recordFullscreenTransition();
     setIsFullscreen(getIsFullscreen());
   }, []);
 
@@ -90,6 +101,7 @@ export function useFullscreen(): FullscreenState {
 
   const enterFullscreen = useCallback(async (): Promise<boolean> => {
     try {
+      recordFullscreenTransition();
       const docEl = document.documentElement as any;
       if (docEl.requestFullscreen) {
         await docEl.requestFullscreen();
@@ -103,6 +115,7 @@ export function useFullscreen(): FullscreenState {
         return false;
       }
       setIsFullscreen(true);
+      recordFullscreenTransition();
       return true;
     } catch (err) {
       console.warn('No se pudo entrar a pantalla completa:', err);
@@ -112,6 +125,7 @@ export function useFullscreen(): FullscreenState {
 
   const exitFullscreen = useCallback(async (): Promise<boolean> => {
     try {
+      recordFullscreenTransition();
       const doc = document as any;
       if (doc.exitFullscreen) {
         await doc.exitFullscreen();
@@ -125,6 +139,7 @@ export function useFullscreen(): FullscreenState {
         return false;
       }
       setIsFullscreen(false);
+      recordFullscreenTransition();
       return true;
     } catch (err) {
       console.warn('No se pudo salir de pantalla completa:', err);
