@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SongTrack } from '../../lib/musicData';
+import { SongTrack, CURATED_SONGS } from '../../lib/musicData';
 import { searchSpotifyTracks, fetchSpotifyPlaylistTracks } from '../../lib/spotify';
 import { RoomSync } from '../../lib/roomSync';
 import { BuzzerPressPayload, Team } from '../../lib/types';
@@ -36,16 +36,19 @@ export function useHostMusicState({
   const [musicBank, setMusicBank] = useState<SongTrack[]>(() => {
     const saved = localStorage.getItem(`party_music_bank_${roomCode}`);
     if (saved) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
     }
-    return [];
+    return CURATED_SONGS;
   });
   const [currentSongTrack, setCurrentSongTrack] = useState<SongTrack | null>(() => {
     const saved = localStorage.getItem(`party_current_song_${roomCode}`);
     if (saved) {
       try { return JSON.parse(saved); } catch {}
     }
-    return null;
+    return CURATED_SONGS[0] || null;
   });
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicRevealed, setMusicRevealed] = useState(false);

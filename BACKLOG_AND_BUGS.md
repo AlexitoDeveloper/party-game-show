@@ -1,151 +1,44 @@
-# 📋 Registro de Tareas Pendientes, Mejoras y Bugs Reportados
+# 📋 Backlog de Tareas Pendientes, Mejoras y Bugs
 
-Documento de seguimiento de incidencias, peticiones de usuario y mejoras pendientes para la aplicación **Party Game Show (1930s Dark Rubber Hose / Casino Art Déco)**.
-
----
-
-## 📌 Estado Actual del Roadmap General
-- [x] **Fase 1**: Núcleo Visual Art Déco en `index.css` (paleta negro azabache, oro antiguo, carmesí, vidriera y marcos de naipes con palos ♠, ♥, ♣, ♦).
-- [x] **Fase 2**: `TvView` (Pantalla de TV con marco de vidriera, minijuegos acotados, footer de puntuación de partida y eliminación de scroll).
-- [x] **Fase 3**: `PlayerView & Buzzer` (Móvil del jugador: ficha de casino clandestino / campana de latón pulido con retroalimentación háptica y mano de cartas desplegable).
-- [x] **Fase 4**: `HostView` (Consola del anfitrión con paneles de ébano, tipografía Broadway y controles de minijuegos unificados).
+Documento de seguimiento de incidencias abiertas, tareas pendientes y próximas mejoras para la aplicación **Party Game Show (1930s Dark Rubber Hose / Casino Art Déco)**.
 
 ---
 
-## 🛠️ Incidencias y Mejoras Reportadas (Pendientes)
+## 🛠️ Tareas Pendientes y Próximas Mejoras
 
-### 1. 🎬 Pantalla de Introducción / Briefing previo al inicio de cada juego - [x] COMPLETADO
-- **Tipo**: Mejora de Experiencia de Usuario (UX) / Flujo de Partida.
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Subfase de Minijuego (`room.game_phase: 'briefing' | 'active'`)**:
-    - Al seleccionar cualquier juego desde el catálogo del Host o avanzar de ronda, la partida inicia automáticamente en subfase `'briefing'`.
-    - En `'briefing'`, los pulsadores y temporizadores quedan en pausa de seguridad, dando control absoluto al Maestro de Ceremonias.
-  - **Cartel Teatral Art Déco 1930s (`TvGameBriefingCard.tsx`) en TV**:
-    - Marco de vidriera y naipes franceses (`hell-card-frame` con pips ♠, ♥, ♣, ♦).
-    - Columna izquierda: Ilustración o cartel oficial del juego con marco dorado reflectante (`GameCoverImage.tsx`).
-    - Columna derecha: Cabecera con número de juego oficial (1 al 10), categoría, título monumental en tipografía Broadway con degradado de oro, sinopsis narrativa, viñetas estéticas de reglas y tabla de puntuaciones destacadas.
-    - Banner inferior de latón con latido luminoso indicando que la sala está atenta a las instrucciones.
-  - **Cargador Inteligente de Portadas de Juegos (`GameCoverImage.tsx`)**:
-    - Carpeta [`public/covers/`](file:///c:/Users/ald19/Desktop/Documentos/Proyectos/party-game-show/public/covers/) creada con guía [`README.txt`](file:///c:/Users/ald19/Desktop/Documentos/Proyectos/party-game-show/public/covers/README.txt).
-    - Soporte multi-extensión (.png, .jpg, .jpeg, .webp) y resolución automática por número o nombre: `1_hits_and_run`, `2_trivial_del_rey`, `3_mensaje_al_rey`, `4_casino_del_diablo`, `5_cine_mudo`, `6_quien_demonios_es`, `7_el_precio_del_tiempo`, `8_el_enigma_del_rey`, `9_tiro_al_vaso`, `10_los_numeros_del_destino`.
-    - Fallback visual de cartel Art Déco con rosetón geométrico, tipografía Broadway y emblema central en caso de que aún no se haya copiado el archivo.
-  - **Control en la Consola del Anfitrión (`HostLivePlayingConsole.tsx`)**:
-    - Banner destacado de Briefing con botón dorado: *"▶️ Iniciar Prueba"* para arrancar la ronda en directo en la TV y móviles al unísono.
-    - Botón *"Ver Reglas / Briefing en TV"* disponible durante la fase activa para que el anfitrión pueda repasar las normas en cualquier momento.
-  - **Pantalla de Espera en el Móvil del Concursante (`PlayerView.tsx`)**:
-    - Tarjeta elegante con miniatura del cartel, instrucciones de quién debe salir a jugar por el equipo (`participantsLabel` y descripción) y aviso de preparación.
+### 1. 🖼️ Compresión WebP y Miniaturas de Cartas de Poder en Móvil
+- **Prioridad:** Alta (Rendimiento Móvil / Conexión 4G/5G).
+- **Descripción:**
+  - Convertir las 19 imágenes maestras de `public/new_cards/` (actualmente ~64 MB en JPEGs de 3.5 MB cada uno) a WebP o AVIF comprimido (~200 KB por carta).
+  - Crear miniaturas en `public/new_cards/thumbs/` para la mano del jugador móvil (`PlayerCardHandModal` y `PlayerFannedHandDrawer`), reservando la alta resolución para la proyección monumental en TV (`CinematicCardPlayReveal.tsx`).
 
 ---
 
-### 2. 🎱 Cartones Virtuales Interactivos de Bingo en Móvil (PlayerView) - [x] COMPLETADO
-- **Tipo**: Nueva Funcionalidad / Experiencia de Jugador.
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Generador Matemático de Cartones (90 Bolas)**:
-    - Módulo [`bingoTicketGenerator.ts`](file:///c:/Users/ald19/Desktop/Documentos/Proyectos/party-game-show/src/lib/bingoTicketGenerator.ts): matriz 3×9 (5 números y 4 huecos por fila, 15 números por cartón, columnas de decenas 1-9 a 80-90 ordenadas de forma ascendente).
-    - **1 Único Cartón Inmutable por Jugador**: Asignación aleatoria única al conectar, sin opción de cambiar o regenerar números. Persistencia en `localStorage` vinculada al código de sala y jugador (`party_bingo_ticket_${roomCode}_${playerId}`).
-  - **Diseño Horizontal Dividido (*Split Landscape*) y Pantalla Completa Obligatoria**:
-    - **El cartón NUNCA sale en vertical**: en vertical solo se muestra la pantalla de instrucciones con la animación Art Déco invitando a girar el terminal (`🔄 Gira tu dispositivo a horizontal`).
-    - **Retorno automático al salir de pantalla completa**: si el jugador sale de la pantalla completa (pulsando salir, tecla escape o gesto del sistema), vuelve inmediatamente a la pantalla inicial donde se le indica que debe poner pantalla completa y girar el móvil.
-    - En horizontal y pantalla completa: layout dividido sin scroll (`100dvh`). Barra lateral izquierda con la última bola extraída, contador de bolas, botón para salir y botones de acción rápida. Cuadrícula principal en la derecha con fichas de casino hápticas y halo dorado inteligente.
-  - **Cantar Línea y Cantar Bingo en Tiempo Real**:
-    - Modal de confirmación con cotejo previo.
-    - Emisión de `BINGO_CLAIM` vía `roomSync`.
-    - **HostView**: Alerta prioritaria con cotejo visual de los números cantados (verde si ya salieron en el bombo, rojo si no) y botón de un click para validar y adjudicar los puntos (+2 pts Línea / +6 pts Bingo).
-    - **TvView**: Celebración cinemática en pantalla completa con los datos del jugador, equipo, números cantados, confeti y fanfarria.
+### 2. 🔒 Blindaje de Políticas RLS en Supabase
+- **Prioridad:** Media (Seguridad / Integridad de Datos).
+- **Descripción:**
+  - Actualizar `src/supabase/schema.sql` para que las políticas de `UPDATE` sobre las tablas `rooms`, `teams` y `game_states` no utilicen `USING (true)`.
+  - Exigir validación del `host_token` para que únicamente el anfitrión legítimo de la sala pueda actualizar puntuaciones y estados desde el cliente de Supabase.
 
 ---
 
-### 3. 🔒 Bloqueo de Canto de Línea y Bingo ya Validados - [x] COMPLETADO
-- **Tipo**: Regla de Juego / Consistencia Multijugador.
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Regla de Validación Única**:
-    - Una vez que el Maestro de Ceremonias valida una Línea (+2 pts), ningún jugador puede volver a cantar Línea en esa partida.
-    - Una vez que el Maestro de Ceremonias valida un Bingo (+6 pts), la partida queda resuelta y cerrada, impidiendo nuevos cantos.
-  - **Bloqueo en el Móvil del Jugador (`PlayerBingoSection.tsx`)**:
-    - Los botones pasan a estado bloqueado y tachado (`🔒 Línea Validada` / `🏆 Bingo Validado`) al validarse el premio.
-    - Apertura de modal y emisión de reclamos bloqueados tanto a nivel visual como lógico.
-    - Si un jugador tenía abierto el modal al momento en que otro jugador es premiado, se cierra automáticamente informando con un toast.
-  - **Protección y Limpieza en la Consola del Anfitrión (`useHostBingoState.ts` / `HostBingoControls.tsx`)**:
-    - Las reclamaciones entrantes extemporáneas de modalidades ya otorgadas se descartan de inmediato.
-    - Al aceptar una Línea o Bingo, se descartan automáticamente de `pendingClaims` los demás cantos pendientes de esa misma modalidad.
-    - Indicador de estado y desactivación del botón de aceptación si una reclamación ya fue otorgada.
-    - Al reiniciar el bombo con *"Reiniciar Bombo"*, los estados de línea y bingo validados se restablecen a disponibles.
-  - **Sincronización en Sala y Pantalla TV (`roomSync.ts` / `TvView.tsx` / `TvBingoGame.tsx`)**:
-    - Los eventos `BINGO_STATE_UPDATE` y `BINGO_CLAIM_RESOLVE` sincronizan `lineAwarded`, `bingoAwarded`, `lineWinner` y `bingoWinner`.
-    - La cabecera de la TV muestra insignias en tiempo real indicando a quién se le otorgó la Línea y quién ganó el Bingo.
+### 3. 🎵 Migración de Scraper de Spotify a la API Oficial
+- **Prioridad:** Media (Fiabilidad de Servicios Externos).
+- **Descripción:**
+  - Sustituir el scraper regex de `<script id="__NEXT_DATA__">` en `api/spotify-playlist/[id].ts` por llamadas directas a los endpoints oficiales de Spotify API utilizando el token de servidor ya configurado en `/api/spotify-token`.
+  - Mantener el scraper únicamente como mecanismo de fallback secundario.
 
 ---
 
-### 4. 👥 Selector de Representantes de Equipo, Concurrencia de 20 Dispositivos y Reconexión Blindada - [x] COMPLETADO
-- **Tipo**: Arquitectura de Red / Lógica de Concurso / UX Multijugador.
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Selector Táctil de Representantes para el Capitán (`CaptainRepSelectorModal.tsx`)**:
-    - En minijuegos que requieren representantes (`solo`, `duo`, `delegates`), el Capitán tiene el botón dorado *`👥 Designar Representantes`*.
-    - Modal Art Déco con selección táctil de compañeros, límite dinámico según el juego y confirmación al instante.
-    - Emisión del evento `CAPTAIN_REPRESENTATIVE` con array múltiple de IDs y nombres.
-  - **Rol de Apoyo y Bloqueo Amigable en Móvil (`PlayerBuzzerSection.tsx` & `PlayerView.tsx`)**:
-    - **Representantes en el ruedo**: Timbre arcade de bronce desbloqueado con animación y háptico.
-    - **Compañeros en el banquillo**: Pantalla distinguida *`🍿 EN EL BANQUILLO - Asesora a tu equipo en la mesa`*, mostrando quiénes son los representantes activos y evitando pulsaciones accidentales.
-  - **Supervisión en la Consola del Host y la TV (`HostLivePlayingConsole.tsx` & `TvGameBriefingCard.tsx`)**:
-    - Panel de representantes en la consola del Maestro de Ceremonias con los combatientes de cada bando.
-    - Tira de combatientes en la pantalla de TV durante el Briefing de cada minijuego.
-  - **Garantía de 20 Dispositivos Concurrentes en Vercel sobre Red Móvil 4G/5G (`roomSync.ts`)**:
-    - Canal centralizado de Supabase Realtime (WebSockets seguros por puerto 443) inmune al cortafuegos CGNAT de los operadores móviles.
-    - Cola de mensajes pendientes (`pendingSupabaseQueue`) para que ningún evento se descarte mientras el socket conecta.
-    - Pings de latido para mantener los túneles móviles despiertos.
-  - **Reconexión Inmediata sin Pérdida de Datos ante Bloqueo de Pantalla**:
-    - Migración de sesión a `localStorage` persistente (`party_session_`, `party_nick_`, `party_team_`, `party_avatar_`).
-    - Si el usuario bloquea el móvil, se sale a otra app o se suspende la pestaña en Safari/Chrome, al volver a abrir el enlace entra en **0 segundos** con su mismo nombre, bando, cartón de bingo y capitanía.
-    - Escuchadores de `visibilitychange`, `focus` y `online` para reconectar y sincronizar la partida en milisegundos en cuanto enciende la pantalla.
+### 4. 🎧 Clips de Audio Locales de 30s para Partidas Sin Internet
+- **Prioridad:** Baja / Experiencia Offline.
+- **Descripción:**
+  - Almacenar clips locales de 30 segundos en `public/sounds/music/` para los 12 temas del Starter Pack de `src/lib/musicData.ts`.
+  - Permitir que el minijuego musical *Hits and RUN* funcione sin depender de conexiones activas a Spotify ni a iTunes cuando se juegue en modo offline.
 
 ---
 
-### 5. 🃏 Proyección Panorámica 16:9 y Alta Definición de Cartas de Poder en TV - [x] COMPLETADO
-- **Tipo**: Renderizado Visual / Experiencia en Pantalla Grande (TV).
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Identificación de Causa**: Las cartas maestras oficiales cuentan con arte en 1696×2528 px, pero en `CinematicCardPlayReveal.tsx` se forzaban en un contenedor vertical de solo 280px con `object-cover`, produciendo interpolación borrosa y recortando el marco dorado decorativo.
-  - **Layout Monumental Widescreen 16:9 (`CinematicCardPlayReveal.tsx`)**:
-    - Distribución horizontal en dos columnas en pantalla de TV / pantallas medianas y grandes (`max-w-5xl md:flex-row`).
-    - **Naipe a Gran Escala**: La carta se proyecta a ~64vh de altura (`aspect-[1696/2528]`) con marco Art Déco y `imageRendering: '-webkit-optimize-contrast'`, mostrando todos los detalles dorados, filigranas y tipografías en su resolución nativa nítida sin recortes.
-    - **Ficha Teatral de Efecto**: Columna lateral con título en Broadway monumental, etiqueta de rareza, timing, descripción amplia de fácil lectura a larga distancia y badges de objetivos / limitaciones sensoriales.
-
----
-
-### 6. 📱 Eliminación de Scroll Vertical y Bloqueo de Rebote en Pantalla Completa Móvil - [x] COMPLETADO
-- **Tipo**: UX Móvil / Fullscreen API / Estabilidad de Mando Táctil.
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Hoja de Estilos Global (`index.css`)**:
-    - Configuración estricta de `html`, `body` y `#root` con `height: 100%`, `width: 100%` y `overscroll-behavior: none; overscroll-behavior-y: none;`.
-    - Sobreescritura de la regla por defecto del navegador en `:fullscreen` (que asignaba `overflow: auto !important`) forzando `overflow: hidden !important; width: 100% !important; height: 100% !important;`.
-    - Bloqueo de gestos accidentales de zoom con `touch-action: manipulation;`.
-  - **Fondo Art Déco Adaptado (`HellCasinoBackground.tsx`)**:
-    - Prop `lockScreenHeight={true}` para fijar `w-full h-full min-h-[100dvh] max-h-[100dvh] overflow-hidden` y evitar que `min-h-screen` expanda verticalmente la ventana.
-  - **Mando Táctil Inmóvil (`PlayerView.tsx`)**:
-    - Contenedor principal `<main>` anclado a `h-full min-h-[100dvh] max-h-[100dvh] overflow-hidden`.
-    - Contenedores interiores (`PASO 1`, `PASO 2`, `PASO 3C`) con `min-h-0`, `pb-12` optimizado y scroll interno invisible (`.no-scrollbar`) solo si la pantalla es muy corta, impidiendo cualquier desplazamiento o rebote de la ventana completa del navegador.
-
----
-
-### 7. 🃏 Prevención de Apertura Accidental de Mano de Naipes al Salir de Pantalla Completa - [x] COMPLETADO
-- **Tipo**: Bugfix UX / Eventos Táctiles / Fullscreen API.
-- **Estado**: ✅ **Completado e Implementado**.
-- **Solución Implementada**:
-  - **Causa Raíz**:
-    - Al salir de pantalla completa (tanto en el botón del encabezado como en la barra lateral del cartón de Bingo o mediante el gesto del sistema), el cambio brusco de altura del viewport y el desplazamiento de coordenadas táctiles (efecto *ghost click* o propagación del evento táctil) impactaba sobre la lengüeta inferior de la bandeja de naipes (`peek-flap-btn`).
-    - Además, en teléfonos con barra de gestos inferior de navegación, la lengüeta colisionaba físicamente con la zona de arrastre del sistema operativo.
-  - **Bloqueo Inteligente de Transición (`useFullscreen.ts` & `PlayerFannedHandDrawer.tsx`)**:
-    - Se incorporó `recordFullscreenTransition()` e `isRecentFullscreenTransition()` para registrar marcas de tiempo precisas en cualquier cambio de pantalla completa.
-    - Si se produce un evento de clic o toque en la lengüeta durante o hasta 650 ms después de un cambio de pantalla completa, se descarta automáticamente.
-    - Se añadieron `onPointerDown={(e) => e.stopPropagation()}` y `e.stopPropagation()` en `FullscreenButton`, `handleExitFullscreen` y en el disparador de la mano para aislar completamente el flujo de eventos.
-    - Se añadió margen de seguridad `pb-[max(env(safe-area-inset-bottom,0px),4px)]` en el anclaje inferior para respetar la barra de navegación del terminal.
-
----
-*Última actualización: 14 de septiembre de 2026*
-
-
+### 5. 🌐 Configuración de Credenciales TURN Privadas
+- **Prioridad:** Baja / Operativa de Producción.
+- **Descripción:**
+  - Parametrizar en variables de entorno los servidores TURN de `roomSync.ts` para posibilitar el uso de infraestructura WebRTC privada (ej. Metered privado o Cloudflare Calls) en eventos comerciales masivos.

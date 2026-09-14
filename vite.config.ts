@@ -1,9 +1,9 @@
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
 // Plugin de relé WebSocket local para sincronizar teléfonos móviles y PC en la misma red Wi-Fi sin configuración
-function partyRelayPlugin(): Plugin {
+function partyRelayPlugin(env: Record<string, string>): Plugin {
   return {
     name: 'party-relay-plugin',
     configureServer(server) {
@@ -13,6 +13,42 @@ function partyRelayPlugin(): Plugin {
           server.ws.send({ type: 'custom', event: 'party-event', data });
         } catch {
           try { (server.ws as any).send('party-event', data); } catch {}
+        }
+      });
+
+      // Endpoint para obtener el token oficial de Spotify sin exponer el Client Secret al cliente
+      server.middlewares.use('/api/spotify-token', async (req, res) => {
+        const clientId = env.SPOTIFY_CLIENT_ID || env.VITE_SPOTIFY_CLIENT_ID;
+        const clientSecret = env.SPOTIFY_CLIENT_SECRET || env.VITE_SPOTIFY_CLIENT_SECRET;
+        if (!clientId || !clientSecret) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Faltan credenciales SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET' }));
+          return;
+        }
+        try {
+          const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+          const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Authorization: `Basic ${credentials}`,
+            },
+            body: 'grant_type=client_credentials',
+          });
+          if (!tokenRes.ok) {
+            res.statusCode = tokenRes.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Error autenticando con Spotify', details: await tokenRes.text() }));
+            return;
+          }
+          const data = await tokenRes.json();
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ access_token: data.access_token, expires_in: data.expires_in }));
+        } catch (err) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: String(err) }));
         }
       });
 
@@ -101,15 +137,36 @@ function partyRelayPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), partyRelayPlugin()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+
+  return {
+    plugins: [react(), partyRelayPlugin(env)],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  server: {
-    host: true,
-    port: 5173,
-  },
+    server: {
+      host: true,
+      port: 5173,
+    },
+    build: {
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('three')) return 'vendor-three';
+              if (id.includes('peerjs')) return 'vendor-peer';
+              if (id.includes('@dicebear')) return 'vendor-dicebear';
+              if (id.includes('framer-motion') || id.includes('gsap')) return 'vendor-animation';
+              if (id.includes('lucide-react') || id.includes('@phosphor-icons')) return 'vendor-icons';
+              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) return 'vendor-react';
+            }
+          },
+        },
+      },
+    },
+  };
 });

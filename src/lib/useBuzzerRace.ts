@@ -6,10 +6,17 @@ import { BuzzerPressPayload } from './types';
 interface UseBuzzerRaceProps {
   roomCode: string;
   isHostOrTv?: boolean;
+  isArbitrator?: boolean;
   roomSync?: RoomSync;
 }
 
-export function useBuzzerRace({ roomCode, isHostOrTv = false, roomSync: propRoomSync }: UseBuzzerRaceProps) {
+export function useBuzzerRace({
+  roomCode,
+  isHostOrTv = false,
+  isArbitrator: propIsArbitrator,
+  roomSync: propRoomSync,
+}: UseBuzzerRaceProps) {
+  const isArbitrator = propIsArbitrator !== undefined ? propIsArbitrator : isHostOrTv;
   const [winner, setWinner] = useState<BuzzerPressPayload | null>(null);
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const lockRef = useRef<boolean>(false);
@@ -35,14 +42,14 @@ export function useBuzzerRace({ roomCode, isHostOrTv = false, roomSync: propRoom
         // Si ya está bloqueado, descartar cualquier otra pulsación
         if (lockRef.current) return;
 
-        // Si somos TV o Host, actuamos como Árbitro Maestro
-        if (isHostOrTv) {
+        // Únicamente la entidad designada como Árbitro Maestro bloquea y arbitra
+        if (isArbitrator) {
           lockRef.current = true;
           setIsLocked(true);
           setWinner(press);
           soundFX.playBuzzer();
 
-          // Retransmitir confirmación de bloqueo a todos los móviles y pantallas
+          // Retransmitir confirmación oficial de bloqueo a la TV, móviles y demás pantallas
           roomSync.broadcast({
             type: 'BUZZER_LOCKED',
             payload: press,
@@ -54,8 +61,8 @@ export function useBuzzerRace({ roomCode, isHostOrTv = false, roomSync: propRoom
         setIsLocked(true);
         setWinner(lockedPayload);
 
-        // Feedback sonoro si no se había reproducido
-        if (!isHostOrTv) {
+        // Si somos oyentes / visualizadores (TV o jugador), reproducir feedback sonoro
+        if (!isArbitrator) {
           soundFX.playBuzzer();
         }
       } else if (event.type === 'BUZZER_RESET') {
@@ -68,7 +75,7 @@ export function useBuzzerRace({ roomCode, isHostOrTv = false, roomSync: propRoom
     return () => {
       unsubscribe();
     };
-  }, [roomSync, isHostOrTv, roomCode]);
+  }, [roomSync, isArbitrator, roomCode]);
 
   // Función para pulsar el buzzer (usada por los mandos móviles de los jugadores)
   const pressBuzzer = useCallback(

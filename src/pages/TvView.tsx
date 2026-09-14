@@ -203,10 +203,11 @@ export default function TvView() {
     };
   }, [roomSync]);
 
-  // Hook del motor de carreras con arbitraje en TV
+  // Hook del motor de carreras como receptor/visualizador en TV (el Host es el árbitro maestro)
   const { winner: buzzerWinner, isLocked: buzzerLocked, resetBuzzer } = useBuzzerRace({
     roomCode,
     isHostOrTv: true,
+    isArbitrator: false,
     roomSync,
   });
 
@@ -1330,7 +1331,7 @@ export default function TvView() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 my-4">
                     {activeTeams.map((team) => {
                       const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
-                      const cups = roundHits[team.id] || 0;
+                      const cups = roundHits[team.id] ?? roundHits[`team_${team.team_index}`] ?? roundHits[String(team.team_index)] ?? 0;
                       return (
                         <div key={team.id} className="p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 flex flex-col items-center shadow-md">
                           <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2 shadow`} />

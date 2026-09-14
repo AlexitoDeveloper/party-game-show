@@ -1,11 +1,5 @@
 import { SongTrack } from './musicData';
 
-const DEFAULT_CLIENT_ID = 'd4fbf20281a04b74a9e5f82f063b5cb5';
-const DEFAULT_CLIENT_SECRET = 'fea04de89fdb4c4bb747bd7ae26ec1ed';
-
-const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || DEFAULT_CLIENT_ID;
-const CLIENT_SECRET = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET || DEFAULT_CLIENT_SECRET;
-
 interface CachedToken {
   token: string;
   expiresAt: number;
@@ -14,7 +8,8 @@ interface CachedToken {
 let tokenCache: CachedToken | null = null;
 
 /**
- * Obtiene o reutiliza un token de acceso a Spotify usando Client Credentials
+ * Obtiene o reutiliza un token de acceso a Spotify de forma segura
+ * Prioriza el endpoint servidor /api/spotify-token para proteger las credenciales.
  */
 export async function getSpotifyAccessToken(): Promise<string | null> {
   const now = Date.now();
@@ -22,32 +17,52 @@ export async function getSpotifyAccessToken(): Promise<string | null> {
     return tokenCache.token;
   }
 
+  // 1. Intentar obtener el token desde el endpoint seguro del servidor / Vite middleware
   try {
-    const credentials = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
-    const res = await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${credentials}`,
-      },
-      body: 'grant_type=client_credentials',
-    });
-
-    if (!res.ok) {
-      console.error('Error al autenticar con Spotify API:', await res.text());
-      return null;
+    const res = await fetch('/api/spotify-token');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.access_token) {
+        tokenCache = {
+          token: data.access_token,
+          expiresAt: now + (data.expires_in || 3600) * 1000,
+        };
+        return tokenCache.token;
+      }
     }
-
-    const data = await res.json();
-    tokenCache = {
-      token: data.access_token,
-      expiresAt: now + (data.expires_in || 3600) * 1000,
-    };
-    return tokenCache.token;
-  } catch (error) {
-    console.error('Error de red al conectar con Spotify:', error);
-    return null;
+  } catch {
+    // Si el endpoint serverless no está disponible, continuar con el fallback
   }
+
+  // 2. Respaldo directo en desarrollo si existen variables locales en el entorno
+  const envId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+  const envSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+  if (envId && envSecret) {
+    try {
+      const credentials = btoa(`${envId}:${envSecret}`);
+      const res = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${credentials}`,
+        },
+        body: 'grant_type=client_credentials',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        tokenCache = {
+          token: data.access_token,
+          expiresAt: now + (data.expires_in || 3600) * 1000,
+        };
+        return tokenCache.token;
+      }
+    } catch (error) {
+      console.error('Error al conectar con Spotify:', error);
+    }
+  }
+
+  return null;
 }
 
 /**

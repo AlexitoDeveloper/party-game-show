@@ -76,10 +76,12 @@ export default function HostView() {
       try { return JSON.parse(saved); } catch {}
     }
     return TEAMS_CATALOG.map((item) => ({
-      id: `team_${roomCode}_${item.index}`,
+      id: `team_${item.index}`,
       room_id: 'room_' + roomCode,
       name: item.name,
+      theme: item.theme,
       color_hex: item.colorHex,
+      color_tw: item.twBg,
       score: 0,
       team_index: item.index,
       is_active: item.index <= 5,
@@ -150,9 +152,14 @@ export default function HostView() {
     suggestedNextGame?: GameDefinition;
   } | null>(null);
 
-  // Instancia de sincronización multi-pantalla como anfitrión
+  // Instancia de sincronización multi-pantalla como anfitrión (Árbitro Maestro oficial)
   const roomSync = useMemo(() => getRoomSync(roomCode, 'host'), [roomCode]);
-  const { resetBuzzer, isLocked, winner } = useBuzzerRace({ roomCode, isHostOrTv: true, roomSync });
+  const { resetBuzzer, isLocked, winner } = useBuzzerRace({
+    roomCode,
+    isHostOrTv: true,
+    isArbitrator: true,
+    roomSync,
+  });
 
   // Proxy de audio silencioso para el Host:
   // El Host es 100% silencioso y retransmite todos los sonidos y fanfarrias exclusivamente a la TV
@@ -213,23 +220,39 @@ export default function HostView() {
   const handleScoreChange = async (teamId: string, delta: number, silent?: boolean) => {
     let effectiveDelta = delta;
 
+    // Resolver el equipo objetivo de forma tolerante a UUIDs, team_${idx} o formato prefijado
+    const targetTeam = teams.find(
+      (t) =>
+        t.id === teamId ||
+        (teamId.startsWith('team_') && t.id.endsWith(teamId.replace('team_', ''))) ||
+        (teamId.startsWith('team_') && String(t.team_index) === teamId.replace(/^.*_/, '')) ||
+        String(t.team_index) === teamId
+    );
+    const resolvedTeamId = targetTeam ? targetTeam.id : teamId;
+
     // EFECTO DOBLE (Carta de Poder): Si el equipo tiene el efecto Doble activo y gana puntos
     const hasDobleActive = powerCardsRef.current?.activeEffects.some(
-      (e: any) => e.sourceTeamId === teamId && e.cardId === 'doble'
+      (e: any) =>
+        (e.sourceTeamId === resolvedTeamId || e.sourceTeamId === teamId) &&
+        e.cardId === 'doble'
     );
     if (hasDobleActive && delta > 0) {
       effectiveDelta = effectiveDelta * 2;
     }
 
-    if (captainGambles[teamId] && delta !== 0) {
+    const teamGamble = captainGambles[resolvedTeamId] || captainGambles[teamId];
+    if (teamGamble && delta !== 0) {
       if (delta > 0) {
         effectiveDelta = effectiveDelta * 2;
       }
-      handleClearCaptainGambles(teamId);
+      handleClearCaptainGambles(resolvedTeamId);
+      if (resolvedTeamId !== teamId) handleClearCaptainGambles(teamId);
     }
 
     const updatedTeams = teams.map((t) =>
-      t.id === teamId ? { ...t, score: Math.max(0, t.score + effectiveDelta) } : t
+      t.id === resolvedTeamId || t.id === teamId
+        ? { ...t, score: Math.max(0, t.score + effectiveDelta) }
+        : t
     );
     setTeams(updatedTeams);
     localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(updatedTeams));
@@ -249,10 +272,10 @@ export default function HostView() {
       }
     }
 
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && targetTeam) {
       await supabase.from('teams').update({
-        score: Math.max(0, (teams.find((t) => t.id === teamId)?.score || 0) + effectiveDelta),
-      }).eq('id', teamId);
+        score: Math.max(0, targetTeam.score + effectiveDelta),
+      }).eq('id', targetTeam.id);
     }
   };
 
