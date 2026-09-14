@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { GAMES_CATALOG } from '../../lib/games';
 import { PowerCard, POWER_CARDS_CATALOG } from '../../lib/powerCards';
 import PowerCardView from '../PowerCardView';
 
@@ -14,9 +13,9 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
   currentSlide,
 }) => {
   return (
-    <section className="flex-1 flex flex-col justify-center items-center my-1.5 z-10 w-full max-w-[1720px] mx-auto px-4 min-h-0">
+    <section className="flex-1 h-full min-h-0 flex flex-col justify-between items-center z-10 w-full max-w-[1720px] mx-auto px-4 py-1 overflow-hidden">
       {/* CABECERA PRESENTACIÓN TEATRAL 1930s */}
-      <div className="w-full flex items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/40 px-5 py-2 rounded-2xl mb-2.5 backdrop-blur-xl shadow-deco-gold">
+      <div className="w-full shrink-0 flex items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/40 px-5 py-2 rounded-2xl mb-2 backdrop-blur-xl shadow-deco-gold">
         <div className="flex items-center gap-3">
           <span className="text-2xl animate-pulse">✨</span>
           <div>
@@ -50,76 +49,33 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
         </div>
       </div>
 
-      {/* DIAPOSITIVA 0: LOS 10 MINIJUEGOS Y CARTEL */}
+      {/* DIAPOSITIVA 0: CARTEL OFICIAL DE LOS 10 DESAFÍOS */}
       {currentSlide === 0 && (
         <motion.div
           key="slide-games"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full grid grid-cols-12 gap-5 items-stretch flex-1 min-h-0"
+          className="w-full flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden py-0.5"
         >
           {/* CARTEL DEL EVENTO */}
-          <div className="col-span-5 bg-[#0c0c14]/90 border-2 border-[#d4af37]/50 rounded-3xl p-3.5 flex flex-col items-center justify-center backdrop-blur-xl shadow-deco-gold relative overflow-hidden group hell-card-frame">
-            <div className="relative w-full h-[590px] rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-[#d4af37]/30 shadow-inner">
+          <div className="h-full max-h-[calc(100vh-230px)] aspect-square w-auto bg-[#0c0c14]/90 border-2 border-[#d4af37]/50 rounded-2xl sm:rounded-3xl p-2.5 flex flex-col items-center justify-center backdrop-blur-xl shadow-deco-gold relative overflow-hidden group hell-card-frame">
+            {/* Esquinas ornamentales con palos de póker */}
+            <span className="absolute top-1.5 left-2.5 text-xs text-[#d4af37]/70 font-serif select-none z-10">♠</span>
+            <span className="absolute top-1.5 right-2.5 text-xs text-red-500/80 font-serif select-none z-10">♥</span>
+            <span className="absolute bottom-1.5 left-2.5 text-xs text-[#d4af37]/70 font-serif select-none z-10">♣</span>
+            <span className="absolute bottom-1.5 right-2.5 text-xs text-red-500/80 font-serif select-none z-10">♦</span>
+
+            <div className="relative w-full flex-1 min-h-0 rounded-xl sm:rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-[#d4af37]/30 shadow-inner">
               <img
                 src="/presentation_games.jpg"
-                alt="Cartel 10 Minijuegos"
+                alt="Cartel Oficial 10 Grandes Desafíos"
                 className="w-full h-full object-contain drop-shadow-2xl"
               />
             </div>
-            <div className="w-full mt-2 text-center">
-              <span className="text-[11px] font-vintage uppercase tracking-widest text-amber-300 flex items-center justify-center gap-1.5">
+            <div className="w-full shrink-0 mt-1.5 text-center">
+              <span className="text-[11px] sm:text-xs font-vintage uppercase tracking-widest text-amber-300 flex items-center justify-center gap-2 font-bold">
                 <span>🏆</span> 10 Retos • Puntuación Progresiva • Elenco en Vivo
-              </span>
-            </div>
-          </div>
-
-          {/* LISTA COMPLETA DE LOS 10 JUEGOS EN ORDEN CON ESTILO BROADWAY */}
-          <div className="col-span-7 bg-[#0c0c14]/90 border-2 border-[#d4af37]/40 rounded-3xl p-5 flex flex-col backdrop-blur-xl shadow-2xl justify-between hell-card-frame">
-            <div className="mb-3">
-              <h3 className="text-2xl font-broadway uppercase text-gold-gradient tracking-wider flex items-center gap-2">
-                <span>🔥</span> CARTELERA DE LA NOCHE
-              </h3>
-              <p className="text-xs font-vintage text-amber-100/70 mt-0.5">
-                Cada cuadrilla sumará puntos en cada contienda. ¡El podio final coronará al campeón de la noche!
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 flex-1">
-              {GAMES_CATALOG.slice(0, 10).map((g, idx) => (
-                <div
-                  key={g.id}
-                  className="p-2.5 rounded-2xl bg-[#14141e]/80 border border-[#d4af37]/25 hover:border-[#d4af37]/60 transition-all flex items-start gap-2.5 shadow-md"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d4af37] to-[#8a6a1a] text-slate-950 font-broadway flex items-center justify-center text-sm font-black shrink-0 shadow-sm border border-[#f5eedb]/30">
-                    {idx + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base">{g.emoji}</span>
-                      <h4 className="text-xs font-broadway tracking-wide text-white truncate">{g.title}</h4>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] uppercase font-vintage tracking-wider text-amber-300">
-                        {g.category}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-black/60 border border-[#d4af37]/30 text-amber-200/90 font-vintage font-bold">
-                        {g.engine === 'buzzer' ? '⚡ Pulsador de Latón' : '🎲 En Vivo'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{g.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-[#d4af37]/30 flex items-center justify-between text-xs text-amber-200/80">
-              <span className="font-vintage tracking-wide flex items-center gap-1.5 text-amber-300 font-bold">
-                <span>👑</span> El Maestro de Ceremonias iniciará la velada en breve
-              </span>
-              <span className="text-[11px] bg-black/60 border border-[#d4af37]/30 px-3 py-1 rounded-full text-amber-200 font-vintage uppercase tracking-wider font-bold">
-                Puntuación en tiempo real
               </span>
             </div>
           </div>

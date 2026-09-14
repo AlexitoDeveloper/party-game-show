@@ -1,5 +1,6 @@
 export type RoomStatus = 'lobby' | 'presentation' | 'playing' | 'paused' | 'podium' | 'ended';
 export type MinigameType = 'buzzer' | 'challenges' | 'duel';
+export type GamePhase = 'briefing' | 'active';
 
 export interface Room {
   id: string;
@@ -9,6 +10,7 @@ export interface Room {
   active_teams_count: number;
   current_game?: MinigameType | null;
   active_game_id?: string | null;
+  game_phase?: GamePhase | null;
   presentation_slide?: number;
   title?: string;
   created_at?: string;

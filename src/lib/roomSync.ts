@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, CaptainGamble, CaptainDuelState, TeamRepresentative, BingoClaimPayload } from './types';
+import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, CaptainGamble, CaptainDuelState, TeamRepresentative, BingoClaimPayload, GamePhase } from './types';
 import { MovieItem } from './moviesData';
 import { PowerCardsState, PowerCard } from './powerCards';
 import { BabyPhotoItem } from './babyPhotosData';
@@ -19,7 +19,8 @@ export type RoomSyncEvent =
   | { type: 'PLAYER_UPDATED'; payload: Player }
   | { type: 'REQUEST_PLAYERS_SYNC' }
   | { type: 'REQUEST_ROOM_SYNC' }
-  | { type: 'SWITCH_GAME'; payload: { status: RoomStatus; current_game: MinigameType; game_id?: string } }
+  | { type: 'SWITCH_GAME'; payload: { status: RoomStatus; current_game: MinigameType; game_id?: string; game_phase?: GamePhase } }
+  | { type: 'GAME_PHASE_UPDATE'; payload: { phase: GamePhase; game_id?: string } }
   | { type: 'RETURN_TO_LOBBY' }
   | { type: 'BUZZER_PRESS'; payload: BuzzerPressPayload }
   | { type: 'BUZZER_LOCKED'; payload: BuzzerPressPayload }

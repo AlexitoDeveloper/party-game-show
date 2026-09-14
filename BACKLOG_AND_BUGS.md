@@ -14,14 +14,27 @@ Documento de seguimiento de incidencias, peticiones de usuario y mejoras pendien
 
 ## 🛠️ Incidencias y Mejoras Reportadas (Pendientes)
 
-### 1. 🎬 Pantalla de Introducción / Briefing previo al inicio de cada juego
+### 1. 🎬 Pantalla de Introducción / Briefing previo al inicio de cada juego - [x] COMPLETADO
 - **Tipo**: Mejora de Experiencia de Usuario (UX) / Flujo de Partida.
-- **Descripción**: Al seleccionar un nuevo minijuego desde la consola del anfitrión, debe mostrarse en la pantalla central de la TV (y en el Host) una **pantalla previa de introducción** con una ilustración/cartel representativo del juego y un texto explicativo claro de las reglas y puntuación, antes de arrancar los pulsadores o la cuenta atrás del juego.
-- **Objetivo**: Dar tiempo al Maestro de Ceremonias para explicar la dinámica y ambientar a los equipos sin que el juego empiece a rodar de inmediato.
-- **Solución Técnica Propuesta**:
-  - Incorporar una subfase de minijuego (`room.game_phase: 'briefing' | 'active'` o estado local de preparación).
-  - Diseñar el componente `<TvGameBriefingCard game={activeGame} />` con diseño de cartel teatral 1930s (`hell-card-frame`).
-  - Añadir un botón en el Host: *"Iniciar Prueba"* que transmita el paso a la fase activa de pulsadores/música/fotografías.
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Subfase de Minijuego (`room.game_phase: 'briefing' | 'active'`)**:
+    - Al seleccionar cualquier juego desde el catálogo del Host o avanzar de ronda, la partida inicia automáticamente en subfase `'briefing'`.
+    - En `'briefing'`, los pulsadores y temporizadores quedan en pausa de seguridad, dando control absoluto al Maestro de Ceremonias.
+  - **Cartel Teatral Art Déco 1930s (`TvGameBriefingCard.tsx`) en TV**:
+    - Marco de vidriera y naipes franceses (`hell-card-frame` con pips ♠, ♥, ♣, ♦).
+    - Columna izquierda: Ilustración o cartel oficial del juego con marco dorado reflectante (`GameCoverImage.tsx`).
+    - Columna derecha: Cabecera con número de juego oficial (1 al 10), categoría, título monumental en tipografía Broadway con degradado de oro, sinopsis narrativa, viñetas estéticas de reglas y tabla de puntuaciones destacadas.
+    - Banner inferior de latón con latido luminoso indicando que la sala está atenta a las instrucciones.
+  - **Cargador Inteligente de Portadas de Juegos (`GameCoverImage.tsx`)**:
+    - Carpeta [`public/covers/`](file:///c:/Users/ald19/Desktop/Documentos/Proyectos/party-game-show/public/covers/) creada con guía [`README.txt`](file:///c:/Users/ald19/Desktop/Documentos/Proyectos/party-game-show/public/covers/README.txt).
+    - Soporte multi-extensión (.png, .jpg, .jpeg, .webp) y resolución automática por número o nombre: `1_hits_and_run`, `2_trivial_del_rey`, `3_mensaje_al_rey`, `4_casino_del_diablo`, `5_cine_mudo`, `6_quien_demonios_es`, `7_el_precio_del_tiempo`, `8_el_enigma_del_rey`, `9_tiro_al_vaso`, `10_los_numeros_del_destino`.
+    - Fallback visual de cartel Art Déco con rosetón geométrico, tipografía Broadway y emblema central en caso de que aún no se haya copiado el archivo.
+  - **Control en la Consola del Anfitrión (`HostLivePlayingConsole.tsx`)**:
+    - Banner destacado de Briefing con botón dorado: *"▶️ Iniciar Prueba"* para arrancar la ronda en directo en la TV y móviles al unísono.
+    - Botón *"Ver Reglas / Briefing en TV"* disponible durante la fase activa para que el anfitrión pueda repasar las normas en cualquier momento.
+  - **Pantalla de Espera en el Móvil del Concursante (`PlayerView.tsx`)**:
+    - Tarjeta elegante con miniatura del cartel, instrucciones de quién debe salir a jugar por el equipo (`participantsLabel` y descripción) y aviso de preparación.
 
 ---
 

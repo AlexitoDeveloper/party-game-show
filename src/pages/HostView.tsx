@@ -65,6 +65,7 @@ export default function HostView() {
       active_teams_count: 5,
       current_game: 'buzzer',
       active_game_id: 'music',
+      game_phase: 'briefing',
       title: savedTitle || 'GAME SHOW ARENA',
     };
   });
@@ -501,6 +502,12 @@ export default function HostView() {
           status: event.payload.status,
           current_game: event.payload.current_game,
           active_game_id: event.payload.game_id || prev.active_game_id,
+          game_phase: event.payload.game_phase || 'briefing',
+        }));
+      } else if (event.type === 'GAME_PHASE_UPDATE') {
+        setRoom((prev) => ({
+          ...prev,
+          game_phase: event.payload.phase,
         }));
       } else if (event.type === 'ROOM_UPDATE') {
         setRoom((prev) => ({ ...prev, ...event.payload }));
@@ -640,6 +647,7 @@ export default function HostView() {
       status: 'playing',
       current_game: game.engine,
       active_game_id: game.id,
+      game_phase: 'briefing',
     };
     setRoom(updatedRoom);
     resetBuzzer();
@@ -655,6 +663,7 @@ export default function HostView() {
         status: 'playing',
         current_game: game.engine,
         game_id: game.id,
+        game_phase: 'briefing',
       },
     });
 
@@ -671,6 +680,40 @@ export default function HostView() {
         current_game: game.engine,
       }).eq('code', roomCode);
     }
+  };
+
+  const handleStartActiveRound = () => {
+    const updatedRoom: Room = {
+      ...room,
+      game_phase: 'active',
+    };
+    setRoom(updatedRoom);
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
+    roomSync.broadcast({
+      type: 'GAME_PHASE_UPDATE',
+      payload: {
+        phase: 'active',
+        game_id: room.active_game_id || activeGame.id,
+      },
+    });
+    hostTvAudioProxy.playDecoBell();
+  };
+
+  const handleToggleBriefing = () => {
+    const nextPhase = room.game_phase === 'briefing' ? 'active' : 'briefing';
+    const updatedRoom: Room = {
+      ...room,
+      game_phase: nextPhase,
+    };
+    setRoom(updatedRoom);
+    localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
+    roomSync.broadcast({
+      type: 'GAME_PHASE_UPDATE',
+      payload: {
+        phase: nextPhase,
+        game_id: room.active_game_id || activeGame.id,
+      },
+    });
   };
 
   const handleFinishShowAndShowGazette = async () => {
@@ -953,6 +996,9 @@ export default function HostView() {
               unDosTresState={unDosTresState}
               bingoState={bingoState}
               mimicaState={mimicaState}
+              gamePhase={room.game_phase || 'briefing'}
+              onStartActiveRound={handleStartActiveRound}
+              onToggleBriefing={handleToggleBriefing}
             />
           ) : (
             <HostStandbySection

@@ -81,6 +81,7 @@ import { TvTriviaGame } from '../components/tv/minigames/TvTriviaGame';
 import { TvUnDosTresGame } from '../components/tv/minigames/TvUnDosTresGame';
 import { TvBingoGame } from '../components/tv/minigames/TvBingoGame';
 import { TvMimicaGame } from '../components/tv/minigames/TvMimicaGame';
+import { TvGameBriefingCard } from '../components/tv/TvGameBriefingCard';
 
 export default function TvView() {
   const { code } = useParams<{ code: string }>();
@@ -89,12 +90,11 @@ export default function TvView() {
 
   const [room, setRoom] = useState<Room>(() => {
     const saved = localStorage.getItem(`party_room_${roomCode}`);
-    const savedTitle = localStorage.getItem(`party_room_title_${roomCode}`);
+    const savedTitle = localStorage.getItem(`party_title_${roomCode}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (savedTitle && !parsed.title) parsed.title = savedTitle;
-        return parsed;
+        if (parsed.code === roomCode) return parsed;
       } catch {}
     }
     return {
@@ -105,6 +105,7 @@ export default function TvView() {
       active_teams_count: 5,
       current_game: 'buzzer',
       active_game_id: 'music',
+      game_phase: 'briefing',
       title: savedTitle || 'GAME SHOW ARENA',
     };
   });
@@ -475,11 +476,17 @@ export default function TvView() {
           status: event.payload.status,
           current_game: event.payload.current_game,
           active_game_id: event.payload.game_id || prev.active_game_id,
+          game_phase: event.payload.game_phase || 'briefing',
         }));
         setRoundHits({});
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
+      } else if (event.type === 'GAME_PHASE_UPDATE') {
+        setRoom((prev) => ({
+          ...prev,
+          game_phase: event.payload.phase,
+        }));
       } else if (event.type === 'ROOM_UPDATE') {
         setRoom((prev) => ({ ...prev, ...event.payload }));
       } else if (event.type === 'TEAMS_UPDATE') {
@@ -777,7 +784,7 @@ export default function TvView() {
 
   return (
     <HellCasinoBackground intensity="high" showPokerSuits={true}>
-      <main className="min-h-screen w-full text-white font-sans overflow-hidden flex flex-col justify-between p-6 select-none relative">
+      <main className="h-screen max-h-screen w-full text-white font-sans overflow-hidden flex flex-col justify-between p-4 sm:p-6 select-none relative">
       {/* Reproductor de Audio HTML5 persistente en la TV para todas las pantallas y fases */}
       <audio
         ref={musicAudioRef}
@@ -979,8 +986,13 @@ export default function TvView() {
             roomSync.broadcast({ type: 'RETURN_TO_LOBBY' });
           }}
         />
+      ) : room.game_phase === 'briefing' ? (
+        /* ================= VISTA BRIEFING / PRESENTACIÓN DEL JUEGO ================= */
+        <section className="flex-1 h-full min-h-0 flex flex-col justify-center items-center z-10 w-full max-w-6xl mx-auto px-2 sm:px-4 py-1 overflow-hidden">
+          <TvGameBriefingCard game={activeGame} />
+        </section>
       ) : (
-        /* ================= VISTA ESCENARIO DE JUEGO ================= */
+        /* ================= VISTA ESCENARIO DE JUEGO ACTIVO ================= */
         <section className="flex-1 flex flex-col justify-center items-center my-2 z-10 w-full max-w-6xl mx-auto min-h-0">
           {/* MARQUESINA DE TEATRO SUPERIOR CON REGLAS Y PUNTUACIONES */}
           <div className="mb-3.5 flex flex-col md:flex-row items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 px-5 py-2.5 rounded-2xl w-full max-w-4xl gap-2.5 shadow-deco-gold backdrop-blur-md">
@@ -1000,17 +1012,45 @@ export default function TvView() {
               </div>
             </div>
 
-            {/* Puntuaciones de este juego proyectadas en TV */}
-            <div className="flex flex-wrap items-center gap-1.5 justify-center md:justify-end">
-              {activeGame.scoringOptions.map((opt) => (
-                <span
-                  key={opt.id}
-                  className="bg-[#14141e]/90 text-amber-100 text-[11px] font-vintage font-bold px-3 py-1 rounded-xl border border-[#d4af37]/30 flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>{opt.label}</span>
-                  <span className="text-amber-300 font-broadway font-black">{opt.badge}</span>
-                </span>
-              ))}
+            {/* Puntuaciones de este juego proyectadas en TV (separadas por prueba y clasificación) */}
+            <div className="flex flex-wrap items-center gap-2 justify-center md:justify-end">
+              {activeGame.scoringOptions.filter((o) => o.type !== 'podium').length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
+                    🎯 Prueba:
+                  </span>
+                  {activeGame.scoringOptions
+                    .filter((o) => o.type !== 'podium')
+                    .map((opt) => (
+                      <span
+                        key={opt.id}
+                        className="bg-[#14141e]/90 text-amber-100 text-[10px] font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
+                      >
+                        <span>{opt.label.replace(/\s*\([+-]?\d+.*?\)$/i, '')}</span>
+                        <span className="text-emerald-400 font-broadway font-black">{opt.badge}</span>
+                      </span>
+                    ))}
+                </div>
+              )}
+
+              {activeGame.scoringOptions.filter((o) => o.type === 'podium').length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
+                    🏆 Clasificación:
+                  </span>
+                  {activeGame.scoringOptions
+                    .filter((o) => o.type === 'podium')
+                    .map((opt) => (
+                      <span
+                        key={opt.id}
+                        className="bg-[#14141e]/90 text-amber-100 text-[10px] font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
+                      >
+                        <span>{opt.label.replace(/\s*\([+-]?\d+.*?\)$/i, '')}</span>
+                        <span className="text-amber-300 font-broadway font-black">{opt.badge}</span>
+                      </span>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
 

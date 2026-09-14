@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Flame, Zap, Star, Sparkles, Orbit, Sun, Moon, Eye, EyeOff, Radio, Swords, X, Crown, ShieldAlert, Award, UserCheck, Droplets, Lock, Skull, Target, Bomb } from 'lucide-react';
+import { CheckCircle2, Flame, Zap, Star, Sparkles, Orbit, Sun, Moon, Eye, EyeOff, Radio, Swords, X, Crown, ShieldAlert, Award, UserCheck, Droplets, Lock, Skull, Target, Bomb, Users } from 'lucide-react';
 import { soundFX } from '../lib/audio';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, TeamCatalogItem } from '../lib/constants';
@@ -23,6 +23,7 @@ import { ArcadeBuzzer } from '../components/ArcadeBuzzer';
 import { getTeamTheme } from '../lib/teamThemes';
 import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
 import { TwemojiText } from '../components/TwemojiText';
+import { GameCoverImage } from '../components/common/GameCoverImage';
 import { DiceBearStyle, generateAvatarDataUri, generateRandomSeed } from '../lib/dicebear';
 import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
@@ -47,6 +48,7 @@ export default function PlayerView() {
       status: 'lobby',
       active_teams_count: 5,
       current_game: 'buzzer',
+      game_phase: 'briefing',
     };
   });
 
@@ -251,11 +253,21 @@ export default function PlayerView() {
             status: event.payload.status,
             current_game: event.payload.current_game,
             active_game_id: event.payload.game_id || prev.active_game_id,
+            game_phase: event.payload.game_phase || 'briefing',
           };
           localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
           return next;
         });
         setCaptainGambles({});
+      } else if (event.type === 'GAME_PHASE_UPDATE') {
+        setRoom((prev) => {
+          const next = {
+            ...prev,
+            game_phase: event.payload.phase,
+          };
+          localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
+          return next;
+        });
       } else if (event.type === 'ROOM_UPDATE') {
         setRoom((prev) => {
           const next = { ...prev, ...event.payload };
@@ -1037,8 +1049,53 @@ export default function PlayerView() {
             )}
           </div>
 
-          {/* ESCENARIO DEL MÓVIL SEGÚN TIPO DE MINIJUEGO */}
-          {activeGame.engine === 'buzzer' ? (
+          {/* ESCENARIO DEL MÓVIL SEGÚN FASE Y TIPO DE MINIJUEGO */}
+          {room.game_phase === 'briefing' ? (
+            <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
+              <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-4 sm:p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame space-y-3">
+                {/* Portada Horizontal 16:9 Completa en Móvil */}
+                <div className="w-full overflow-hidden rounded-2xl bg-[#08080d] border-2 border-[#d4af37]/50 shadow-md">
+                  <GameCoverImage
+                    game={activeGame}
+                    gameIndex={GAMES_CATALOG.findIndex((g) => g.id === activeGame.id)}
+                    className="w-full aspect-[16/9] object-contain"
+                    showArtDecoFrame={false}
+                    priority
+                    objectFit="contain"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="text-[10px] uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
+                    PRUEBA #{GAMES_CATALOG.findIndex((g) => g.id === activeGame.id) + 1}
+                  </span>
+                  <span className="text-xs font-vintage font-bold text-amber-300">
+                    {activeGame.category}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-broadway uppercase text-gold-gradient leading-tight">
+                  {activeGame.title}
+                </h3>
+
+                {/* Rol de los participantes */}
+                <div className="bg-[#14141e]/90 border border-[#d4af37]/40 rounded-xl p-2.5 text-left shadow-inner">
+                  <div className="flex items-center gap-1.5 text-amber-300 text-xs font-broadway uppercase">
+                    <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>{activeGame.participantsLabel}</span>
+                  </div>
+                  <p className="text-[11px] font-vintage text-amber-100/80 mt-1 leading-snug">
+                    {activeGame.participantsDescription}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-[#d4af37]/20 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-300 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>Mira a la gran pantalla para seguir las instrucciones</span>
+                </div>
+              </div>
+            </div>
+          ) : activeGame.engine === 'buzzer' ? (
             <PlayerBuzzerSection
               isBanned={isBanned}
               bannedShake={bannedShake}
