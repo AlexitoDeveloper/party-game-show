@@ -15,8 +15,10 @@ import { FannedHandDeck } from '../components/cards/FannedHandDeck';
 import { PlayerBuzzerSection } from '../components/player/PlayerBuzzerSection';
 import { PlayerBingoSection } from '../components/player/PlayerBingoSection';
 import { PlayerMimicaSection } from '../components/player/PlayerMimicaSection';
-import { PlayerCardHandModal } from '../components/player/PlayerCardHandModal';
 import { PlayerDoubleOrNothingModal } from '../components/player/PlayerDoubleOrNothingModal';
+import { PlayerHeader } from '../components/player/PlayerHeader';
+import { PlayerFannedHandDrawer } from '../components/player/PlayerFannedHandDrawer';
+import { playerHaptics } from '../lib/playerHaptics';
 import { ArcadeBuzzer } from '../components/ArcadeBuzzer';
 import { getTeamTheme } from '../lib/teamThemes';
 import { LobbyProfilePicker } from '../components/LobbyProfilePicker';
@@ -79,17 +81,12 @@ export default function PlayerView() {
     }
     return null;
   });
-  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
-  const [selectedCardToPlay, setSelectedCardToPlay] = useState<PowerCard | null>(null);
-  const [targetTeamId, setTargetTeamId] = useState<string>('');
-  const [targetPlayerName, setTargetPlayerName] = useState<string>('');
-  const [targetCardId, setTargetCardId] = useState<string>('');
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
-  const [isManualPlayerEntry, setIsManualPlayerEntry] = useState(false);
   const [bannedShake, setBannedShake] = useState(false);
 
   const handleBannedClick = () => {
     soundFX.playFail();
+    playerHaptics.rattleChain();
     setBannedShake(true);
     setTimeout(() => setBannedShake(false), 500);
     setFeedbackToast('⛓️ ¡ESTÁS BANEADO! Tu timbre ha sido sellado con cadenas.');
@@ -131,6 +128,22 @@ export default function PlayerView() {
     isHostOrTv: false,
     roomSync,
   });
+
+  // Efecto háptico reactivo cuando se define el ganador de una carrera de pulsadores
+  const lastWinnerPlayerIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (winner && winner.playerId !== lastWinnerPlayerIdRef.current) {
+      lastWinnerPlayerIdRef.current = winner.playerId;
+      const meId = player?.id || sessionToken;
+      if (winner.playerId === meId) {
+        playerHaptics.winner();
+      } else {
+        playerHaptics.lockout();
+      }
+    } else if (!winner) {
+      lastWinnerPlayerIdRef.current = null;
+    }
+  }, [winner, player?.id, sessionToken]);
 
   // Juego activo según catálogo
   const activeGame: GameDefinition = useMemo(() => {
@@ -654,11 +667,6 @@ export default function PlayerView() {
       },
     });
 
-    setSelectedCardToPlay(null);
-    setTargetTeamId('');
-    setTargetPlayerName('');
-    setTargetCardId('');
-    setIsCardModalOpen(false);
     setFeedbackToast(`¡Carta ${card.name} lanzada! Mira a la TV...`);
     setTimeout(() => setFeedbackToast(null), 4000);
   };
@@ -682,7 +690,7 @@ export default function PlayerView() {
   return (
     <HellCasinoBackground intensity="medium" showPokerSuits={true}>
       <main
-        className={`min-h-[100dvh] w-full text-white font-sans flex flex-col justify-between p-5 transition-all duration-500 relative overflow-hidden select-none ${
+        className={`h-[100dvh] max-h-[100dvh] w-full text-white font-sans flex flex-col justify-between p-3.5 sm:p-5 transition-all duration-500 relative overflow-hidden select-none ${
           isCursed ? 'cursed-screen-glow' : hasTeamShield ? 'shield-screen-glow' : ''
         }`}
       >
@@ -698,42 +706,18 @@ export default function PlayerView() {
         <div className="absolute inset-0 deco-sunburst-bg opacity-20 pointer-events-none" />
       )}
 
-      {/* HEADER DEL MÓVIL (PLACA DE LATÓN VINTAGE) */}
-      <header className="flex items-center justify-between border-b border-[#d4af37]/35 pb-3 z-10">
-        <div>
-          <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-200/70 block">SALA</span>
-          <span className="text-2xl font-broadway text-gold-gradient block leading-none">{roomCode}</span>
-        </div>
-
-        {isJoined && (
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-[#0c0c14] border-2 border-[#d4af37]/50 p-0.5 overflow-hidden flex items-center justify-center shadow-md">
-                <img
-                  src={generateAvatarDataUri(player?.avatar_seed || avatarSeed || nickname, (player?.avatar_style as any) || avatarStyle)}
-                  alt="Avatar"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              {player?.badge_emoji && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#0c0c14] border border-[#d4af37] flex items-center justify-center shadow">
-                  <TwemojiText className="text-[10px]">{player.badge_emoji}</TwemojiText>
-                </div>
-              )}
-            </div>
-
-            <div className="text-right">
-              <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-200/70 block leading-tight">JUGADOR</span>
-              <div className="flex items-center gap-1.5 justify-end">
-                <span className="text-sm font-broadway uppercase tracking-wide text-white">{nickname}</span>
-                {selectedTeam && (
-                  <span className={`w-2.5 h-2.5 rounded-full ${selectedTeam.twBg}`} />
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </header>
+      {/* HEADER DEL MÓVIL (PLACA DE LATÓN Y MEDALLÓN ART DÉCO) */}
+      <PlayerHeader
+        roomCode={roomCode}
+        isJoined={isJoined}
+        player={player}
+        nickname={nickname}
+        avatarSeed={avatarSeed}
+        avatarStyle={avatarStyle}
+        selectedTeam={selectedTeam}
+        activeTeams={activeTeams}
+        onLogout={handleLogout}
+      />
 
       {/* CONTENIDO PRINCIPAL */}
       {!isJoined ? (
@@ -1157,45 +1141,24 @@ export default function PlayerView() {
         </div>
       )}
 
-      {/* BOTÓN FLOTANTE: NAIPES DE PODER DEL EQUIPO */}
+      {/* BANDEJA DE NAIPES DESPLEGABLE ESTILO TAPETE DE CASINO */}
       {isJoined && selectedTeam && (
-        <div className="fixed bottom-10 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsCardModalOpen(true)}
-            className={`pointer-events-auto px-5 py-2.5 rounded-full border-2 shadow-2xl flex items-center gap-2.5 backdrop-blur-xl transition-all ${
-              myTeamCards.length > 0
-                ? 'bg-gold-gradient border-[#f5eedb] text-slate-950 shadow-deco-gold font-broadway font-black animate-pulse'
-                : 'bg-[#0c0c14]/95 border-[#d4af37]/30 text-amber-200/60 font-vintage font-bold'
-            }`}
-          >
-            <span className="text-lg select-none">🃏</span>
-            <span className="text-xs font-broadway uppercase tracking-wider">
-              Naipes de Poder ({myTeamCards.length})
-            </span>
-          </motion.button>
-        </div>
+        <PlayerFannedHandDrawer
+          myTeamCards={myTeamCards}
+          selectedTeam={selectedTeam}
+          player={player}
+          activeTeams={activeTeams}
+          myTeamId={myTeamId}
+          rivalPlayers={rivalPlayers}
+          powerCards={powerCards}
+          onPlayCard={handlePlayCard}
+          onExecuteCardAction={executeCardAction}
+          onToast={(msg) => {
+            setFeedbackToast(msg);
+            setTimeout(() => setFeedbackToast(null), 3500);
+          }}
+        />
       )}
-
-      {/* MODAL COLECCIONABLE DE NAIPES DE PODER (ESTILO SPEAKEASY) */}
-      <PlayerCardHandModal
-        isOpen={isCardModalOpen}
-        onClose={() => setIsCardModalOpen(false)}
-        selectedTeam={selectedTeam}
-        player={player}
-        myTeamCards={myTeamCards}
-        activeTeams={activeTeams}
-        myTeamId={myTeamId}
-        rivalPlayers={rivalPlayers}
-        powerCards={powerCards}
-        onPlayCard={handlePlayCard}
-        onExecuteCardAction={executeCardAction}
-        onToast={(msg) => {
-          setFeedbackToast(msg);
-          setTimeout(() => setFeedbackToast(null), 3500);
-        }}
-      />
 
       {/* MODAL DEL CAPITÁN: DOBLE O NADA */}
       <PlayerDoubleOrNothingModal

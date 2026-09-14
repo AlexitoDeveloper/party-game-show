@@ -86,6 +86,7 @@ export const PlayerBuzzerSection: React.FC<PlayerBuzzerSectionProps> = ({
           isLocked={isLocked}
           isDuelActive={captainDuel?.isActive}
           onPress={onBuzzerClick}
+          isMeWinner={isMeWinner}
         />
       )}
 
