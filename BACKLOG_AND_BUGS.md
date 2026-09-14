@@ -103,6 +103,34 @@ Documento de seguimiento de incidencias, peticiones de usuario y mejoras pendien
     - Escuchadores de `visibilitychange`, `focus` y `online` para reconectar y sincronizar la partida en milisegundos en cuanto enciende la pantalla.
 
 ---
+
+### 5. 🃏 Proyección Panorámica 16:9 y Alta Definición de Cartas de Poder en TV - [x] COMPLETADO
+- **Tipo**: Renderizado Visual / Experiencia en Pantalla Grande (TV).
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Identificación de Causa**: Las cartas maestras oficiales cuentan con arte en 1696×2528 px, pero en `CinematicCardPlayReveal.tsx` se forzaban en un contenedor vertical de solo 280px con `object-cover`, produciendo interpolación borrosa y recortando el marco dorado decorativo.
+  - **Layout Monumental Widescreen 16:9 (`CinematicCardPlayReveal.tsx`)**:
+    - Distribución horizontal en dos columnas en pantalla de TV / pantallas medianas y grandes (`max-w-5xl md:flex-row`).
+    - **Naipe a Gran Escala**: La carta se proyecta a ~64vh de altura (`aspect-[1696/2528]`) con marco Art Déco y `imageRendering: '-webkit-optimize-contrast'`, mostrando todos los detalles dorados, filigranas y tipografías en su resolución nativa nítida sin recortes.
+    - **Ficha Teatral de Efecto**: Columna lateral con título en Broadway monumental, etiqueta de rareza, timing, descripción amplia de fácil lectura a larga distancia y badges de objetivos / limitaciones sensoriales.
+
+---
+
+### 6. 📱 Eliminación de Scroll Vertical y Bloqueo de Rebote en Pantalla Completa Móvil - [x] COMPLETADO
+- **Tipo**: UX Móvil / Fullscreen API / Estabilidad de Mando Táctil.
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Hoja de Estilos Global (`index.css`)**:
+    - Configuración estricta de `html`, `body` y `#root` con `height: 100%`, `width: 100%` y `overscroll-behavior: none; overscroll-behavior-y: none;`.
+    - Sobreescritura de la regla por defecto del navegador en `:fullscreen` (que asignaba `overflow: auto !important`) forzando `overflow: hidden !important; width: 100% !important; height: 100% !important;`.
+    - Bloqueo de gestos accidentales de zoom con `touch-action: manipulation;`.
+  - **Fondo Art Déco Adaptado (`HellCasinoBackground.tsx`)**:
+    - Prop `lockScreenHeight={true}` para fijar `w-full h-full min-h-[100dvh] max-h-[100dvh] overflow-hidden` y evitar que `min-h-screen` expanda verticalmente la ventana.
+  - **Mando Táctil Inmóvil (`PlayerView.tsx`)**:
+    - Contenedor principal `<main>` anclado a `h-full min-h-[100dvh] max-h-[100dvh] overflow-hidden`.
+    - Contenedores interiores (`PASO 1`, `PASO 2`, `PASO 3C`) con `min-h-0`, `pb-12` optimizado y scroll interno invisible (`.no-scrollbar`) solo si la pantalla es muy corta, impidiendo cualquier desplazamiento o rebote de la ventana completa del navegador.
+
+---
 *Última actualización: 14 de septiembre de 2026*
 
 

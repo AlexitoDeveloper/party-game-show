@@ -7,6 +7,41 @@
   color-scheme: dark;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Reglas de pantalla completa estricta para Fullscreen API en móviles y escritorio */
+:fullscreen,
+::backdrop,
+:-webkit-full-screen,
+:-moz-full-screen,
+:-ms-fullscreen {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  overscroll-behavior-y: none !important;
+  background-color: #000000 !important;
+}
+
+/* Utilidad para evitar scrollbar en contenedores scrolleables internos */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .font-broadway {
   font-family: 'Limelight', cursive, sans-serif;
   letter-spacing: 0.04em;

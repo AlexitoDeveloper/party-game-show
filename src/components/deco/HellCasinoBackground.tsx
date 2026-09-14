@@ -5,6 +5,7 @@ interface HellCasinoBackgroundProps {
   showPokerSuits?: boolean;
   intensity?: 'subtle' | 'medium' | 'high';
   className?: string;
+  lockScreenHeight?: boolean;
 }
 
 export const HellCasinoBackground: React.FC<HellCasinoBackgroundProps> = ({
@@ -12,12 +13,17 @@ export const HellCasinoBackground: React.FC<HellCasinoBackgroundProps> = ({
   showPokerSuits = true,
   intensity = 'medium',
   className = '',
+  lockScreenHeight = false,
 }) => {
   const opacityClass =
     intensity === 'subtle' ? 'opacity-20' : intensity === 'high' ? 'opacity-45' : 'opacity-30';
 
+  const containerClasses = lockScreenHeight
+    ? `relative w-full h-full min-h-[100dvh] max-h-[100dvh] bg-black hell-casino-bg text-white overflow-hidden ${className}`
+    : `relative min-h-screen bg-black hell-casino-bg text-white overflow-x-hidden ${className}`;
+
   return (
-    <div className={`relative min-h-screen bg-black hell-casino-bg text-white overflow-x-hidden ${className}`}>
+    <div className={containerClasses}>
       {/* CAPA 1: ARCOS DE VIDRIERA ART DECÓ (STAINED GLASS) CON RAYOS RADIANTES Y ROSA CENTRAL */}
       <div className={`pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden ${opacityClass}`}>
         <svg
@@ -108,7 +114,7 @@ export const HellCasinoBackground: React.FC<HellCasinoBackgroundProps> = ({
       <div className="pointer-events-none fixed inset-0 z-0 film-grain-overlay opacity-30" />
 
       {/* CONTENIDO REAL DE LA APLICACIÓN */}
-      <div className="relative z-10">{children}</div>
+      <div className={`relative z-10 ${lockScreenHeight ? 'w-full h-full flex flex-col overflow-hidden' : ''}`}>{children}</div>
     </div>
   );
 };

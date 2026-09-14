@@ -808,9 +808,9 @@ export default function PlayerView() {
   const isMeWinner = winner?.playerId === (player?.id || sessionToken);
 
   return (
-    <HellCasinoBackground intensity="medium" showPokerSuits={true}>
+    <HellCasinoBackground intensity="medium" showPokerSuits={true} lockScreenHeight={true}>
       <main
-        className={`h-[100dvh] max-h-[100dvh] w-full text-white font-sans flex flex-col justify-between p-3.5 sm:p-5 transition-all duration-500 relative overflow-hidden select-none ${
+        className={`h-full min-h-[100dvh] max-h-[100dvh] w-full text-white font-sans flex flex-col justify-between p-3 sm:p-5 transition-all duration-500 relative overflow-hidden select-none overscroll-none touch-manipulation ${
           isCursed ? 'cursed-screen-glow' : hasTeamShield ? 'shield-screen-glow' : ''
         }`}
       >
@@ -842,7 +842,7 @@ export default function PlayerView() {
       {/* CONTENIDO PRINCIPAL */}
       {!isJoined ? (
         /* PASO 1: INTRODUCIR NOMBRE Y CREAR IDENTIDAD VISUAL (PASE VIP) */
-        <div className="flex-1 flex flex-col justify-center my-auto z-10 max-w-sm mx-auto w-full py-2">
+        <div className="flex-1 min-h-0 flex flex-col justify-center my-auto z-10 max-w-sm mx-auto w-full py-2 overflow-y-auto no-scrollbar">
           <div className="text-center mb-4">
             <h2 className="text-3xl font-broadway uppercase tracking-wider text-gold-gradient">Pase de Acceso</h2>
             <p className="text-xs font-vintage text-amber-100/70 mt-1">Regístrate para la velada clandestina</p>
@@ -881,7 +881,7 @@ export default function PlayerView() {
         </div>
       ) : !selectedTeam ? (
         /* PASO 2: ELEGIR EQUIPO */
-        <div className="flex-1 flex flex-col justify-center my-4 z-10 max-w-md mx-auto w-full">
+        <div className="flex-1 min-h-0 flex flex-col justify-center my-auto z-10 max-w-md mx-auto w-full overflow-y-auto no-scrollbar py-2">
           <div className="text-center mb-4">
             <h2 className="text-2xl font-broadway uppercase tracking-wider text-gold-gradient">Elige tu Bando</h2>
             <p className="text-xs font-vintage text-amber-100/70">Tu pulsador de latón se teñirá del color de tu mesa</p>
@@ -912,7 +912,7 @@ export default function PlayerView() {
         </div>
       ) : room.status === 'lobby' ? (
         /* PASO 3A: EN LOBBY */
-        <div className="flex-1 flex flex-col justify-center items-center my-auto z-10 max-w-sm mx-auto text-center">
+        <div className="flex-1 min-h-0 flex flex-col justify-center items-center my-auto z-10 max-w-sm mx-auto text-center overflow-y-auto no-scrollbar py-2">
           <div className={`w-24 h-24 rounded-3xl ${selectedTeam.twBg} ${selectedTeam.index === 5 ? 'border-2 border-zinc-500' : ''} flex items-center justify-center shadow-2xl ${selectedTeam.twGlow} mb-4`}>
             {getTeamIcon(selectedTeam.index, selectedTeam.index === 4 || selectedTeam.index === 3)}
           </div>
@@ -945,7 +945,7 @@ export default function PlayerView() {
         </div>
       ) : room.status === 'presentation' ? (
         /* PASO 3B: EN PRESENTACIÓN */
-        <div className="flex-1 flex flex-col justify-center items-center my-auto z-10 max-w-sm mx-auto text-center space-y-4">
+        <div className="flex-1 min-h-0 flex flex-col justify-center items-center my-auto z-10 max-w-sm mx-auto text-center space-y-3 sm:space-y-4 overflow-y-auto no-scrollbar py-2">
           <div className="w-20 h-20 rounded-3xl bg-[#14141e] border-2 border-[#d4af37] flex items-center justify-center shadow-deco-gold animate-pulse">
             <Sparkles className="w-10 h-10 text-amber-300" />
           </div>
@@ -978,7 +978,7 @@ export default function PlayerView() {
         </div>
       ) : (
         /* PASO 3C: MANDO EN JUEGO */
-        <div className="flex-1 flex flex-col justify-between my-2 pb-20 z-10 max-w-sm mx-auto w-full items-center">
+        <div className="flex-1 min-h-0 flex flex-col justify-between my-1 sm:my-2 pb-12 z-10 max-w-sm mx-auto w-full items-center overflow-y-auto no-scrollbar">
           {/* BANNER DE EQUIPO Y JUEGO ACTIVO */}
           <div className="w-full space-y-2">
             <div className="w-full flex items-center justify-between bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl px-4 py-2.5 shadow-md">
@@ -1435,7 +1435,7 @@ export default function PlayerView() {
       />
 
       {/* FOOTER */}
-      <footer className="text-center text-[10px] text-slate-600 uppercase tracking-widest z-10">
+      <footer className="text-center text-[10px] text-slate-600 uppercase tracking-widest z-10 shrink-0 select-none">
         Mando Táctil • Sincronía Instantánea • Web Haptics
       </footer>
     </main>

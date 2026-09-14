@@ -45,7 +45,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
 
   return (
     <>
-      <header className="flex items-center justify-between border-b-2 border-[#d4af37]/35 pb-2.5 z-20 relative select-none">
+      <header className="flex items-center justify-between border-b-2 border-[#d4af37]/35 pb-2.5 z-20 relative select-none shrink-0">
         {/* LADO IZQUIERDO: PLACA DE SALA */}
         <div className="flex items-center gap-2">
           <div className="bg-[#0e0e16]/90 border border-[#d4af37]/50 rounded-xl px-2.5 py-1 shadow-inner">

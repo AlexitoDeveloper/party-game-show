@@ -102,6 +102,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
         )}
 
         {/* Temblor de pantalla sutil en el impacto */}
+        {/* Contenedor de impacto y animación centrado y adaptado a formato panorámico TV 16:9 */}
         <motion.div
           animate={
             hasLanded
@@ -112,7 +113,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
               : {}
           }
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="relative max-w-lg w-full flex flex-col items-center space-y-4 z-10"
+          className="relative max-w-5xl w-full flex flex-col items-center gap-4 sm:gap-6 z-10 px-2 sm:px-4"
         >
           {/* CABECERA MARQUEE: EQUIPO QUE LANZA LA CARTA */}
           <motion.div
@@ -128,147 +129,179 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
           >
             <div className="flex items-center gap-3 min-w-0">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-md border"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shadow-md border"
                 style={{ backgroundColor: `${accentColor}30`, borderColor: accentColor }}
               >
-                <Zap className="w-5 h-5 text-amber-300 animate-pulse" />
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 animate-pulse" />
               </div>
               <div className="min-w-0 text-left">
                 <span className="text-[10px] sm:text-xs uppercase font-broadway tracking-widest block text-amber-200/80">
                   {type === 'deal' ? 'Naipe Repartido a' : '¡Naipe de Poder Jugado!'}
                 </span>
-                <h3 className="text-lg sm:text-2xl font-broadway uppercase text-white truncate drop-shadow-md">
+                <h3 className="text-lg sm:text-2xl lg:text-3xl font-broadway uppercase text-white truncate drop-shadow-md">
                   {teamName}
                 </h3>
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full bg-black/70 border border-amber-400/50 text-[11px] font-vintage text-amber-300 uppercase tracking-wider font-bold shrink-0">
+            <span className="px-3.5 py-1.5 rounded-full bg-black/70 border border-amber-400/60 text-xs sm:text-sm font-vintage text-amber-300 uppercase tracking-wider font-bold shrink-0 shadow-sm">
               ★ {card.rarity} ★
             </span>
           </motion.div>
 
-          {/* CARTA CON ENTRADA CINEMÁTICA DE IMPACTO (SLAM DIRECTO SIN FLIP QUE DEJE LATERALES NEGROS) */}
-          <motion.div
-            initial={{ scale: 2.4, y: -60, opacity: 0, rotateZ: -10 }}
-            animate={{ scale: 1, y: 0, opacity: 1, rotateZ: 0 }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 20,
-              mass: 0.85,
-            }}
-            className="relative w-[240px] sm:w-[280px] h-[350px] sm:h-[400px] rounded-3xl p-3 bg-[#0a0604] border-4 border-[#d4af37] shadow-[0_0_60px_rgba(212,175,55,0.4)] flex flex-col justify-between overflow-hidden group"
-          >
-            {/* Esquinas procedurales doradas */}
-            <DecoProceduralSpandrel size={34} position="top-left" />
-            <DecoProceduralSpandrel size={34} position="top-right" />
-            <DecoProceduralSpandrel size={30} position="bottom-left" />
-            <DecoProceduralSpandrel size={30} position="bottom-right" />
+          {/* ÁREA CENTRAL: SPLIT-SCREEN EN TV CON CARTA EN ALTA DEFINICIÓN + DOSSIER DE EFECTO */}
+          <div className="w-full flex flex-col md:flex-row items-center justify-center gap-5 sm:gap-8">
+            {/* CARTA CON ENTRADA CINEMÁTICA DE IMPACTO (ALTA DEFINICIÓN EN PROPORCIÓN EXACTA 1696x2528) */}
+            <motion.div
+              initial={{ scale: 2.2, y: -40, opacity: 0, rotateZ: -8 }}
+              animate={{ scale: 1, y: 0, opacity: 1, rotateZ: 0 }}
+              transition={{
+                type: 'spring',
+                stiffness: 280,
+                damping: 22,
+                mass: 0.9,
+              }}
+              className="relative h-[46vh] sm:h-[54vh] md:h-[64vh] max-h-[660px] aspect-[1696/2528] rounded-3xl p-2.5 sm:p-3 bg-[#0a0604] border-4 border-[#d4af37] shadow-[0_0_80px_rgba(212,175,55,0.5)] flex flex-col justify-between overflow-hidden group shrink-0"
+            >
+              {/* Esquinas procedurales doradas */}
+              <DecoProceduralSpandrel size={36} position="top-left" />
+              <DecoProceduralSpandrel size={36} position="top-right" />
+              <DecoProceduralSpandrel size={32} position="bottom-left" />
+              <DecoProceduralSpandrel size={32} position="bottom-right" />
 
-            {/* Ilustración Grande a Sangre de la Carta */}
-            <div className="w-full h-full rounded-2xl overflow-hidden bg-black/90 border border-amber-500/40 relative flex items-center justify-center">
-              <img
-                src={imageUrl}
-                alt={card.name}
-                className="w-full h-full object-cover object-center pointer-events-none select-none"
-              />
+              {/* Imagen nativa de la carta a máxima fidelidad sin cortes */}
+              <div className="w-full h-full rounded-2xl overflow-hidden bg-black/90 relative flex items-center justify-center">
+                <img
+                  src={imageUrl}
+                  alt={card.name}
+                  className="w-full h-full object-contain pointer-events-none select-none"
+                  style={{
+                    imageRendering: '-webkit-optimize-contrast' as any,
+                  }}
+                  loading="eager"
+                  decoding="sync"
+                />
 
-              {/* Sello de foil y resplandor dinámico que cruza el naipe */}
-              <motion.div
-                initial={{ x: '-100%', opacity: 0 }}
-                animate={{ x: '100%', opacity: [0, 0.6, 0] }}
-                transition={{ repeat: Infinity, repeatDelay: 2.5, duration: 1.5, ease: 'easeInOut' }}
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-200/30 to-transparent pointer-events-none transform -skew-x-12"
-              />
-            </div>
-          </motion.div>
-
-          {/* FICHA INFERIOR CON NOMBRE, TIMING Y EFECTO COMPLETO */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
-            className="w-full bg-[#120b06]/95 border-2 border-[#d4af37]/60 rounded-2xl p-4 shadow-deco-gold backdrop-blur-md text-center space-y-2.5"
-          >
-            <div className="flex items-center justify-between border-b border-amber-500/30 pb-2">
-              <h2 className="text-base sm:text-lg font-broadway uppercase tracking-wider text-gold-gradient">
-                {card.name}
-              </h2>
-              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-amber-950/90 border border-amber-500/40 text-amber-300 font-vintage font-bold">
-                {card.timing}
-              </span>
-            </div>
-
-            <p className="text-xs sm:text-sm text-amber-100/90 font-body leading-relaxed px-2">
-              {card.description}
-            </p>
-
-            {/* AVISO DE OBJETIVO SI APLICA */}
-            {targetName && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-red-950/80 border border-red-500/60 text-xs font-vintage text-red-200 font-bold shadow-md">
-                <Target className="w-3.5 h-3.5 text-red-400" />
-                <span>Objetivo: <strong className="text-white underline">{targetName}</strong></span>
+                {/* Sello de foil y resplandor dinámico que cruza el naipe */}
+                <motion.div
+                  initial={{ x: '-100%', opacity: 0 }}
+                  animate={{ x: '100%', opacity: [0, 0.7, 0] }}
+                  transition={{ repeat: Infinity, repeatDelay: 2.5, duration: 1.6, ease: 'easeInOut' }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-100/35 to-transparent pointer-events-none transform -skew-x-12"
+                />
               </div>
-            )}
+            </motion.div>
 
-            {/* LIMITACIÓN SENSORIAL (SI ES EL CUARTO MONO) */}
-            {sensoryLimitation && (
-              <div className="bg-purple-950/80 border border-purple-400/60 p-2.5 rounded-xl text-center shadow-md">
-                <span className="text-[10px] uppercase font-vintage text-purple-300 font-bold block">
-                  🌀 Limitación Sensorial Impuesta:
-                </span>
-                <p className="text-xs sm:text-sm font-broadway text-white mt-0.5">
-                  {sensoryLimitation}
-                </p>
-              </div>
-            )}
+            {/* FICHA TEATRAL CON NOMBRE, TIMING Y EFECTO COMPLETO LEGIBLE DESDE LEJOS */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
+              className="flex-1 w-full max-w-lg bg-[#120b06]/95 border-2 border-[#d4af37]/70 rounded-3xl p-4 sm:p-6 shadow-deco-gold backdrop-blur-md flex flex-col justify-between space-y-3.5 text-left"
+            >
+              <div>
+                {/* Título de la Carta y Timing */}
+                <div className="flex items-start justify-between border-b border-amber-500/30 pb-3 gap-2">
+                  <div>
+                    <span className="text-[11px] sm:text-xs uppercase font-vintage text-amber-300/80 tracking-widest font-bold block">
+                      ★ Naipe de Poder · {card.rarity}
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-broadway uppercase tracking-wider text-gold-gradient drop-shadow-md mt-0.5">
+                      {card.name}
+                    </h2>
+                  </div>
+                  <span className="text-xs px-3 py-1 rounded-full bg-amber-950/90 border border-amber-500/50 text-amber-300 font-vintage font-bold whitespace-nowrap shrink-0 shadow-inner">
+                    {card.timing}
+                  </span>
+                </div>
 
-            {/* CARTA RECUPERADA (SI ES VIAJE EN EL TIEMPO) */}
-            {recoveredCard && (
-              <div className="bg-amber-950/80 border border-amber-400/60 p-2 rounded-xl text-center">
-                <span className="text-[10px] uppercase font-vintage text-amber-300 font-bold block">
-                  ⏳ Carta Rescatada del Pasado:
-                </span>
-                <span className="text-xs font-broadway text-amber-100">
-                  {recoveredCard.name}
-                </span>
-              </div>
-            )}
+                {/* Tagline / Subtítulo */}
+                {card.tagline && (
+                  <div className="text-xs sm:text-sm font-broadway uppercase tracking-wider text-amber-400 mt-2">
+                    «{card.tagline}»
+                  </div>
+                )}
 
-            {/* CONTROLES / PIE */}
-            <div className="pt-2 border-t border-[#d4af37]/25 flex items-center justify-between gap-2">
-              {isHost ? (
-                <div className="w-full flex gap-2">
-                  {onReturnToTeam && activeAnimation.teamId && (
-                    <button
-                      type="button"
-                      onClick={() => onReturnToTeam(activeAnimation.teamId!, card.id)}
-                      className="flex-1 py-2 px-3 rounded-xl bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs font-vintage uppercase font-bold flex items-center justify-center gap-1 active:scale-95 transition-all hover:bg-amber-900"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Anular y Devolver</span>
-                    </button>
+                {/* Regla y Efecto con texto amplio de gran contraste */}
+                <div className="bg-black/60 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 mt-3 shadow-inner">
+                  <span className="text-[10px] sm:text-xs uppercase font-vintage text-amber-300 font-bold block mb-1">
+                    📜 Efecto Oficial de la Carta:
+                  </span>
+                  <p className="text-sm sm:text-base lg:text-lg text-amber-100 font-body leading-relaxed font-semibold">
+                    {card.description}
+                  </p>
+                </div>
+
+                {/* MODIFICADORES ADICIONALES */}
+                <div className="space-y-2 mt-3">
+                  {/* AVISO DE OBJETIVO SI APLICA */}
+                  {targetName && (
+                    <div className="inline-flex items-center gap-2 p-2.5 rounded-xl bg-red-950/90 border border-red-500/70 text-xs sm:text-sm font-vintage text-red-200 font-bold shadow-md w-full">
+                      <Target className="w-4 h-4 text-red-400 shrink-0" />
+                      <span>Objetivo Designado: <strong className="text-white underline text-sm sm:text-base">{targetName}</strong></span>
+                    </div>
                   )}
-                  {onDismiss && (
-                    <button
-                      type="button"
-                      onClick={onDismiss}
-                      className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 text-black font-broadway font-black text-xs uppercase flex items-center justify-center gap-1 shadow-deco-gold active:scale-95"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Cerrar de Pantalla</span>
-                    </button>
+
+                  {/* LIMITACIÓN SENSORIAL (SI ES EL CUARTO MONO) */}
+                  {sensoryLimitation && (
+                    <div className="bg-purple-950/90 border border-purple-400/70 p-3 rounded-xl shadow-md w-full">
+                      <span className="text-[10px] sm:text-xs uppercase font-vintage text-purple-300 font-bold block">
+                        🌀 Limitación Sensorial Impuesta al Rival:
+                      </span>
+                      <p className="text-sm sm:text-base font-broadway text-white mt-1">
+                        {sensoryLimitation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* CARTA RECUPERADA (SI ES VIAJE EN EL TIEMPO) */}
+                  {recoveredCard && (
+                    <div className="bg-amber-950/90 border border-amber-400/70 p-2.5 rounded-xl w-full">
+                      <span className="text-[10px] sm:text-xs uppercase font-vintage text-amber-300 font-bold block">
+                        ⏳ Carta Rescatada del Pasado:
+                      </span>
+                      <span className="text-xs sm:text-sm font-broadway text-amber-100 mt-0.5 block">
+                        {recoveredCard.name}
+                      </span>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <div className="w-full flex items-center justify-center gap-1.5 text-[11px] text-amber-300/80 font-vintage uppercase tracking-wider animate-pulse">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Control de Sala: El Anfitrión gestionará este efecto</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
+              </div>
+
+              {/* CONTROLES / PIE */}
+              <div className="pt-3 border-t border-[#d4af37]/30 flex items-center justify-between gap-2">
+                {isHost ? (
+                  <div className="w-full flex gap-2.5">
+                    {onReturnToTeam && activeAnimation.teamId && (
+                      <button
+                        type="button"
+                        onClick={() => onReturnToTeam(activeAnimation.teamId!, card.id)}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs font-vintage uppercase font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all hover:bg-amber-900"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        <span>Anular y Devolver</span>
+                      </button>
+                    )}
+                    {onDismiss && (
+                      <button
+                        type="button"
+                        onClick={onDismiss}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 text-black font-broadway font-black text-xs sm:text-sm uppercase flex items-center justify-center gap-1.5 shadow-deco-gold active:scale-95"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Cerrar de Pantalla</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm text-amber-300/90 font-vintage uppercase tracking-wider animate-pulse py-1">
+                    <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Control de Sala: El Anfitrión gestionará este efecto</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
