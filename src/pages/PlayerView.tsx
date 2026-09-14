@@ -29,6 +29,8 @@ import { DiceBearStyle, generateAvatarDataUri, generateRandomSeed } from '../lib
 import { getBingoBallTheme, BINGO_NICKNAMES } from '../lib/bingoUtils';
 import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
 import { usePreventAccidentalNavigation } from '../hooks/usePreventAccidentalNavigation';
+import { useFullscreen } from '../hooks/useFullscreen';
+import { FullscreenButton } from '../components/common/FullscreenButton';
 
 export default function PlayerView() {
   const { code } = useParams<{ code: string }>();
@@ -36,6 +38,9 @@ export default function PlayerView() {
 
   // Prevenir que el jugador salga de la partida al pulsar Atrás en su móvil
   usePreventAccidentalNavigation();
+
+  // Control de pantalla completa
+  const { enterFullscreen } = useFullscreen();
 
   const [room, setRoom] = useState<Room>(() => {
     const saved = localStorage.getItem(`party_room_${roomCode}`);
@@ -434,6 +439,9 @@ export default function PlayerView() {
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname.trim()) return;
+
+    // Intentar pasar a pantalla completa con el gesto directo de pulsar el botón
+    enterFullscreen().catch(() => {});
 
     sessionStorage.setItem(`party_nick_${roomCode}`, nickname.trim());
     localStorage.setItem(`party_nick_${roomCode}`, nickname.trim());
@@ -838,6 +846,9 @@ export default function PlayerView() {
           <div className="text-center mb-4">
             <h2 className="text-3xl font-broadway uppercase tracking-wider text-gold-gradient">Pase de Acceso</h2>
             <p className="text-xs font-vintage text-amber-100/70 mt-1">Regístrate para la velada clandestina</p>
+            <div className="mt-2 flex justify-center">
+              <FullscreenButton showLabel={true} label="Pantalla Completa" size="sm" />
+            </div>
           </div>
 
           <form onSubmit={handleJoin} className="space-y-4">

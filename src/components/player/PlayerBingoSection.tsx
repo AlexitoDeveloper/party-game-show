@@ -8,6 +8,7 @@ import { TeamCatalogItem } from '../../lib/constants';
 import { RoomSync } from '../../lib/roomSync';
 import { soundFX } from '../../lib/audio';
 import { playerHaptics } from '../../lib/playerHaptics';
+import { useFullscreen } from '../../hooks/useFullscreen';
 
 interface PlayerBingoSectionProps {
   bingoIsSpinning: boolean;
@@ -46,28 +47,12 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
     setLocalBingoAwarded(bingoAwarded);
   }, [bingoAwarded]);
 
-  // 1. Detección de Soporte de Fullscreen API
-  const isFullscreenApiSupported = useMemo(() => {
-    if (typeof document === 'undefined') return false;
-    return !!(
-      document.fullscreenEnabled ||
-      (document as any).webkitFullscreenEnabled ||
-      (document.documentElement as any).requestFullscreen ||
-      (document.documentElement as any).webkitRequestFullscreen
-    );
-  }, []);
+  // 1. Estados de Orientación y Pantalla Completa mediante hook unificado
+  const { isFullscreen, isSupported: isFullscreenApiSupported, enterFullscreen, exitFullscreen } = useFullscreen();
 
-  // 2. Estados de Orientación y Pantalla Completa
   const [isPortrait, setIsPortrait] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerHeight > window.innerWidth;
-    }
-    return false;
-  });
-
-  const [isFullscreen, setIsFullscreen] = useState(() => {
-    if (typeof document !== 'undefined') {
-      return !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
     }
     return false;
   });
@@ -80,10 +65,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
       const portrait = window.innerHeight > window.innerWidth;
       setIsPortrait(portrait);
 
-      const inFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-      setIsFullscreen(inFs);
-
-      // Si se rota a vertical, nunca se permite ver el cartón
+      // Si se rota a vertical, resetear entrada manual
       if (portrait) {
         setManualLandscapeEntered(false);
       }
@@ -91,43 +73,20 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
-    document.addEventListener('fullscreenchange', handleResize);
-    document.addEventListener('webkitfullscreenchange', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
-      document.removeEventListener('fullscreenchange', handleResize);
-      document.removeEventListener('webkitfullscreenchange', handleResize);
     };
   }, []);
 
   const handleRequestFullscreen = async () => {
-    try {
-      const docEl = document.documentElement as any;
-      if (docEl.requestFullscreen) {
-        await docEl.requestFullscreen();
-      } else if (docEl.webkitRequestFullscreen) {
-        await docEl.webkitRequestFullscreen();
-      }
-      setIsFullscreen(true);
-      setManualLandscapeEntered(true);
-    } catch {
-      // Si falla o no está soportado (iOS Safari), permitir la entrada si está en apaisado
-      setManualLandscapeEntered(true);
-    }
+    await enterFullscreen();
+    setManualLandscapeEntered(true);
   };
 
   const handleExitFullscreen = async () => {
-    try {
-      const doc = document as any;
-      if (document.exitFullscreen) {
-        await document.exitFullscreen();
-      } else if (doc.webkitExitFullscreen) {
-        await doc.webkitExitFullscreen();
-      }
-    } catch {}
-    setIsFullscreen(false);
+    await exitFullscreen();
     setManualLandscapeEntered(false);
   };
 

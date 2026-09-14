@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Room } from '../../lib/types';
 import { GameDefinition, GAMES_CATALOG } from '../../lib/games';
+import { FullscreenButton } from '../common/FullscreenButton';
 
 interface HostHeaderControlsProps {
   room: Room;
@@ -75,6 +76,16 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+          <FullscreenButton
+            size="md"
+            showLabel={true}
+            className="hidden sm:flex"
+          />
+          <FullscreenButton
+            size="md"
+            showLabel={false}
+            className="flex sm:hidden"
+          />
           <Link
             to={`/room/${roomCode}/tv`}
             target="_blank"

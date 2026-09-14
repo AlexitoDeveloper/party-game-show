@@ -4,6 +4,7 @@ import { Player, Team } from '../../lib/types';
 import { TeamCatalogItem } from '../../lib/constants';
 import { DiceBearStyle, generateAvatarDataUri } from '../../lib/dicebear';
 import { TwemojiText } from '../TwemojiText';
+import { FullscreenButton } from '../common/FullscreenButton';
 
 interface PlayerHeaderProps {
   roomCode: string;
@@ -68,9 +69,9 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           )}
         </div>
 
-        {/* LADO DERECHO: PERFIL DEL JUGADOR, CAPITÁN Y SALIDA */}
+        {/* LADO DERECHO: PERFIL DEL JUGADOR, CAPITÁN, PANTALLA COMPLETA Y SALIDA */}
         {isJoined ? (
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Medallón de Avatar con Corona si es Capitán */}
             <div className="relative">
               <div className="w-10 h-10 rounded-2xl bg-[#0c0c14] border-2 border-[#d4af37] p-0.5 overflow-hidden flex items-center justify-center shadow-deco-gold">
@@ -114,8 +115,8 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   MESA
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 justify-end">
-                <span className="text-sm font-broadway uppercase tracking-wide text-white font-black truncate max-w-[100px]">
+              <div className="flex items-center gap-1 justify-end">
+                <span className="text-sm font-broadway uppercase tracking-wide text-white font-black truncate max-w-[70px] xs:max-w-[85px] sm:max-w-[110px]">
                   {nickname}
                 </span>
                 {selectedTeam && (
@@ -127,20 +128,26 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
               </div>
             </div>
 
-            {/* Botón Discreto de Salida */}
-            <button
-              type="button"
-              onClick={() => setShowExitConfirm(true)}
-              className="w-8 h-8 rounded-xl bg-[#141010] border border-red-900/60 text-red-400 hover:text-red-200 flex items-center justify-center active:scale-95 transition-all ml-0.5"
-              title="Salir de la mesa"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+            {/* Acciones: Pantalla Completa y Salida */}
+            <div className="flex items-center gap-1 ml-0.5">
+              <FullscreenButton size="md" />
+              <button
+                type="button"
+                onClick={() => setShowExitConfirm(true)}
+                className="w-8 h-8 rounded-xl bg-[#141010] border border-red-900/60 text-red-400 hover:text-red-200 flex items-center justify-center active:scale-95 transition-all"
+                title="Salir de la mesa"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs text-amber-300 font-vintage font-bold">
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>Sintonizando...</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-amber-300 font-vintage font-bold">
+              <Radio className="w-3.5 h-3.5 animate-pulse" />
+              <span className="hidden xs:inline">Sintonizando...</span>
+            </div>
+            <FullscreenButton size="md" />
           </div>
         )}
       </header>

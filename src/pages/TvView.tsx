@@ -82,6 +82,7 @@ import { TvUnDosTresGame } from '../components/tv/minigames/TvUnDosTresGame';
 import { TvBingoGame } from '../components/tv/minigames/TvBingoGame';
 import { TvMimicaGame } from '../components/tv/minigames/TvMimicaGame';
 import { TvGameBriefingCard } from '../components/tv/TvGameBriefingCard';
+import { FullscreenButton } from '../components/common/FullscreenButton';
 
 export default function TvView() {
   const { code } = useParams<{ code: string }>();
@@ -978,6 +979,9 @@ export default function TvView() {
               {roomCode}
             </div>
           </div>
+
+          {/* BOTÓN PANTALLA COMPLETA TV */}
+          <FullscreenButton size="lg" className="h-[52px] w-[52px]" />
         </div>
       </header>
 
