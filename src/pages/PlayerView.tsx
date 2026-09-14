@@ -1193,6 +1193,55 @@ export default function PlayerView() {
                   </p>
                 </div>
 
+                {/* Selección interactiva de representantes durante la presentación */}
+                {isRepGame && (
+                  <div className="pt-2 border-t border-[#d4af37]/30 space-y-2">
+                    {player?.is_captain ? (
+                      <div className="space-y-1.5">
+                        <button
+                          onClick={() => setIsRepModalOpen(true)}
+                          className="w-full py-2.5 px-3 rounded-2xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 transition-all hover:brightness-110 animate-pulse"
+                        >
+                          <Users className="w-4 h-4" />
+                          <span>
+                            {repIds.length > 0
+                              ? `✅ Representantes: ${repNames.join(', ')} (Cambiar)`
+                              : `⚡ ¡Designar ${maxRepresentatives} Representantes!`}
+                          </span>
+                        </button>
+                        <p className="text-[10px] font-vintage text-amber-200/70">
+                          {repIds.length > 0
+                            ? 'Has asignado a los combatientes. El juego comenzará cuando el anfitrión dé la señal.'
+                            : 'Como Capitán 👑, debes elegir quiénes salen al ruedo para que el anfitrión pueda iniciar la prueba.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-xl bg-black/60 border border-[#d4af37]/30 text-center">
+                        {hasDesignatedReps ? (
+                          <div>
+                            <span className="text-[10px] font-vintage text-amber-300 block uppercase font-bold">
+                              Representantes designados por tu Capitán:
+                            </span>
+                            <span className="text-xs font-broadway text-gold-gradient block mt-0.5">
+                              ⭐ {repNames.join(', ')}
+                            </span>
+                            <span className="text-[10px] font-vintage text-amber-100/70 block mt-1">
+                              {isMeRepresentative
+                                ? '¡Prepárate! Vas a competir en el ruedo.'
+                                : 'Estarás en el banquillo asesorando a tu equipo.'}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2 text-xs font-vintage text-amber-300">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                            <span>Tu Capitán 👑 está eligiendo a los representantes...</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="pt-2 border-t border-[#d4af37]/20 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-300 animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                   <span>Mira a la gran pantalla para seguir las instrucciones</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Users, Crown, Swords, Star, RefreshCw, Play, BookOpen } from 'lucide-react';
+import { Award, Users, Crown, Swords, Star, RefreshCw, Play, BookOpen, Lock } from 'lucide-react';
 import { TEAMS_CATALOG } from '../../lib/constants';
 import { GameDefinition } from '../../lib/games';
 import { Team, BuzzerPressPayload, GamePhase, Player, TeamRepresentative } from '../../lib/types';
@@ -76,43 +76,98 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   teamRepresentatives = {},
   players = [],
 }) => {
+  const isRepGame = ['solo', 'duo', 'delegates'].includes(activeGame.participantsMode);
+
+  // Equipos activos con al menos un jugador conectado que aún no han designado representantes
+  const teamsWithMembers = activeTeams.filter((t) =>
+    (players || []).some((p) => p.team_id === t.id || p.team_index === t.team_index)
+  );
+
+  const missingRepTeams = isRepGame
+    ? teamsWithMembers.filter((t) => {
+        const rep = teamRepresentatives?.[t.id];
+        const has =
+          (rep?.representativePlayerIds && rep.representativePlayerIds.length > 0) ||
+          !!rep?.representativePlayerId;
+        return !has;
+      })
+    : [];
+
+  const canStartRound = !isRepGame || missingRepTeams.length === 0;
+
   return (
     <section className="hell-card-frame rounded-3xl p-6 space-y-4">
       {/* BANNER DE SUBFASE BRIEFING */}
       {gamePhase === 'briefing' ? (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1f1508] via-[#2a1d0b] to-[#1a0f12] border-2 border-[#d4af37] shadow-deco-gold flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#8a6a1a] flex items-center justify-center text-slate-950 font-black shadow-md shrink-0">
-              <span className="text-2xl">🎬</span>
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
-                  FASE DE BRIEFING
-                </span>
-                <span className="text-xs text-amber-300 font-vintage font-bold">
-                  Cartel proyectado en la TV
-                </span>
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1f1508] via-[#2a1d0b] to-[#1a0f12] border-2 border-[#d4af37] shadow-deco-gold flex flex-col gap-3.5">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#8a6a1a] flex items-center justify-center text-slate-950 font-black shadow-md shrink-0">
+                <span className="text-2xl">🎬</span>
               </div>
-              <h3 className="text-base sm:text-lg font-broadway text-white uppercase tracking-wide mt-1">
-                Explicando normas de {activeGame.title}
-              </h3>
-              <p className="text-xs text-amber-100/70 font-vintage mt-0.5">
-                La sala está leyendo las reglas y conociendo a sus representantes. Pulsa el botón cuando desees arrancar el juego en la TV.
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
+                    FASE DE PRESENTACIÓN / BRIEFING
+                  </span>
+                  <span className="text-xs text-amber-300 font-vintage font-bold">
+                    Portada proyectada en la TV
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-broadway text-white uppercase tracking-wide mt-1">
+                  {activeGame.title}
+                </h3>
+                <p className="text-xs text-amber-100/70 font-vintage mt-0.5">
+                  {isRepGame
+                    ? 'Los capitanes deben designar a sus representantes en sus móviles antes de que puedas arrancar la prueba.'
+                    : 'La sala está atendiendo a las normas. Pulsa Iniciar cuando desees arrancar el juego en la TV.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-stretch md:items-end gap-1.5 w-full md:w-auto shrink-0">
+              {canStartRound ? (
+                <button
+                  onClick={onStartActiveRound}
+                  className="px-6 py-3 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold border-2 border-[#f5eedb]/60 active:scale-95 transition-all animate-pulse"
+                  title="Iniciar la fase activa del juego en la TV y móviles"
+                >
+                  <Play className="w-4 h-4 fill-slate-950" />
+                  <span>▶️ Iniciar Prueba</span>
+                </button>
+              ) : (
+                <div className="flex flex-col items-stretch md:items-end gap-1 w-full md:w-auto">
+                  <button
+                    disabled
+                    className="px-5 py-3 rounded-2xl bg-[#14141e] border-2 border-amber-600/50 text-amber-200/50 font-broadway font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed shadow-inner"
+                    title={`Faltan representantes de: ${missingRepTeams.map((t) => t.name).join(', ')}`}
+                  >
+                    <Lock className="w-4 h-4 text-amber-500" />
+                    <span>Faltan Representantes ({missingRepTeams.length})</span>
+                  </button>
+                  <button
+                    onClick={onStartActiveRound}
+                    className="text-[10px] uppercase font-vintage text-amber-400/80 hover:text-amber-200 underline text-center md:text-right"
+                    title="Forzar inicio de prueba sin esperar a los capitanes"
+                  >
+                    ⚡ Forzar inicio de todos modos
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-            <button
-              onClick={onStartActiveRound}
-              className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold border-2 border-[#f5eedb]/60 active:scale-95 transition-all animate-pulse"
-              title="Iniciar la fase activa del juego en la TV y móviles"
-            >
-              <Play className="w-4 h-4 fill-slate-950" />
-              <span>▶️ Iniciar Prueba</span>
-            </button>
-          </div>
+          {/* Alerta de equipos pendientes de asignar representantes */}
+          {isRepGame && !canStartRound && (
+            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between text-xs font-vintage gap-2">
+              <span className="text-amber-200/90">
+                ⏳ Esperando a que los capitanes elijan a sus combatientes. Faltan:{' '}
+                <strong className="text-amber-300 font-broadway uppercase">
+                  {missingRepTeams.map((t) => t.name).join(', ')}
+                </strong>
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="px-4 py-2 rounded-xl bg-[#0c0c14]/80 border border-[#d4af37]/30 flex items-center justify-between gap-2 text-xs">

@@ -681,6 +681,11 @@ export default function HostView() {
       powerCardsHook.handleClearAllActiveEffects();
     }
 
+    // Reiniciar representantes para que se asignen durante la presentación de esta prueba
+    setTeamRepresentatives({});
+    try { localStorage.removeItem(`party_representatives_${roomCode}`); } catch {}
+    roomSync.broadcast({ type: 'CLEAR_TEAM_REPRESENTATIVES' });
+
     roomSync.broadcast({
       type: 'SWITCH_GAME',
       payload: {
