@@ -118,6 +118,14 @@ export default function PlayerView() {
     return saved ? JSON.parse(saved) : null;
   });
   const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
+  const [bingoLineAwarded, setBingoLineAwarded] = useState<boolean>(() => {
+    const saved = localStorage.getItem(`party_bingo_line_awarded_${roomCode}`);
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [bingoAwarded, setBingoAwarded] = useState<boolean>(() => {
+    const saved = localStorage.getItem(`party_bingo_bingo_awarded_${roomCode}`);
+    return saved ? JSON.parse(saved) : false;
+  });
 
   // Instancia de sincronización multi-pantalla como jugador móvil
   const roomSync = useMemo(() => getRoomSync(roomCode, 'player'), [roomCode]);
@@ -307,10 +315,36 @@ export default function PlayerView() {
         setBingoCurrentBall(event.payload.currentBall);
         setBingoDrawnBalls(event.payload.drawnBalls);
         setBingoIsSpinning(!!event.payload.isSpinning);
+        if (typeof event.payload.lineAwarded === 'boolean') {
+          setBingoLineAwarded(event.payload.lineAwarded);
+          try {
+            localStorage.setItem(`party_bingo_line_awarded_${roomCode}`, JSON.stringify(event.payload.lineAwarded));
+          } catch {}
+        }
+        if (typeof event.payload.bingoAwarded === 'boolean') {
+          setBingoAwarded(event.payload.bingoAwarded);
+          try {
+            localStorage.setItem(`party_bingo_bingo_awarded_${roomCode}`, JSON.stringify(event.payload.bingoAwarded));
+          } catch {}
+        }
         try {
           localStorage.setItem(`party_bingo_current_${roomCode}`, JSON.stringify(event.payload.currentBall));
           localStorage.setItem(`party_bingo_drawn_${roomCode}`, JSON.stringify(event.payload.drawnBalls));
         } catch {}
+      } else if (event.type === 'BINGO_CLAIM_RESOLVE') {
+        if (event.payload.accepted) {
+          if (event.payload.claimType === 'line') {
+            setBingoLineAwarded(true);
+            try {
+              localStorage.setItem(`party_bingo_line_awarded_${roomCode}`, JSON.stringify(true));
+            } catch {}
+          } else if (event.payload.claimType === 'bingo') {
+            setBingoAwarded(true);
+            try {
+              localStorage.setItem(`party_bingo_bingo_awarded_${roomCode}`, JSON.stringify(true));
+            } catch {}
+          }
+        }
       }
     });
 
@@ -605,14 +639,6 @@ export default function PlayerView() {
       }
     }
 
-    if (card.requiresTarget !== 'none') {
-      setSelectedCardToPlay(card);
-      setTargetTeamId('');
-      setTargetPlayerName('');
-      setTargetCardId('');
-      setIsManualPlayerEntry(false);
-      return;
-    }
     executeCardAction(card);
   };
 
@@ -1030,6 +1056,12 @@ export default function PlayerView() {
               bingoIsSpinning={bingoIsSpinning}
               bingoCurrentBall={bingoCurrentBall}
               bingoDrawnBalls={bingoDrawnBalls}
+              lineAwarded={bingoLineAwarded}
+              bingoAwarded={bingoAwarded}
+              player={player}
+              selectedTeam={selectedTeam}
+              roomCode={roomCode}
+              roomSync={roomSync}
             />
           ) : activeGame.id === 'mimica' ? (
             <PlayerMimicaSection

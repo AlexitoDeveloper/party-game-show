@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, CaptainGamble, CaptainDuelState, TeamRepresentative } from './types';
+import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, CaptainGamble, CaptainDuelState, TeamRepresentative, BingoClaimPayload } from './types';
 import { MovieItem } from './moviesData';
 import { PowerCardsState, PowerCard } from './powerCards';
 import { BabyPhotoItem } from './babyPhotosData';
@@ -28,7 +28,30 @@ export type RoomSyncEvent =
   | { type: 'MOVIE_STATE_UPDATE'; payload: { movieIndex: number; frameLevel: 1 | 2 | 3 | 4; isRevealed: boolean; categoryFilter?: string; movieData?: MovieItem } }
   | { type: 'TRIVIA_STATE_UPDATE'; payload: { questionIndex: number; isRevealed: boolean; isReboundActive: boolean; questionData?: TriviaQuestion } }
   | { type: 'UN_DOS_TRES_STATE'; payload: { promptIndex: number; activeTeamId?: string; eliminatedTeamIds: string[]; countdownSeconds: number | null; isTimerRunning: boolean; challengeData?: UnDosTresChallenge } }
-  | { type: 'BINGO_STATE_UPDATE'; payload: { currentBall: number | null; drawnBalls: number[]; isSpinning?: boolean } }
+  | {
+      type: 'BINGO_STATE_UPDATE';
+      payload: {
+        currentBall: number | null;
+        drawnBalls: number[];
+        isSpinning?: boolean;
+        lineAwarded?: boolean;
+        bingoAwarded?: boolean;
+        lineWinner?: { playerName: string; teamName: string } | null;
+        bingoWinner?: { playerName: string; teamName: string } | null;
+      };
+    }
+  | { type: 'BINGO_CLAIM'; payload: BingoClaimPayload }
+  | {
+      type: 'BINGO_CLAIM_RESOLVE';
+      payload: {
+        claimType: 'line' | 'bingo';
+        accepted: boolean;
+        teamId: string;
+        deltaPoints?: number;
+        winnerName?: string;
+        teamName?: string;
+      };
+    }
   | { type: 'MIMICA_STATE_UPDATE'; payload: { activeTeamId?: string; hitsCount: number; timerSeconds: number | null; isRunning: boolean } }
   | { type: 'ROUND_HITS_UPDATE'; payload: { roundHits: Record<string, number>; gameId?: string | null } }
   | { type: 'POWER_CARDS_STATE_UPDATE'; payload: PowerCardsState }

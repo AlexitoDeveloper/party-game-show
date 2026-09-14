@@ -302,7 +302,11 @@ export default function HostView() {
     soundFX: hostTvAudioProxy,
   });
 
-  const bingoState = useHostBingoState({ roomSync });
+  const bingoState = useHostBingoState({ roomSync, roomCode });
+  const bingoStateRef = useRef(bingoState);
+  useEffect(() => {
+    bingoStateRef.current = bingoState;
+  }, [bingoState]);
 
   const mimicaState = useHostMimicaState({
     roomSync,
@@ -464,6 +468,9 @@ export default function HostView() {
         }
         if (roomRef.current.active_game_id === 'music') {
           musicState.syncMusicState(musicState.musicPlaying, musicState.musicRevealed);
+        }
+        if (roomRef.current.active_game_id === 'bingo') {
+          bingoStateRef.current.syncBingoState();
         }
         roomSync.broadcast({
           type: 'ROUND_HITS_UPDATE',

@@ -361,11 +361,21 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           bingoDrawnBalls={bingoState.bingoDrawnBalls}
           bingoCurrentBall={bingoState.bingoCurrentBall}
           bingoIsSpinning={bingoState.bingoIsSpinning}
+          lineAwarded={bingoState.lineAwarded}
+          bingoAwarded={bingoState.bingoAwarded}
+          lineWinner={bingoState.lineWinner}
+          bingoWinner={bingoState.bingoWinner}
           onResetBingo={bingoState.handleResetBingo}
           onDrawBingoBall={bingoState.handleDrawBingoBall}
           teams={teams}
           selectedTeamCatalog={selectedTeamCatalog}
           onScoreChange={onScoreChange}
+          pendingClaims={bingoState.pendingClaims}
+          activeClaim={bingoState.activeClaim}
+          onResolveClaim={(claim, accepted) =>
+            bingoState.handleResolveClaim(claim, accepted, onScoreChange)
+          }
+          onDismissClaim={bingoState.handleDismissActiveClaim}
         />
       )}
 

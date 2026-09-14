@@ -72,4 +72,25 @@ export const playerHaptics = {
   cardSlide(): void {
     this.vibrate(15);
   },
+
+  /**
+   * Golpe táctil firme de ficha de casino al tachar o desmarcar número en el cartón
+   */
+  stamp(): void {
+    this.vibrate([28, 15, 35]);
+  },
+
+  /**
+   * Fanfarria háptica de Línea completada
+   */
+  lineClaim(): void {
+    this.vibrate([50, 40, 80, 50, 100]);
+  },
+
+  /**
+   * Gran fanfarria triunfal continua para BINGO
+   */
+  bingoClaim(): void {
+    this.vibrate([70, 30, 90, 30, 120, 40, 200]);
+  },
 };

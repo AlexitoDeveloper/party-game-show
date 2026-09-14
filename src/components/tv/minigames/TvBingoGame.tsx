@@ -1,31 +1,122 @@
 import React from 'react';
 import { BingoRoulette } from '../../BingoRoulette';
 import { getBingoBallTheme } from '../../../lib/bingoUtils';
+import { BingoClaimPayload } from '../../../lib/types';
+import { generateAvatarDataUri } from '../../../lib/dicebear';
 
 interface TvBingoGameProps {
   bingoCurrentBall: number | null;
   bingoDrawnBalls: number[];
   bingoIsSpinning: boolean;
+  bingoCelebration?: BingoClaimPayload | null;
+  lineAwarded?: boolean;
+  bingoAwarded?: boolean;
+  lineWinner?: { playerName: string; teamName: string } | null;
+  bingoWinner?: { playerName: string; teamName: string } | null;
 }
 
 export const TvBingoGame: React.FC<TvBingoGameProps> = ({
   bingoCurrentBall,
   bingoDrawnBalls,
   bingoIsSpinning,
+  bingoCelebration,
+  lineAwarded = false,
+  bingoAwarded = false,
+  lineWinner = null,
+  bingoWinner = null,
 }) => {
   return (
     <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-4 sm:p-6 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
+      {/* BANNER GIGANTE DE CELEBRACIÓN DE CANTO EN VIVO */}
+      {bingoCelebration && (
+        <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-bounce-short">
+          <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-gold-gradient text-slate-950 font-broadway font-black text-sm uppercase tracking-widest shadow-deco-gold border border-[#f5eedb] mb-4">
+            <span>📢</span> ¡CANTO EN DIRECTO DESDE EL MÓVIL!
+          </div>
+
+          <h2 className="text-4xl sm:text-6xl font-broadway uppercase tracking-tight text-gold-gradient mb-3 drop-shadow-lg">
+            {bingoCelebration.claimType === 'line' ? '📏 ¡¡LÍNEA CANTADA!!' : '🎱 ¡¡¡BINGO CANTADO!!!'}
+          </h2>
+
+          <div className="flex items-center justify-center gap-4 my-4 p-4 rounded-3xl bg-[#0a0a14] border-2 border-[#d4af37]/60 shadow-deco-gold">
+            {bingoCelebration.avatarSeed && (
+              <img
+                src={generateAvatarDataUri(
+                  bingoCelebration.avatarSeed,
+                  (bingoCelebration.avatarStyle as any) || 'avataaars'
+                )}
+                alt="Avatar"
+                className="w-16 h-16 rounded-full border-2 border-[#d4af37] bg-slate-900 shadow-md"
+              />
+            )}
+            <div className="text-left">
+              <span className="text-2xl sm:text-3xl font-broadway text-white block">
+                {bingoCelebration.playerName}
+              </span>
+              <span
+                className="inline-block px-3 py-1 rounded-lg font-broadway font-black text-xs sm:text-sm text-slate-950 uppercase shadow-sm mt-1"
+                style={{ backgroundColor: bingoCelebration.teamColorHex || '#d4af37' }}
+              >
+                {bingoCelebration.teamName}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl my-2">
+            {bingoCelebration.numbers.map((num) => {
+              const isDrawn = bingoDrawnBalls.includes(num);
+              return (
+                <span
+                  key={num}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-broadway font-black text-sm shadow-sm border ${
+                    isDrawn
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-300'
+                      : 'bg-[#181824] text-amber-200/60 border-[#d4af37]/30'
+                  }`}
+                >
+                  {num}
+                </span>
+              );
+            })}
+          </div>
+
+          <p className="text-xs font-vintage text-amber-300/80 mt-4 uppercase tracking-widest animate-pulse">
+            El Maestro de Ceremonias está comprobando el cartón en la consola del anfitrión...
+          </p>
+        </div>
+      )}
+
       {/* CABECERA COMPACTA */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm">
           <span>🎰</span> RULETA Y BOMBO VIRTUAL (1 - 90)
         </div>
-        <div className="flex items-center gap-2.5 text-xs font-broadway">
-          <span className="px-3.5 py-1 rounded-full bg-[#14141e] text-amber-200 border border-[#d4af37]/40 shadow-sm">
-            📏 Línea: +2 pts
+        <div className="flex flex-wrap items-center gap-2.5 text-xs font-broadway">
+          <span
+            className={`px-3.5 py-1 rounded-full border shadow-sm transition-all ${
+              lineAwarded
+                ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60 ring-1 ring-emerald-400'
+                : 'bg-[#14141e] text-amber-200 border-[#d4af37]/40'
+            }`}
+          >
+            {lineAwarded
+              ? lineWinner
+                ? `✅ Línea: ${lineWinner.playerName} (${lineWinner.teamName})`
+                : '✅ Línea Validada (+2 pts)'
+              : '📏 Línea: +2 pts'}
           </span>
-          <span className="px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 border border-[#f5eedb]/50 shadow-deco-gold font-black">
-            🎱 BINGO: +6 pts
+          <span
+            className={`px-3.5 py-1 rounded-full border shadow-deco-gold font-black transition-all ${
+              bingoAwarded
+                ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60 ring-1 ring-emerald-400'
+                : 'bg-gold-gradient text-slate-950 border-[#f5eedb]/50'
+            }`}
+          >
+            {bingoAwarded
+              ? bingoWinner
+                ? `🏆 BINGO: ${bingoWinner.playerName} (${bingoWinner.teamName})`
+                : '🏆 BINGO Ganado (+6 pts)'
+              : '🎱 BINGO: +6 pts'}
           </span>
         </div>
       </div>

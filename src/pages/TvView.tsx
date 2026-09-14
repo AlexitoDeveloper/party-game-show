@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
-import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState } from '../lib/types';
+import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState, BingoClaimPayload } from '../lib/types';
 import { OFFICIAL_TRIVIA_QUESTIONS, TriviaQuestion } from '../lib/triviaData';
 import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDosTresData';
 import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
@@ -356,6 +356,11 @@ export default function TvView() {
   const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(null);
   const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>([]);
   const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
+  const [bingoCelebration, setBingoCelebration] = useState<BingoClaimPayload | null>(null);
+  const [bingoLineAwarded, setBingoLineAwarded] = useState(false);
+  const [bingoAwarded, setBingoAwarded] = useState(false);
+  const [bingoLineWinner, setBingoLineWinner] = useState<{ playerName: string; teamName: string } | null>(null);
+  const [bingoWinner, setBingoWinner] = useState<{ playerName: string; teamName: string } | null>(null);
 
   // Estados específicos para Mímica
   const [mimicaActiveTeamId, setMimicaActiveTeamId] = useState<string | undefined>(undefined);
@@ -571,6 +576,46 @@ export default function TvView() {
         setBingoCurrentBall(event.payload.currentBall);
         setBingoDrawnBalls(event.payload.drawnBalls);
         setBingoIsSpinning(!!event.payload.isSpinning);
+        if (typeof event.payload.lineAwarded === 'boolean') {
+          setBingoLineAwarded(event.payload.lineAwarded);
+        }
+        if (typeof event.payload.bingoAwarded === 'boolean') {
+          setBingoAwarded(event.payload.bingoAwarded);
+        }
+        if (event.payload.lineWinner !== undefined) {
+          setBingoLineWinner(event.payload.lineWinner);
+        }
+        if (event.payload.bingoWinner !== undefined) {
+          setBingoWinner(event.payload.bingoWinner);
+        }
+      } else if (event.type === 'BINGO_CLAIM') {
+        setBingoCelebration(event.payload);
+        if (event.payload.claimType === 'line') {
+          soundFX.playVictory();
+        } else {
+          soundFX.playApplause();
+        }
+        triggerTeamConfetti(event.payload.teamIndex);
+        setTimeout(() => {
+          setBingoCelebration((prev) => (prev?.timestamp === event.payload.timestamp ? null : prev));
+        }, 7500);
+      } else if (event.type === 'BINGO_CLAIM_RESOLVE') {
+        if (event.payload.accepted) {
+          soundFX.playVictory();
+          triggerVictoryConfetti(false);
+          if (event.payload.claimType === 'line') {
+            setBingoLineAwarded(true);
+            if (event.payload.winnerName && event.payload.teamName) {
+              setBingoLineWinner({ playerName: event.payload.winnerName, teamName: event.payload.teamName });
+            }
+          } else if (event.payload.claimType === 'bingo') {
+            setBingoAwarded(true);
+            if (event.payload.winnerName && event.payload.teamName) {
+              setBingoWinner({ playerName: event.payload.winnerName, teamName: event.payload.teamName });
+            }
+          }
+        }
+        setBingoCelebration(null);
       } else if (event.type === 'MIMICA_STATE_UPDATE') {
         setMimicaActiveTeamId(event.payload.activeTeamId);
         setMimicaHitsCount(event.payload.hitsCount);
@@ -1187,6 +1232,11 @@ export default function TvView() {
                   bingoCurrentBall={bingoCurrentBall}
                   bingoDrawnBalls={bingoDrawnBalls}
                   bingoIsSpinning={bingoIsSpinning}
+                  bingoCelebration={bingoCelebration}
+                  lineAwarded={bingoLineAwarded}
+                  bingoAwarded={bingoAwarded}
+                  lineWinner={bingoLineWinner}
+                  bingoWinner={bingoWinner}
                 />
               ) : activeGame.id === 'mimica' ? (
                 <TvMimicaGame

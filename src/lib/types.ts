@@ -97,3 +97,18 @@ export interface BuzzerPressPayload {
   avatarStyle?: string;
   badgeEmoji?: string;
 }
+
+export interface BingoClaimPayload {
+  claimType: 'line' | 'bingo';
+  playerId: string;
+  playerName: string;
+  teamId: string;
+  teamName: string;
+  teamColorHex?: string;
+  teamIndex?: number;
+  avatarSeed?: string;
+  avatarStyle?: string;
+  cardIndex: number;
+  numbers: number[];
+  timestamp: number;
+}

@@ -25,28 +25,46 @@ Documento de seguimiento de incidencias, peticiones de usuario y mejoras pendien
 
 ---
 
-### 2. 🎱 Cartones Virtuales Interactivos de Bingo en Móvil (PlayerView)
+### 2. 🎱 Cartones Virtuales Interactivos de Bingo en Móvil (PlayerView) - [x] COMPLETADO
 - **Tipo**: Nueva Funcionalidad / Experiencia de Jugador.
-- **Descripción**: Permitir que cada jugador disponga en su dispositivo móvil de uno o dos **cartones de bingo virtuales interactivos** para jugar sin necesidad de cartones de papel impresos. Los jugadores podrán marcar/tachar números conforme salgan del bombo virtual de la TV y cantar Línea o Bingo directamente desde su interfaz.
-- **Decisión de Diseño de Pantalla (Modo Horizontal / Landscape)**:
-  - **Recomendación UX**: **Totalmente acertado poner el móvil en horizontal**. 
-  - **Motivo técnico y ergonómico**: Un cartón estándar de bingo español (90 bolas) consta de una matriz de **3 filas × 9 columnas** (15 números repartidos con 5 números y 4 huecos por fila). En un móvil en vertical (~360–390 px de ancho), 9 columnas dejan casillas de apenas ~35 px de ancho, haciendo imposible leer los números con comodidad o tocarlos sin pulsar la casilla vecina por error.
-  - Al girar a **horizontal** (~650–900 px de ancho útil), cada casilla dispone de espacio suficiente (~60–80 px) para un diseño táctil generoso, legible y estilizado en Casino Art Déco 1930s.
-  - **Manejo de Orientación**:
-    - Detector de orientación mediante CSS (`@media (orientation: portrait)`) y listener `screen.orientation`.
-    - Si el jugador sostiene el móvil en vertical durante la prueba de Bingo, mostrar una pantalla/overlay elegante con una animación Art Déco invitando a girar el dispositivo: *"Gira tu dispositivo en horizontal para abrir tu cartón de juego 🔄"*.
-    - Opción de visualización compacta o soporte de pantalla completa (`fullscreen`).
-- **Especificaciones Técnicas y Funcionales**:
-  - **Generación Algorítmica de Cartones**:
-    - Generador matemático de cartones válidos de 90 bolas (columna 1: 1-9, columna 2: 10-19, ..., columna 9: 80-90; exactamente 5 números por fila y 15 en total; sin números duplicados).
-    - Persistencia en `localStorage` vinculada al jugador y código de sala (`party_bingo_card_${roomCode}_${playerId}`) para que al recargar la página no cambie el cartón ni se borren las marcas.
-  - **Interacción y Trazabilidad**:
-    - Marcar/desmarcar casillas con toque háptico y sello estilo ficha de casino / tampón vintage.
-    - Detección automática inteligente: resaltar en un tono sutil los números del cartón que ya han sido cantados en el bombo de la TV (`bingoDrawnBalls`).
-  - **Botones de Acción "Cantar Línea" y "Cantar Bingo"**:
-    - Botones dorados prominentes en la cabecera o lateral del cartón.
-    - Al pulsar, emitir evento en tiempo real vía `roomSync` para alertar en directo al Host y a la TV con fanfarria sonora y animación en pantalla.
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Generador Matemático de Cartones (90 Bolas)**:
+    - Módulo [`bingoTicketGenerator.ts`](file:///c:/Users/ald19/Desktop/Documentos/Proyectos/party-game-show/src/lib/bingoTicketGenerator.ts): matriz 3×9 (5 números y 4 huecos por fila, 15 números por cartón, columnas de decenas 1-9 a 80-90 ordenadas de forma ascendente).
+    - **1 Único Cartón Inmutable por Jugador**: Asignación aleatoria única al conectar, sin opción de cambiar o regenerar números. Persistencia en `localStorage` vinculada al código de sala y jugador (`party_bingo_ticket_${roomCode}_${playerId}`).
+  - **Diseño Horizontal Dividido (*Split Landscape*) y Pantalla Completa Obligatoria**:
+    - **El cartón NUNCA sale en vertical**: en vertical solo se muestra la pantalla de instrucciones con la animación Art Déco invitando a girar el terminal (`🔄 Gira tu dispositivo a horizontal`).
+    - **Retorno automático al salir de pantalla completa**: si el jugador sale de la pantalla completa (pulsando salir, tecla escape o gesto del sistema), vuelve inmediatamente a la pantalla inicial donde se le indica que debe poner pantalla completa y girar el móvil.
+    - En horizontal y pantalla completa: layout dividido sin scroll (`100dvh`). Barra lateral izquierda con la última bola extraída, contador de bolas, botón para salir y botones de acción rápida. Cuadrícula principal en la derecha con fichas de casino hápticas y halo dorado inteligente.
+  - **Cantar Línea y Cantar Bingo en Tiempo Real**:
+    - Modal de confirmación con cotejo previo.
+    - Emisión de `BINGO_CLAIM` vía `roomSync`.
+    - **HostView**: Alerta prioritaria con cotejo visual de los números cantados (verde si ya salieron en el bombo, rojo si no) y botón de un click para validar y adjudicar los puntos (+2 pts Línea / +6 pts Bingo).
+    - **TvView**: Celebración cinemática en pantalla completa con los datos del jugador, equipo, números cantados, confeti y fanfarria.
+
+---
+
+### 3. 🔒 Bloqueo de Canto de Línea y Bingo ya Validados - [x] COMPLETADO
+- **Tipo**: Regla de Juego / Consistencia Multijugador.
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Regla de Validación Única**:
+    - Una vez que el Maestro de Ceremonias valida una Línea (+2 pts), ningún jugador puede volver a cantar Línea en esa partida.
+    - Una vez que el Maestro de Ceremonias valida un Bingo (+6 pts), la partida queda resuelta y cerrada, impidiendo nuevos cantos.
+  - **Bloqueo en el Móvil del Jugador (`PlayerBingoSection.tsx`)**:
+    - Los botones pasan a estado bloqueado y tachado (`🔒 Línea Validada` / `🏆 Bingo Validado`) al validarse el premio.
+    - Apertura de modal y emisión de reclamos bloqueados tanto a nivel visual como lógico.
+    - Si un jugador tenía abierto el modal al momento en que otro jugador es premiado, se cierra automáticamente informando con un toast.
+  - **Protección y Limpieza en la Consola del Anfitrión (`useHostBingoState.ts` / `HostBingoControls.tsx`)**:
+    - Las reclamaciones entrantes extemporáneas de modalidades ya otorgadas se descartan de inmediato.
+    - Al aceptar una Línea o Bingo, se descartan automáticamente de `pendingClaims` los demás cantos pendientes de esa misma modalidad.
+    - Indicador de estado y desactivación del botón de aceptación si una reclamación ya fue otorgada.
+    - Al reiniciar el bombo con *"Reiniciar Bombo"*, los estados de línea y bingo validados se restablecen a disponibles.
+  - **Sincronización en Sala y Pantalla TV (`roomSync.ts` / `TvView.tsx` / `TvBingoGame.tsx`)**:
+    - Los eventos `BINGO_STATE_UPDATE` y `BINGO_CLAIM_RESOLVE` sincronizan `lineAwarded`, `bingoAwarded`, `lineWinner` y `bingoWinner`.
+    - La cabecera de la TV muestra insignias en tiempo real indicando a quién se le otorgó la Línea y quién ganó el Bingo.
 
 ---
 *Última actualización: 14 de septiembre de 2026*
+
 
