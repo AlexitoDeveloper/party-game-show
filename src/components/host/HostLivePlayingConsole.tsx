@@ -2,7 +2,7 @@ import React from 'react';
 import { Award, Users, Crown, Swords, Star, RefreshCw, Play, BookOpen } from 'lucide-react';
 import { TEAMS_CATALOG } from '../../lib/constants';
 import { GameDefinition } from '../../lib/games';
-import { Team, BuzzerPressPayload, GamePhase } from '../../lib/types';
+import { Team, BuzzerPressPayload, GamePhase, Player, TeamRepresentative } from '../../lib/types';
 import { HostMusicControls } from './minigames/HostMusicControls';
 import { HostMoviesControls } from './minigames/HostMoviesControls';
 import { HostBabyPhotosControls } from './minigames/HostBabyPhotosControls';
@@ -41,6 +41,8 @@ export interface HostLivePlayingConsoleProps {
   gamePhase?: GamePhase | null;
   onStartActiveRound?: () => void;
   onToggleBriefing?: () => void;
+  teamRepresentatives?: Record<string, TeamRepresentative>;
+  players?: Player[];
 }
 
 export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
@@ -71,6 +73,8 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   gamePhase,
   onStartActiveRound,
   onToggleBriefing,
+  teamRepresentatives = {},
+  players = [],
 }) => {
   return (
     <section className="hell-card-frame rounded-3xl p-6 space-y-4">
@@ -167,6 +171,58 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           })}
         </div>
       </div>
+
+      {/* PANEL DE REPRESENTANTES DESIGNADOS POR BANDO */}
+      {['solo', 'duo', 'delegates'].includes(activeGame.participantsMode) && (
+        <div className="p-3 sm:p-3.5 bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-broadway uppercase text-gold-gradient tracking-wide">
+                Representantes en el Ruedo ({activeGame.participantsLabel})
+              </span>
+            </div>
+            <span className="text-[10px] font-vintage text-amber-200/60">
+              {activeGame.participantsMode === 'solo' ? '1 por bando' : activeGame.participantsMode === 'duo' ? '2 por bando' : 'Hasta 3 por bando'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+            {activeTeams.map((team) => {
+              const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
+              const rep = teamRepresentatives[team.id];
+              const names = rep?.representativeNames?.length
+                ? rep.representativeNames
+                : rep?.representativeName
+                ? [rep.representativeName]
+                : [];
+
+              return (
+                <div
+                  key={team.id}
+                  className="bg-[#12121c] border border-[#d4af37]/30 rounded-xl p-2.5 flex flex-col justify-between shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className={`text-[11px] font-broadway uppercase ${cat?.twText || 'text-amber-200'}`}>
+                      {team.name}
+                    </span>
+                    <span className={`w-2 h-2 rounded-full ${cat?.twBg}`} />
+                  </div>
+                  <div className="text-[11px] font-vintage">
+                    {names.length > 0 ? (
+                      <span className="text-amber-100 font-bold block truncate">
+                        ⭐ {names.join(', ')}
+                      </span>
+                    ) : (
+                      <span className="text-amber-200/40 italic block">Eligiendo...</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* CONTROL DEL SISTEMA DE CAPITANES: MINIDUELO Y APUESTAS */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-3.5 hell-card-frame-crimson rounded-2xl">

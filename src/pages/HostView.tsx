@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { JukeboxState, JUKEBOX_PLAYLIST } from '../lib/audio';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { TEAMS_CATALOG } from '../lib/constants';
-import { Room, Team, Player, CaptainDuelState } from '../lib/types';
+import { Room, Team, Player, CaptainDuelState, TeamRepresentative } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
 import { getRoomSync } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition, ScoringOption } from '../lib/games';
@@ -126,6 +126,18 @@ export default function HostView() {
 
   const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
   const [captainGambles, setCaptainGambles] = useState<Record<string, { teamId: string; teamName: string; playerName: string }>>({});
+  const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
+    const saved = localStorage.getItem(`party_representatives_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`party_representatives_${roomCode}`, JSON.stringify(teamRepresentatives));
+  }, [teamRepresentatives, roomCode]);
+
   const [showCoinBurst, setShowCoinBurst] = useState(false);
   const [selectedTeamForPoints, setSelectedTeamForPoints] = useState<string>('');
   const [podiumPage, setPodiumPage] = useState<'podium' | 'medals'>('podium');
@@ -543,6 +555,18 @@ export default function HostView() {
         }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
+      } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
+        setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
+      } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
+        if (event.payload?.teamId) {
+          setTeamRepresentatives((prev) => {
+            const next = { ...prev };
+            delete next[event.payload!.teamId!];
+            return next;
+          });
+        } else {
+          setTeamRepresentatives({});
+        }
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
         if (powerCardsRef.current) {
           roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCardsRef.current });
@@ -999,6 +1023,8 @@ export default function HostView() {
               gamePhase={room.game_phase || 'briefing'}
               onStartActiveRound={handleStartActiveRound}
               onToggleBriefing={handleToggleBriefing}
+              teamRepresentatives={teamRepresentatives}
+              players={players}
             />
           ) : (
             <HostStandbySection

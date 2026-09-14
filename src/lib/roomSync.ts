@@ -78,6 +78,7 @@ export type RoomSyncEvent =
   | { type: 'PLAY_SOUND'; payload: { sound: string } }
   | { type: 'LAUNCH_TIMER'; payload: { seconds: number } }
   | { type: 'CLEAR_CAPTAIN_GAMBLES'; payload?: { teamId?: string } }
+  | { type: 'CLEAR_TEAM_REPRESENTATIVES'; payload?: { teamId?: string } }
   | { type: 'TEST_FINISHED'; payload: { gameTitle: string; winnerTeamName?: string } }
   | {
       type: 'TEST_VERDICT_APPLIED';
@@ -178,6 +179,8 @@ export class RoomSync {
   private instanceId: string;
   private localChannel: BroadcastChannel | null = null;
   private supabaseChannel: ReturnType<typeof supabase.channel> | null = null;
+  private isSupabaseSubscribed = false;
+  private pendingSupabaseQueue: RelayMessage[] = [];
   private listeners: ((event: RoomSyncEvent) => void)[] = [];
   private processedEventIds = new Set<string>();
 
@@ -220,27 +223,81 @@ export class RoomSync {
       });
     }
 
-    // 3. Canal Supabase Realtime (cuando se configuran credenciales en la nube)
+    // 3. Canal Supabase Realtime (WebSockets en la nube para Vercel y datos móviles 4G/5G)
     if (isSupabaseConfigured) {
-      try {
-        this.supabaseChannel = supabase.channel(`room-state-sync:${this.roomCode}`);
-        this.supabaseChannel
-          .on('broadcast', { event: 'STATE_EVENT' }, ({ payload }) => {
-            const msg = payload as RelayMessage;
-            if (msg && msg.senderId !== this.instanceId) {
-              this.handleIncoming(msg.eventId, msg.event);
-            }
-          })
-          .subscribe();
-      } catch (err) {
-        console.warn('Error inicializando canal de Supabase:', err);
-      }
+      this.initSupabaseChannel();
     }
 
-    // 4. Canal WebRTC PeerJS P2P (Multi-dispositivo en la nube para Vercel)
+    // 4. Canal WebRTC PeerJS P2P (Respaldo directo)
     if (typeof window !== 'undefined') {
       this.initPeerRelay();
+
+      // Escuchadores de reconexión móvil inmediata al desbloquear pantalla o cambiar de app
+      window.addEventListener('visibilitychange', this.handleVisibilityChange);
+      window.addEventListener('focus', this.handleVisibilityChange);
+      window.addEventListener('online', this.handleVisibilityChange);
     }
+  }
+
+  private handleVisibilityChange = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (isSupabaseConfigured && (!this.supabaseChannel || !this.isSupabaseSubscribed)) {
+        this.initSupabaseChannel();
+      }
+      this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+      this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
+    }
+  };
+
+  private initSupabaseChannel() {
+    if (!isSupabaseConfigured || this.isDestroyed || !this.roomCode) return;
+    try {
+      if (this.supabaseChannel) {
+        try { supabase.removeChannel(this.supabaseChannel); } catch {}
+        this.supabaseChannel = null;
+      }
+      this.isSupabaseSubscribed = false;
+
+      const chan = supabase.channel(`room-state-sync:${this.roomCode}`);
+      this.supabaseChannel = chan;
+
+      chan
+        .on('broadcast', { event: 'STATE_EVENT' }, ({ payload }) => {
+          const msg = payload as RelayMessage;
+          if (msg && msg.senderId !== this.instanceId) {
+            this.handleIncoming(msg.eventId, msg.event);
+          }
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            this.isSupabaseSubscribed = true;
+            this.flushPendingSupabaseQueue();
+            this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+            this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            this.isSupabaseSubscribed = false;
+          }
+        });
+    } catch (err) {
+      console.warn('Error inicializando canal de Supabase:', err);
+    }
+  }
+
+  private flushPendingSupabaseQueue() {
+    if (!this.supabaseChannel || !this.isSupabaseSubscribed || this.pendingSupabaseQueue.length === 0) return;
+    const toSend = [...this.pendingSupabaseQueue];
+    this.pendingSupabaseQueue = [];
+    toSend.forEach((msg) => {
+      try {
+        this.supabaseChannel?.send({
+          type: 'broadcast',
+          event: 'STATE_EVENT',
+          payload: msg,
+        });
+      } catch (err) {
+        console.warn('Error enviando mensaje encolado de Supabase:', err);
+      }
+    });
   }
 
   private initPeerRelay() {
@@ -536,13 +593,19 @@ export class RoomSync {
 
     // 3. Enviar por Supabase Realtime si está activo
     if (this.supabaseChannel) {
-      try {
-        this.supabaseChannel.send({
-          type: 'broadcast',
-          event: 'STATE_EVENT',
-          payload: message,
-        });
-      } catch {}
+      if (this.isSupabaseSubscribed) {
+        try {
+          this.supabaseChannel.send({
+            type: 'broadcast',
+            event: 'STATE_EVENT',
+            payload: message,
+          });
+        } catch {
+          this.pendingSupabaseQueue.push(message);
+        }
+      } else {
+        this.pendingSupabaseQueue.push(message);
+      }
     }
 
     // 4. Enviar por PeerJS WebRTC P2P (Vercel)
@@ -590,6 +653,11 @@ export class RoomSync {
       SHARED_INSTANCES.delete(key);
     }
 
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      window.removeEventListener('focus', this.handleVisibilityChange);
+      window.removeEventListener('online', this.handleVisibilityChange);
+    }
     if (this.localChannel) {
       this.localChannel.close();
       this.localChannel = null;

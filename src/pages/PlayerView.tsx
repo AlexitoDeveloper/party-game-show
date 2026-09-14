@@ -13,6 +13,7 @@ import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards'
 import PowerCardView from '../components/PowerCardView';
 import { FannedHandDeck } from '../components/cards/FannedHandDeck';
 import { PlayerBuzzerSection } from '../components/player/PlayerBuzzerSection';
+import { CaptainRepSelectorModal } from '../components/player/CaptainRepSelectorModal';
 import { PlayerBingoSection } from '../components/player/PlayerBingoSection';
 import { PlayerMimicaSection } from '../components/player/PlayerMimicaSection';
 import { PlayerDoubleOrNothingModal } from '../components/player/PlayerDoubleOrNothingModal';
@@ -161,7 +162,7 @@ export default function PlayerView() {
     return found || GAMES_CATALOG[0];
   }, [room.active_game_id]);
 
-  // Recuperar sesión persistente única por cada pestaña/ventana
+  // Recuperar sesión persistente con prioridad en localStorage para resistir bloqueos de móvil
   useEffect(() => {
     // 1. Solicitar inmediatamente el estado activo de la sala a TV/Host
     roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
@@ -169,26 +170,35 @@ export default function PlayerView() {
     const urlParams = new URLSearchParams(window.location.search);
     const forceNew = urlParams.has('new') || urlParams.get('logout') === 'true';
 
+    const getStored = (key: string) => localStorage.getItem(key) || sessionStorage.getItem(key);
+    const setStored = (key: string, val: string) => {
+      try { localStorage.setItem(key, val); } catch {}
+      try { sessionStorage.setItem(key, val); } catch {}
+    };
+    const removeStored = (key: string) => {
+      try { localStorage.removeItem(key); } catch {}
+      try { sessionStorage.removeItem(key); } catch {}
+    };
+
     if (forceNew) {
-      sessionStorage.removeItem(`party_session_${roomCode}`);
-      sessionStorage.removeItem(`party_nick_${roomCode}`);
-      sessionStorage.removeItem(`party_team_${roomCode}`);
-      sessionStorage.removeItem(`party_avatar_seed_${roomCode}`);
-      sessionStorage.removeItem(`party_avatar_style_${roomCode}`);
+      removeStored(`party_session_${roomCode}`);
+      removeStored(`party_nick_${roomCode}`);
+      removeStored(`party_team_${roomCode}`);
+      removeStored(`party_avatar_seed_${roomCode}`);
+      removeStored(`party_avatar_style_${roomCode}`);
     }
 
-    // Cada pestaña mantiene su sesión independiente para permitir múltiples jugadores en el mismo navegador o dispositivo
-    let token = sessionStorage.getItem(`party_session_${roomCode}`);
+    let token = getStored(`party_session_${roomCode}`);
     if (!token) {
       token = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-      sessionStorage.setItem(`party_session_${roomCode}`, token);
+      setStored(`party_session_${roomCode}`, token);
     }
     setSessionToken(token);
 
-    const savedNick = !forceNew ? sessionStorage.getItem(`party_nick_${roomCode}`) : null;
-    const savedTeamIndex = !forceNew ? sessionStorage.getItem(`party_team_${roomCode}`) : null;
-    const savedAvatarSeed = sessionStorage.getItem(`party_avatar_seed_${roomCode}`);
-    const savedAvatarStyle = (sessionStorage.getItem(`party_avatar_style_${roomCode}`)) as DiceBearStyle | null;
+    const savedNick = !forceNew ? getStored(`party_nick_${roomCode}`) : null;
+    const savedTeamIndex = !forceNew ? getStored(`party_team_${roomCode}`) : null;
+    const savedAvatarSeed = getStored(`party_avatar_seed_${roomCode}`);
+    const savedAvatarStyle = (getStored(`party_avatar_style_${roomCode}`)) as DiceBearStyle | null;
 
     if (savedAvatarSeed) setAvatarSeed(savedAvatarSeed);
     if (savedAvatarStyle) setAvatarStyle(savedAvatarStyle);
@@ -220,6 +230,26 @@ export default function PlayerView() {
       // Notificar a la TV y Host
       roomSync.broadcast({ type: 'PLAYER_JOINED', payload: existingPlayer });
     }
+
+    // Reactivación inmediata al desbloquear pantalla o cambiar de aplicación
+    const handleReactivation = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
+        if (playerRef.current) {
+          roomSync.broadcast({ type: 'PLAYER_JOINED', payload: playerRef.current });
+        }
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleReactivation);
+    window.addEventListener('focus', handleReactivation);
+    window.addEventListener('online', handleReactivation);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleReactivation);
+      window.removeEventListener('focus', handleReactivation);
+      window.removeEventListener('online', handleReactivation);
+    };
   }, [roomCode, roomSync]);
 
   // Mantener referencia síncrona del jugador para responder a peticiones de sincronización sin reiniciar listeners
@@ -318,6 +348,16 @@ export default function PlayerView() {
         setCaptainDuel(event.payload);
       } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
         setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
+      } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
+        if (event.payload?.teamId) {
+          setTeamRepresentatives((prev) => {
+            const next = { ...prev };
+            delete next[event.payload!.teamId!];
+            return next;
+          });
+        } else {
+          setTeamRepresentatives({});
+        }
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
         // La TV o el Host han pedido sincronizar la lista de jugadores
         if (playerRef.current) {
@@ -443,6 +483,11 @@ export default function PlayerView() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(`party_session_${roomCode}`);
+    localStorage.removeItem(`party_nick_${roomCode}`);
+    localStorage.removeItem(`party_team_${roomCode}`);
+    localStorage.removeItem(`party_avatar_seed_${roomCode}`);
+    localStorage.removeItem(`party_avatar_style_${roomCode}`);
     sessionStorage.removeItem(`party_session_${roomCode}`);
     sessionStorage.removeItem(`party_nick_${roomCode}`);
     sessionStorage.removeItem(`party_team_${roomCode}`);
@@ -672,12 +717,14 @@ export default function PlayerView() {
     setTimeout(() => setFeedbackToast(null), 4000);
   };
 
-  const handleDesignateRepresentative = (tPlayerId: string, tPlayerName: string) => {
+  const handleDesignateRepresentatives = (tPlayerIds: string[], tPlayerNames: string[]) => {
     if (!myTeamId || !player?.is_captain) return;
     const rep: TeamRepresentative = {
       teamId: myTeamId,
-      representativePlayerId: tPlayerId,
-      representativeName: tPlayerName,
+      representativePlayerIds: tPlayerIds,
+      representativeNames: tPlayerNames,
+      representativePlayerId: tPlayerIds[0] || '',
+      representativeName: tPlayerNames[0] || '',
     };
     setTeamRepresentatives((prev) => ({ ...prev, [myTeamId]: rep }));
     roomSync.broadcast({
@@ -685,9 +732,36 @@ export default function PlayerView() {
       payload: rep,
     });
     setIsRepModalOpen(false);
-    setFeedbackToast(`👤 ${tPlayerName} designado representante.`);
+    const namesStr = tPlayerNames.join(', ');
+    setFeedbackToast(`👤 ${namesStr} en el ruedo.`);
     setTimeout(() => setFeedbackToast(null), 4000);
   };
+
+  // Miembros de mi bando para el selector de representantes del capitán
+  const myTeamMembers = useMemo(() => {
+    if (!myTeamId && !selectedTeam) return [];
+    return allPlayers.filter(
+      (p) => p.team_id === myTeamId || p.team_index === selectedTeam?.index
+    );
+  }, [allPlayers, myTeamId, selectedTeam?.index]);
+
+  // Modo y representantes del minijuego en curso
+  const isRepGame = ['solo', 'duo', 'delegates'].includes(activeGame.participantsMode);
+  const maxRepresentatives = activeGame.participantsMode === 'solo' ? 1 : activeGame.participantsMode === 'duo' ? 2 : 3;
+  const currentTeamRep = myTeamId ? teamRepresentatives[myTeamId] : null;
+  const repIds = currentTeamRep?.representativePlayerIds && currentTeamRep.representativePlayerIds.length > 0
+    ? currentTeamRep.representativePlayerIds
+    : currentTeamRep?.representativePlayerId
+    ? [currentTeamRep.representativePlayerId]
+    : [];
+  const repNames = currentTeamRep?.representativeNames && currentTeamRep.representativeNames.length > 0
+    ? currentTeamRep.representativeNames
+    : currentTeamRep?.representativeName
+    ? [currentTeamRep.representativeName]
+    : [];
+  const hasDesignatedReps = repIds.length > 0;
+  // Solo se envía al banquillo si el juego requiere representantes, ya se eligieron, y este jugador no está entre ellos
+  const isMeRepresentative = !isRepGame || !hasDesignatedReps || repIds.includes(player?.id || sessionToken);
 
   const executeCardAction = (card: PowerCard, tTeamId?: string, tPlayerName?: string, tCardId?: string) => {
     if (!myTeamId || !selectedTeam) return;
@@ -911,34 +985,64 @@ export default function PlayerView() {
               </button>
             </div>
 
-            {/* ROL DE CAPITÁN Y BOTÓN DE DOBLE O NADA */}
-            <div className="w-full flex items-center justify-between gap-2 px-1">
-              {player?.is_captain ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase shadow-sm">
-                  <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
-                  <span>👑 Eres el Capitán</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14141e] border border-[#d4af37]/25 text-amber-200/70 text-[10px] font-vintage font-bold">
-                  <UserCheck className="w-3 h-3 text-amber-400" />
-                  <span>Miembro de Mesa</span>
-                </div>
+            {/* ROL DE CAPITÁN Y BOTONES DE ACCIÓN */}
+            <div className="w-full flex flex-col gap-2 px-1">
+              <div className="w-full flex items-center justify-between gap-2">
+                {player?.is_captain ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase shadow-sm">
+                    <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
+                    <span>👑 Eres el Capitán</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14141e] border border-[#d4af37]/25 text-amber-200/70 text-[10px] font-vintage font-bold">
+                    <UserCheck className="w-3 h-3 text-amber-400" />
+                    <span>Miembro de Mesa</span>
+                  </div>
+                )}
+
+                {/* Botón de Doble o Nada exclusivo para el Capitán */}
+                {player?.is_captain && (
+                  <button
+                    onClick={() => setIsDoubleModalOpen(true)}
+                    disabled={!!(myTeamId && captainGambles[myTeamId])}
+                    className={`px-3 py-1 rounded-full text-[10px] font-broadway uppercase tracking-wider flex items-center gap-1 transition-all shadow-md active:scale-95 ${
+                      myTeamId && captainGambles[myTeamId]
+                        ? 'bg-amber-500/20 text-amber-300 border border-[#d4af37]/50 opacity-70'
+                        : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold font-black'
+                    }`}
+                  >
+                    <Star className="w-3 h-3 fill-current" />
+                    <span>{myTeamId && captainGambles[myTeamId] ? '🔥 Doble o Nada Activo' : '⭐ Doble o Nada'}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Botón de Selección de Representantes exclusivo para el Capitán en juegos que lo requieran */}
+              {player?.is_captain && isRepGame && (
+                <button
+                  onClick={() => setIsRepModalOpen(true)}
+                  className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/30 via-yellow-500/20 to-amber-700/30 border border-[#d4af37]/60 text-amber-200 hover:text-white flex items-center justify-between gap-2 text-[11px] font-vintage font-bold transition-all shadow-sm active:scale-98"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Designar Representantes</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-broadway font-black ${
+                    repIds.length > 0 ? 'bg-gold-gradient text-slate-950' : 'bg-stone-800 text-amber-300'
+                  }`}>
+                    {repIds.length > 0 ? `${repIds.length}/${maxRepresentatives} Elegidos` : `Elegir (${maxRepresentatives})`}
+                  </span>
+                </button>
               )}
 
-              {/* Botón de Doble o Nada exclusivo para el Capitán */}
-              {player?.is_captain && (
-                <button
-                  onClick={() => setIsDoubleModalOpen(true)}
-                  disabled={!!(myTeamId && captainGambles[myTeamId])}
-                  className={`px-3 py-1 rounded-full text-[10px] font-broadway uppercase tracking-wider flex items-center gap-1 transition-all shadow-md active:scale-95 ${
-                    myTeamId && captainGambles[myTeamId]
-                      ? 'bg-amber-500/20 text-amber-300 border border-[#d4af37]/50 opacity-70'
-                      : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold font-black'
-                  }`}
-                >
-                  <Star className="w-3 h-3 fill-current" />
-                  <span>{myTeamId && captainGambles[myTeamId] ? '🔥 Doble o Nada Activo' : '⭐ Doble o Nada'}</span>
-                </button>
+              {/* Indicador para los compañeros cuando ya hay representantes */}
+              {!player?.is_captain && isRepGame && hasDesignatedReps && (
+                <div className="w-full py-1 px-3 rounded-xl bg-[#14141e]/90 border border-[#d4af37]/25 flex items-center justify-between text-[10px] font-vintage">
+                  <span className="text-amber-200/70">Tu posición en esta prueba:</span>
+                  <span className={`font-broadway uppercase ${isMeRepresentative ? 'text-gold-gradient font-black' : 'text-amber-300/80'}`}>
+                    {isMeRepresentative ? '⭐ ¡En el Ruedo!' : '🍿 En el Banquillo'}
+                  </span>
+                </div>
               )}
             </div>
 
@@ -1107,6 +1211,8 @@ export default function PlayerView() {
               onBuzzerClick={handleBuzzerClick}
               isMeWinner={isMeWinner}
               winner={winner}
+              isBenchMode={!isMeRepresentative}
+              representativeNames={repNames}
             />
           ) : activeGame.id === 'bingo' ? (
             <PlayerBingoSection
@@ -1254,6 +1360,18 @@ export default function PlayerView() {
         isOpen={isDoubleModalOpen}
         onClose={() => setIsDoubleModalOpen(false)}
         onConfirm={handleTriggerDoubleOrNothing}
+      />
+
+      {/* MODAL DEL CAPITÁN: SELECTOR DE REPRESENTANTES */}
+      <CaptainRepSelectorModal
+        isOpen={isRepModalOpen}
+        onClose={() => setIsRepModalOpen(false)}
+        teamMembers={myTeamMembers}
+        currentRep={currentTeamRep}
+        maxRepresentatives={maxRepresentatives}
+        gameTitle={activeGame.title}
+        gameEmoji={activeGame.emoji}
+        onConfirm={handleDesignateRepresentatives}
       />
 
       {/* FOOTER */}

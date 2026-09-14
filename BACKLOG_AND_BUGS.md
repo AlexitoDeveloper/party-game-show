@@ -78,6 +78,31 @@ Documento de seguimiento de incidencias, peticiones de usuario y mejoras pendien
     - La cabecera de la TV muestra insignias en tiempo real indicando a quién se le otorgó la Línea y quién ganó el Bingo.
 
 ---
+
+### 4. 👥 Selector de Representantes de Equipo, Concurrencia de 20 Dispositivos y Reconexión Blindada - [x] COMPLETADO
+- **Tipo**: Arquitectura de Red / Lógica de Concurso / UX Multijugador.
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Selector Táctil de Representantes para el Capitán (`CaptainRepSelectorModal.tsx`)**:
+    - En minijuegos que requieren representantes (`solo`, `duo`, `delegates`), el Capitán tiene el botón dorado *`👥 Designar Representantes`*.
+    - Modal Art Déco con selección táctil de compañeros, límite dinámico según el juego y confirmación al instante.
+    - Emisión del evento `CAPTAIN_REPRESENTATIVE` con array múltiple de IDs y nombres.
+  - **Rol de Apoyo y Bloqueo Amigable en Móvil (`PlayerBuzzerSection.tsx` & `PlayerView.tsx`)**:
+    - **Representantes en el ruedo**: Timbre arcade de bronce desbloqueado con animación y háptico.
+    - **Compañeros en el banquillo**: Pantalla distinguida *`🍿 EN EL BANQUILLO - Asesora a tu equipo en la mesa`*, mostrando quiénes son los representantes activos y evitando pulsaciones accidentales.
+  - **Supervisión en la Consola del Host y la TV (`HostLivePlayingConsole.tsx` & `TvGameBriefingCard.tsx`)**:
+    - Panel de representantes en la consola del Maestro de Ceremonias con los combatientes de cada bando.
+    - Tira de combatientes en la pantalla de TV durante el Briefing de cada minijuego.
+  - **Garantía de 20 Dispositivos Concurrentes en Vercel sobre Red Móvil 4G/5G (`roomSync.ts`)**:
+    - Canal centralizado de Supabase Realtime (WebSockets seguros por puerto 443) inmune al cortafuegos CGNAT de los operadores móviles.
+    - Cola de mensajes pendientes (`pendingSupabaseQueue`) para que ningún evento se descarte mientras el socket conecta.
+    - Pings de latido para mantener los túneles móviles despiertos.
+  - **Reconexión Inmediata sin Pérdida de Datos ante Bloqueo de Pantalla**:
+    - Migración de sesión a `localStorage` persistente (`party_session_`, `party_nick_`, `party_team_`, `party_avatar_`).
+    - Si el usuario bloquea el móvil, se sale a otra app o se suspende la pestaña en Safari/Chrome, al volver a abrir el enlace entra en **0 segundos** con su mismo nombre, bando, cartón de bingo y capitanía.
+    - Escuchadores de `visibilitychange`, `focus` y `online` para reconectar y sincronizar la partida en milisegundos en cuanto enciende la pantalla.
+
+---
 *Última actualización: 14 de septiembre de 2026*
 
 

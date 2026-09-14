@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
-import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState, BingoClaimPayload } from '../lib/types';
+import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState, BingoClaimPayload, TeamRepresentative } from '../lib/types';
 import { OFFICIAL_TRIVIA_QUESTIONS, TriviaQuestion } from '../lib/triviaData';
 import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDosTresData';
 import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
@@ -159,6 +159,18 @@ export default function TvView() {
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
   const [showTvCoinBurst, setShowTvCoinBurst] = useState(false);
+
+  const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
+    const saved = localStorage.getItem(`party_representatives_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`party_representatives_${roomCode}`, JSON.stringify(teamRepresentatives));
+  }, [teamRepresentatives, roomCode]);
 
   // Instancia de sincronización multi-pantalla como pantalla de TV
   const roomSync = useMemo(() => getRoomSync(roomCode, 'tv'), [roomCode]);
@@ -559,6 +571,18 @@ export default function TvView() {
         setCaptainDuel(event.payload);
         if (event.payload.isActive) {
           soundFX.playBuzzer();
+        }
+      } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
+        setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
+      } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
+        if (event.payload?.teamId) {
+          setTeamRepresentatives((prev) => {
+            const next = { ...prev };
+            delete next[event.payload!.teamId!];
+            return next;
+          });
+        } else {
+          setTeamRepresentatives({});
         }
       } else if (event.type === 'TRIVIA_STATE_UPDATE') {
         setTriviaIndex(event.payload.questionIndex);
@@ -989,7 +1013,11 @@ export default function TvView() {
       ) : room.game_phase === 'briefing' ? (
         /* ================= VISTA BRIEFING / PRESENTACIÓN DEL JUEGO ================= */
         <section className="flex-1 h-full min-h-0 flex flex-col justify-center items-center z-10 w-full max-w-6xl mx-auto px-2 sm:px-4 py-1 overflow-hidden">
-          <TvGameBriefingCard game={activeGame} />
+          <TvGameBriefingCard
+            game={activeGame}
+            teamRepresentatives={teamRepresentatives}
+            activeTeams={teams.filter((t) => t.is_active)}
+          />
         </section>
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ACTIVO ================= */

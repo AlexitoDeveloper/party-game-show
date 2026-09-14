@@ -4,11 +4,25 @@ import { Users, Trophy } from 'lucide-react';
 import { GameDefinition, GAMES_CATALOG } from '../../lib/games';
 import { GameCoverImage } from '../common/GameCoverImage';
 
+import { Team, TeamRepresentative } from '../../lib/types';
+
 interface TvGameBriefingCardProps {
   game: GameDefinition;
+  teamRepresentatives?: Record<string, TeamRepresentative>;
+  activeTeams?: Team[];
 }
 
-export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({ game }) => {
+export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
+  game,
+  teamRepresentatives = {},
+  activeTeams = [],
+}) => {
+  const isRepGame = ['solo', 'duo', 'delegates'].includes(game.participantsMode);
+  const hasAnyReps = Object.keys(teamRepresentatives).some((k) => {
+    const r = teamRepresentatives[k];
+    return (r.representativePlayerIds && r.representativePlayerIds.length > 0) || !!r.representativePlayerId;
+  });
+
   const gameIndex = React.useMemo(() => {
     const idx = GAMES_CATALOG.findIndex((g) => g.id === game.id);
     return idx >= 0 ? idx : 0;
@@ -70,6 +84,35 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({ game }) 
           </div>
         </div>
       </div>
+
+      {/* 1B. TIRA DE REPRESENTANTES DESIGNADOS POR BANDO */}
+      {isRepGame && activeTeams.length > 0 && (
+        <div className="w-full shrink-0 mb-1 bg-[#0c0c14]/90 border border-[#d4af37]/35 px-4 py-1.5 rounded-xl flex items-center justify-between gap-2 overflow-x-auto shadow-sm">
+          <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-broadway uppercase shrink-0">
+            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <span>Representantes al Ruedo:</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {activeTeams.map((team) => {
+              const rep = teamRepresentatives[team.id];
+              const names = rep?.representativeNames?.length
+                ? rep.representativeNames
+                : rep?.representativeName
+                ? [rep.representativeName]
+                : [];
+              return (
+                <div key={team.id} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 border border-[#d4af37]/30 text-[10px]">
+                  <span className={`w-2 h-2 rounded-full ${team.color_tw}`} />
+                  <span className="font-vintage text-amber-100 font-bold">{team.name}:</span>
+                  <span className="font-broadway text-amber-300">
+                    {names.length > 0 ? names.join(', ') : <span className="text-amber-200/50 italic">Capitán eligiendo...</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 2. ESCENARIO CENTRAL FLEXIBLE: ADAPTADO AL ALTO EXACTO DISPONIBLE */}
       <div className="w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden my-auto py-0.5">

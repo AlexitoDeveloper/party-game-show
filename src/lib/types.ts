@@ -61,8 +61,11 @@ export interface CaptainDuelState {
 
 export interface TeamRepresentative {
   teamId: string;
-  representativePlayerId: string;
-  representativeName: string;
+  representativePlayerIds: string[];
+  representativeNames: string[];
+  // Campos opcionales para compatibilidad
+  representativePlayerId?: string;
+  representativeName?: string;
 }
 
 export interface SecretCard {
