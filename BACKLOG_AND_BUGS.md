@@ -131,6 +131,21 @@ Documento de seguimiento de incidencias, peticiones de usuario y mejoras pendien
     - Contenedores interiores (`PASO 1`, `PASO 2`, `PASO 3C`) con `min-h-0`, `pb-12` optimizado y scroll interno invisible (`.no-scrollbar`) solo si la pantalla es muy corta, impidiendo cualquier desplazamiento o rebote de la ventana completa del navegador.
 
 ---
+
+### 7. 🃏 Prevención de Apertura Accidental de Mano de Naipes al Salir de Pantalla Completa - [x] COMPLETADO
+- **Tipo**: Bugfix UX / Eventos Táctiles / Fullscreen API.
+- **Estado**: ✅ **Completado e Implementado**.
+- **Solución Implementada**:
+  - **Causa Raíz**:
+    - Al salir de pantalla completa (tanto en el botón del encabezado como en la barra lateral del cartón de Bingo o mediante el gesto del sistema), el cambio brusco de altura del viewport y el desplazamiento de coordenadas táctiles (efecto *ghost click* o propagación del evento táctil) impactaba sobre la lengüeta inferior de la bandeja de naipes (`peek-flap-btn`).
+    - Además, en teléfonos con barra de gestos inferior de navegación, la lengüeta colisionaba físicamente con la zona de arrastre del sistema operativo.
+  - **Bloqueo Inteligente de Transición (`useFullscreen.ts` & `PlayerFannedHandDrawer.tsx`)**:
+    - Se incorporó `recordFullscreenTransition()` e `isRecentFullscreenTransition()` para registrar marcas de tiempo precisas en cualquier cambio de pantalla completa.
+    - Si se produce un evento de clic o toque en la lengüeta durante o hasta 650 ms después de un cambio de pantalla completa, se descarta automáticamente.
+    - Se añadieron `onPointerDown={(e) => e.stopPropagation()}` y `e.stopPropagation()` en `FullscreenButton`, `handleExitFullscreen` y en el disparador de la mano para aislar completamente el flujo de eventos.
+    - Se añadió margen de seguridad `pb-[max(env(safe-area-inset-bottom,0px),4px)]` en el anclaje inferior para respetar la barra de navegación del terminal.
+
+---
 *Última actualización: 14 de septiembre de 2026*
 
 
