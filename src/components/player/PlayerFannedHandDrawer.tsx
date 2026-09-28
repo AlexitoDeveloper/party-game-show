@@ -53,11 +53,8 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
   const [targetCardId, setTargetCardId] = useState<string | undefined>(undefined);
   const [isManualPlayerEntry, setIsManualPlayerEntry] = useState(false);
 
-  const toggleDrawer = (e?: React.MouseEvent | React.TouchEvent | React.SyntheticEvent) => {
+  const openDrawer = (e?: React.SyntheticEvent) => {
     if (e) {
-      if (typeof (e as any).preventDefault === 'function') {
-        (e as any).preventDefault();
-      }
       e.stopPropagation();
     }
     // Evitar que toques o clics accidentales/fantasmas durante o justo tras salir de pantalla completa abran la mano
@@ -65,10 +62,16 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
       return;
     }
     playerHaptics.cardSlide();
-    setIsOpen((prev) => !prev);
-    if (isOpen) {
-      setSelectedCardToPlay(null);
+    setIsOpen(true);
+  };
+
+  const closeDrawer = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
     }
+    playerHaptics.cardSlide();
+    setIsOpen(false);
+    setSelectedCardToPlay(null);
   };
 
   const handleSelectCard = (card: PowerCard) => {
@@ -102,20 +105,18 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
       {/* 1. BOTÓN / LENGÜETA INFERIOR (CENTRADO HORIZONTAL EN LA PARTE INFERIOR) */}
       <AnimatePresence>
         {!isOpen && (!isBuzzerActive || cardCount > 0) && (
-          <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none select-none pb-[max(env(safe-area-inset-bottom,0px),4px)]">
+          <motion.div
+            key="peek-flap-wrapper"
+            initial={{ y: 25, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 25, opacity: 0, pointerEvents: 'none' }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none select-none pb-[max(env(safe-area-inset-bottom,0px),4px)]"
+          >
             <motion.button
-              key="peek-flap-btn"
               type="button"
-              onClick={toggleDrawer}
+              onClick={openDrawer}
               onPointerDown={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                toggleDrawer(e);
-              }}
-              initial={{ y: 25, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 25, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.97 }}
               className={`pointer-events-auto px-4 py-2 rounded-t-2xl border-t-2 border-x-2 shadow-2xl flex items-center gap-2.5 backdrop-blur-xl transition-all cursor-pointer ${
@@ -149,22 +150,24 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
 
               <ChevronUp className="w-4 h-4 text-amber-300 animate-bounce" />
             </motion.button>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* 2. OVERLAY Y PANEL DESPLEGABLE CON TAPETE DE CASINO */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col justify-end items-center select-none">
+          <motion.div
+            key="drawer-overlay-wrapper"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex flex-col justify-end items-center select-none"
+          >
             {/* BACKDROP OSCURO TRANSLÚCIDO (TOCAR PARA CERRAR) */}
-            <motion.div
-              key="drawer-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={toggleDrawer}
+            <div
+              onClick={closeDrawer}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
             />
 
@@ -174,7 +177,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
               className="relative z-10 w-full max-w-md casino-velvet-tray border-t-4 border-[#d4af37] rounded-t-3xl p-4 shadow-[0_-25px_60px_rgba(0,0,0,0.95)] max-h-[85vh] overflow-y-auto flex flex-col"
             >
               {/* CABECERA DEL TAPETE */}
@@ -195,7 +198,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
 
                 <button
                   type="button"
-                  onClick={toggleDrawer}
+                  onClick={closeDrawer}
                   className="w-8 h-8 rounded-full bg-[#12121a] border border-[#d4af37]/40 text-amber-200 flex items-center justify-center hover:text-white active:scale-90 transition-all cursor-pointer"
                   title="Plegar tapete"
                 >
@@ -401,7 +404,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
                 </div>
               )}
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

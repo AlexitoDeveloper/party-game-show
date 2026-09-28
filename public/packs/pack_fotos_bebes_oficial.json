@@ -1,63 +1,4 @@
-export interface BabyPhotoItem {
-  id: string;
-  imageUrl: string;          // Ruta local (ej: '/photos/bebes/foto1.jpg') o URL web
-  personName?: string;       // Opcional: etiqueta de referencia interna
-  hint?: string;             // Pista opcional
-  ownerPlayerName?: string;  // Opcional
-}
-
-// ============================================================================
-// 🛠️ FOTOS DE PRUEBA / MODO DESARROLLO (ANTI-SPOILERS PARA EL DESARROLLADOR)
-// ============================================================================
-// Estos ejemplos son únicamente de prueba para diseñar y testear la interfaz.
-// No contienen las fotos reales de la fiesta para que puedas jugar como
-// participante sin conocer de antemano las soluciones.
-//
-// 📁 CÓMO AÑADIR LAS FOTOS REALES:
-// 1. Guarda las imágenes en la carpeta: 'public/photos/bebes/' (ej: foto1.jpg, foto2.jpg)
-// 2. Define la lista en 'public/packs/pack_fotos_bebes_oficial.json' o súbela como archivo JSON desde el Host.
-// 3. Desde el panel del Anfitrión (Host), pulsa "Pack Oficial Fiesta" para activar las fotos reales sin hacerte spoilers durante el desarrollo.
-// ============================================================================
-
-export const DEV_MOCK_BABY_PHOTOS: BabyPhotoItem[] = [
-  {
-    id: 'demo_bebe_1',
-    imageUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Leo Messi (Bebé)',
-    hint: 'Astro del fútbol mundial con 8 balones de oro',
-  },
-  {
-    id: 'demo_bebe_2',
-    imageUrl: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Rosalía (Bebé)',
-    hint: 'Cantante icónica de Motomami',
-  },
-  {
-    id: 'demo_bebe_3',
-    imageUrl: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Jugador Secreto 1',
-    ownerPlayerName: 'Álex',
-    hint: 'Uno de los concursantes de esta noche',
-  },
-  {
-    id: 'demo_bebe_4',
-    imageUrl: 'https://images.unsplash.com/photo-1522771930-78848d9293e8?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Shakira (Bebé)',
-    hint: 'Estrella internacional del pop latino',
-  },
-  {
-    id: 'demo_bebe_5',
-    imageUrl: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Jugador Secreto 2',
-    ownerPlayerName: 'Sara',
-    hint: 'Miembro de uno de los equipos en juego',
-  },
-];
-
-// ============================================================================
-// 📸 FOTOS REALES OFICIALES DE LA FIESTA (ANTI-SPOILERS, SIN RESPUESTAS)
-// ============================================================================
-export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
+[
   {
     "id": "bebe_1",
     "imageUrl": "/photos/bebes/020ebfae6bf954160799df4311850eea.jpg",
@@ -80,12 +21,12 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_5",
-    "imageUrl": "/photos/bebes/BB baby.jpg",
+    "imageUrl": "/photos/bebes/BB%20baby.jpg",
     "personName": "Foto 5"
   },
   {
     "id": "bebe_6",
-    "imageUrl": "/photos/bebes/BE baby.avif",
+    "imageUrl": "/photos/bebes/BE%20baby.avif",
     "personName": "Foto 6"
   },
   {
@@ -95,7 +36,7 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_8",
-    "imageUrl": "/photos/bebes/DB baby bule.webp",
+    "imageUrl": "/photos/bebes/DB%20baby%20bule.webp",
     "personName": "Foto 8"
   },
   {
@@ -105,7 +46,7 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_10",
-    "imageUrl": "/photos/bebes/ES baby.jpg",
+    "imageUrl": "/photos/bebes/ES%20baby.jpg",
     "personName": "Foto 10"
   },
   {
@@ -185,12 +126,12 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_26",
-    "imageUrl": "/photos/bebes/Jim C baby.jpg",
+    "imageUrl": "/photos/bebes/Jim%20C%20baby.jpg",
     "personName": "Foto 26"
   },
   {
     "id": "bebe_27",
-    "imageUrl": "/photos/bebes/lamine-yamal-bebé-es-la-mole-v0-mpa0s1d5didh1.webp",
+    "imageUrl": "/photos/bebes/lamine-yamal-beb%C3%A9-es-la-mole-v0-mpa0s1d5didh1.webp",
     "personName": "Foto 27"
   },
   {
@@ -200,12 +141,12 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_29",
-    "imageUrl": "/photos/bebes/MC babr.jpg",
+    "imageUrl": "/photos/bebes/MC%20babr.jpg",
     "personName": "Foto 29"
   },
   {
     "id": "bebe_30",
-    "imageUrl": "/photos/bebes/MJ baby.jpg",
+    "imageUrl": "/photos/bebes/MJ%20baby.jpg",
     "personName": "Foto 30"
   },
   {
@@ -215,7 +156,7 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_32",
-    "imageUrl": "/photos/bebes/moe szyslak.webp",
+    "imageUrl": "/photos/bebes/moe%20szyslak.webp",
     "personName": "Foto 32"
   },
   {
@@ -230,7 +171,7 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_35",
-    "imageUrl": "/photos/bebes/RN TEn.avif",
+    "imageUrl": "/photos/bebes/RN%20TEn.avif",
     "personName": "Foto 35"
   },
   {
@@ -270,12 +211,12 @@ export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   },
   {
     "id": "bebe_43",
-    "imageUrl": "/photos/bebes/TR baby.webp",
+    "imageUrl": "/photos/bebes/TR%20baby.webp",
     "personName": "Foto 43"
   },
   {
     "id": "bebe_44",
-    "imageUrl": "/photos/bebes/Z y C.jpg",
+    "imageUrl": "/photos/bebes/Z%20y%20C.jpg",
     "personName": "Foto 44"
   }
-];
+]

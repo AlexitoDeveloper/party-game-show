@@ -16,9 +16,10 @@ export const PlayerDoubleOrNothingModal: React.FC<PlayerDoubleOrNothingModalProp
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          key="double-or-nothing-modal"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{ opacity: 0, pointerEvents: 'none' }}
           className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 select-none"
         >
           <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">

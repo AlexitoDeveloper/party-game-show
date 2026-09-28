@@ -32,7 +32,7 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
             <Camera className="w-4 h-4 text-amber-400" />
             <span className="font-broadway uppercase">FOTO {babyPhotoIndex + 1} DE {babyPhotosCount}</span>
             <span className="text-[#d4af37]/40">•</span>
-            <span className="text-amber-100/80 font-medium">¿Famoso o Concursante? 🕵️</span>
+            <span className="text-amber-100/80 font-medium">¿Quién es este bebé? 👶</span>
           </div>
 
           <div className="bg-[#380b12]/90 border border-red-500/50 px-3.5 py-1.5 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-red-200 shadow-lg">
@@ -57,7 +57,7 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-400/15 blur-3xl pointer-events-none" />
         </div>
 
-        {/* OVERLAY: REVELADO / VEREDICTO DE ACIERTO */}
+        {/* OVERLAY: VEREDICTO DE ACIERTO EN TV */}
         <AnimatePresence>
           {babyPhotoRevealed && (
             <motion.div
@@ -66,28 +66,12 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-[#07070a]/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center hell-card-frame"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-emerald-300 shadow-[0_0_25px_rgba(52,211,153,0.5)]">
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-500 text-slate-950 text-sm font-broadway font-black uppercase tracking-widest mb-3 border border-emerald-300 shadow-[0_0_25px_rgba(52,211,153,0.5)]">
                 🎉 ¡RESPUESTA CORRECTA!
               </div>
-              {currentBabyPhoto.personName && !currentBabyPhoto.personName.startsWith('Foto ') ? (
-                <h2 className="text-4xl md:text-5xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
-                  {currentBabyPhoto.personName}
-                </h2>
-              ) : (
-                <h2 className="text-3xl md:text-4xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
-                  ¡Punto Concedido! (+2 pts)
-                </h2>
-              )}
-              {currentBabyPhoto.ownerPlayerName ? (
-                <div className="mt-2.5 inline-block bg-[#380b12]/90 border border-red-500/50 px-4 py-1.5 rounded-xl text-xs font-vintage font-bold text-red-200">
-                  👤 ¡Foto de <strong className="text-white font-broadway">{currentBabyPhoto.ownerPlayerName}</strong>! (¡No podía pulsar!)
-                </div>
-              ) : null}
-              {currentBabyPhoto.hint && (
-                <p className="mt-3 text-xs md:text-sm text-amber-100/80 italic max-w-md bg-[#0c0c14] px-4 py-1.5 rounded-xl border border-[#d4af37]/30 font-vintage">
-                  💡 Pista: "{currentBabyPhoto.hint}"
-                </p>
-              )}
+              <h2 className="text-3xl md:text-5xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
+                ¡Punto Concedido! (+2 pts)
+              </h2>
             </motion.div>
           )}
         </AnimatePresence>

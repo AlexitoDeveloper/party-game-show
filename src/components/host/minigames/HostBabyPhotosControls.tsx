@@ -102,34 +102,16 @@ export const HostBabyPhotosControls: React.FC<HostBabyPhotosControlsProps> = ({
 
         <div className="space-y-1.5 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span className="text-xs font-vintage font-bold uppercase px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
               Diapositiva #{babyPhotoIndex + 1}
             </span>
-            {activePackName.includes('Demo') ? (
-              <span className="text-xs font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                {currentBabyPhoto.category}
-              </span>
-            ) : (
-              <span className="text-xs font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                📸 Foto Real (Sin Spoilers)
-              </span>
-            )}
           </div>
           <h3 className="text-xl font-broadway text-gold-gradient">
-            {activePackName.includes('Demo')
-              ? currentBabyPhoto.personName
-              : currentBabyPhoto.personName && !currentBabyPhoto.personName.startsWith('Foto ')
-              ? currentBabyPhoto.personName
-              : `Foto #${babyPhotoIndex + 1}`}
+            Foto #{babyPhotoIndex + 1}
           </h3>
           <p className="text-xs font-vintage text-amber-200/80">
             🎙️ El concursante que pulse el timbre dirá su respuesta en voz alta. Indica si es correcta:
           </p>
-          {activePackName.includes('Demo') && currentBabyPhoto.hint && (
-            <p className="text-xs font-vintage text-amber-200/60">
-              Pista demo: <span className="text-white font-semibold">{currentBabyPhoto.hint}</span>
-            </p>
-          )}
         </div>
 
         <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">

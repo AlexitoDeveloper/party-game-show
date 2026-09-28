@@ -231,9 +231,10 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
       <AnimatePresence>
         {confirmPlayCard && (
           <motion.div
+            key="confirm-play-card-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
             className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
           >
             <motion.div
@@ -283,9 +284,10 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
       <AnimatePresence>
         {inspectingCard && (
           <motion.div
+            key="inspect-card-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
             className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none"
             onClick={() => setInspectingCard(null)}
           >

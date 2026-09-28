@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BabyPhotoItem, DEV_MOCK_BABY_PHOTOS } from '../../lib/babyPhotosData';
+import { BabyPhotoItem, DEV_MOCK_BABY_PHOTOS, OFFICIAL_BABY_PHOTOS } from '../../lib/babyPhotosData';
 import { RoomSync } from '../../lib/roomSync';
 import { BuzzerPressPayload, Team } from '../../lib/types';
 import { TEAMS_CATALOG } from '../../lib/constants';
@@ -73,43 +73,50 @@ export function useHostBabyPhotosState({
     try {
       let loadedPhotos: BabyPhotoItem[] = [];
 
-      // 1. Intentar descubrir automáticamente las imágenes en public/photos/bebes vía API de desarrollo
-      try {
-        const autoRes = await fetch('/api/photos-bebes');
-        if (autoRes.ok) {
-          const autoData = await autoRes.json();
-          if (Array.isArray(autoData) && autoData.length > 0) {
-            loadedPhotos = autoData;
-          }
-        }
-      } catch {}
+      // 1. Si tenemos la lista oficial compilada en la app, usarla directamente (100% fiable en Vercel)
+      if (OFFICIAL_BABY_PHOTOS && OFFICIAL_BABY_PHOTOS.length > 0) {
+        loadedPhotos = [...OFFICIAL_BABY_PHOTOS];
+      }
 
-      // 2. Si no hay fotos vía /api/photos-bebes, intentar cargar /packs/pack_fotos_bebes_oficial.json
+      // 2. Intentar cargar desde /packs/pack_fotos_bebes_oficial.json si estuviera presente
       if (loadedPhotos.length === 0) {
-        const res = await fetch('/packs/pack_fotos_bebes_oficial.json');
-        if (res.ok) {
-          const rawData = await res.json();
-          if (Array.isArray(rawData) && rawData.length > 0) {
-            loadedPhotos = rawData.map((item: any, idx: number) => {
-              if (typeof item === 'string') {
+        try {
+          const res = await fetch('/packs/pack_fotos_bebes_oficial.json');
+          if (res.ok) {
+            const rawData = await res.json();
+            if (Array.isArray(rawData) && rawData.length > 0) {
+              loadedPhotos = rawData.map((item: any, idx: number) => {
+                if (typeof item === 'string') {
+                  return {
+                    id: `foto_${idx + 1}`,
+                    imageUrl: item,
+                    personName: `Foto ${idx + 1}`,
+                  };
+                }
                 return {
-                  id: `foto_${idx + 1}`,
-                  imageUrl: item,
-                  personName: `Foto ${idx + 1}`,
-                  category: 'Famoso' as const,
+                  id: item.id || `foto_${idx + 1}`,
+                  imageUrl: item.imageUrl,
+                  personName: item.personName || `Foto ${idx + 1}`,
+                  hint: item.hint,
+                  ownerPlayerName: item.ownerPlayerName,
                 };
-              }
-              return {
-                id: item.id || `foto_${idx + 1}`,
-                imageUrl: item.imageUrl,
-                personName: item.personName || `Foto ${idx + 1}`,
-                category: item.category || 'Famoso',
-                hint: item.hint,
-                ownerPlayerName: item.ownerPlayerName,
-              };
-            });
+              });
+            }
           }
-        }
+        } catch {}
+      }
+
+      // 3. Fallback de desarrollo local por si se añadieron fotos nuevas en caliente
+      if (loadedPhotos.length === 0) {
+        try {
+          const autoRes = await fetch('/api/photos-bebes');
+          if (autoRes.ok) {
+            const autoData = await autoRes.json();
+            if (Array.isArray(autoData) && autoData.length > 0) {
+              loadedPhotos = autoData;
+            }
+          }
+        } catch {}
       }
 
       if (loadedPhotos.length > 0) {
@@ -124,12 +131,23 @@ export function useHostBabyPhotosState({
         resetBuzzer();
         syncBabyPhotoState(0, false, shuffled[0], shuffled.length);
       } else {
-        alert(
-          'No se encontraron imágenes en "public/photos/bebes/" ni en "/packs/pack_fotos_bebes_oficial.json".\n\nColoca tus fotos en la carpeta "public/photos/bebes/".'
-        );
+        alert('No se encontraron imágenes en "public/photos/bebes/".');
       }
     } catch (err) {
-      alert('Error al cargar las fotos reales');
+      if (OFFICIAL_BABY_PHOTOS && OFFICIAL_BABY_PHOTOS.length > 0) {
+        const shuffled = shuffleArray(OFFICIAL_BABY_PHOTOS);
+        setBabyPhotosList(shuffled);
+        const name = `Fotos Reales Fiesta (${shuffled.length} fotos)`;
+        setActivePackName(name);
+        localStorage.setItem(`party_baby_photos_${roomCode}`, JSON.stringify(shuffled));
+        localStorage.setItem(`party_baby_photos_pack_name_${roomCode}`, name);
+        setBabyPhotoIndex(0);
+        setBabyPhotoRevealed(false);
+        resetBuzzer();
+        syncBabyPhotoState(0, false, shuffled[0], shuffled.length);
+      } else {
+        alert('Error al cargar las fotos reales');
+      }
     }
   };
 
@@ -159,14 +177,12 @@ export function useHostBabyPhotosState({
                 id: `foto_${idx + 1}`,
                 imageUrl: item,
                 personName: `Foto ${idx + 1}`,
-                category: 'Famoso' as const,
               };
             }
             return {
               id: item.id || `foto_${idx + 1}`,
               imageUrl: item.imageUrl,
               personName: item.personName || `Foto ${idx + 1}`,
-              category: item.category || 'Famoso',
               hint: item.hint,
               ownerPlayerName: item.ownerPlayerName,
             };
