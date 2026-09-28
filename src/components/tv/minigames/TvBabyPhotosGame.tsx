@@ -57,21 +57,27 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-400/15 blur-3xl pointer-events-none" />
         </div>
 
-        {/* OVERLAY: REVELADO DE IDENTIDAD */}
+        {/* OVERLAY: REVELADO / VEREDICTO DE ACIERTO */}
         <AnimatePresence>
           {babyPhotoRevealed && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center hell-card-frame-crimson"
+              className="absolute inset-0 bg-[#07070a]/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center hell-card-frame"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-[#f5eedb]/50 shadow-deco-gold">
-                🎉 ¡IDENTIDAD REVELADA!
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-emerald-300 shadow-[0_0_25px_rgba(52,211,153,0.5)]">
+                🎉 ¡RESPUESTA CORRECTA!
               </div>
-              <h2 className="text-4xl md:text-5xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
-                {currentBabyPhoto.personName}
-              </h2>
+              {currentBabyPhoto.personName && !currentBabyPhoto.personName.startsWith('Foto ') ? (
+                <h2 className="text-4xl md:text-5xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
+                  {currentBabyPhoto.personName}
+                </h2>
+              ) : (
+                <h2 className="text-3xl md:text-4xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
+                  ¡Punto Concedido! (+2 pts)
+                </h2>
+              )}
               {currentBabyPhoto.ownerPlayerName ? (
                 <div className="mt-2.5 inline-block bg-[#380b12]/90 border border-red-500/50 px-4 py-1.5 rounded-xl text-xs font-vintage font-bold text-red-200">
                   👤 ¡Foto de <strong className="text-white font-broadway">{currentBabyPhoto.ownerPlayerName}</strong>! (¡No podía pulsar!)

@@ -70,7 +70,7 @@ export type RoomSyncEvent =
         targetCardId?: string;
       };
     }
-  | { type: 'BABY_PHOTO_UPDATE'; payload: { photoIndex: number; isRevealed: boolean; photoData?: BabyPhotoItem } }
+  | { type: 'BABY_PHOTO_UPDATE'; payload: { photoIndex: number; isRevealed: boolean; photoData?: BabyPhotoItem; totalPhotos?: number } }
   | { type: 'SET_CAPTAIN'; payload: { teamId: string; playerId: string } }
   | { type: 'CAPTAIN_DOUBLE_OR_NOTHING'; payload: CaptainGamble }
   | { type: 'CAPTAIN_DUEL_STATE'; payload: CaptainDuelState }

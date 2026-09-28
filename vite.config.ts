@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
 
 // Plugin de relé WebSocket local para sincronizar teléfonos móviles y PC en la misma red Wi-Fi sin configuración
 function partyRelayPlugin(env: Record<string, string>): Plugin {
@@ -128,6 +129,34 @@ function partyRelayPlugin(env: Record<string, string>): Plugin {
           });
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ playlistName, playlistCover, tracks }));
+        } catch (err) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
+
+      // Endpoint para listar automáticamente las fotos reales de bebés presentes en public/photos/bebes
+      server.middlewares.use('/api/photos-bebes', async (req, res) => {
+        try {
+          const bebesDir = path.resolve(__dirname, 'public/photos/bebes');
+          if (fs.existsSync(bebesDir)) {
+            const files = fs.readdirSync(bebesDir);
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
+            const imageFiles = files
+              .filter((f) => imageExtensions.includes(path.extname(f).toLowerCase()))
+              .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+              .map((file, idx) => ({
+                id: `foto_bebe_${idx + 1}`,
+                imageUrl: `/photos/bebes/${file}`,
+                personName: `Foto ${idx + 1}`,
+                category: 'Famoso' as const,
+              }));
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(imageFiles));
+            return;
+          }
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify([]));
         } catch (err) {
           res.statusCode = 500;
           res.end(JSON.stringify({ error: String(err) }));

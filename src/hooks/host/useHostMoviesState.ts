@@ -20,6 +20,15 @@ export interface UseHostMoviesStateParams {
   };
 }
 
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export function useHostMoviesState({
   roomCode,
   roomSync,
@@ -37,7 +46,7 @@ export function useHostMoviesState({
     if (saved) {
       try { return JSON.parse(saved); } catch {}
     }
-    return DEV_MOCK_MOVIES;
+    return shuffleArray(DEV_MOCK_MOVIES);
   });
   const [activePackName, setActivePackName] = useState<string>(() => {
     return localStorage.getItem(`party_movie_pack_name_${roomCode}`) || 'Modo Demo (Pruebas)';
@@ -47,6 +56,7 @@ export function useHostMoviesState({
   const [movieRevealed, setMovieRevealed] = useState(false);
   const [movieCategoryFilter, setMovieCategoryFilter] = useState<'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror'>('Todos');
 
+  // En la prueba de emojis se juegan todas las películas mezcladas y en orden aleatorio
   const filteredMovies = useMemo(() => {
     if (movieCategoryFilter === 'Todos') return movieBank;
     return movieBank.filter((m) => m.category === movieCategoryFilter);
@@ -74,22 +84,35 @@ export function useHostMoviesState({
     });
   };
 
+  const handleShuffleMovies = () => {
+    const shuffled = shuffleArray(movieBank);
+    setMovieBank(shuffled);
+    localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(shuffled));
+    setMovieIndex(0);
+    setMovieFrameLevel(1);
+    setMovieRevealed(false);
+    resetBuzzer();
+    syncMovieState(0, 1, false, undefined, shuffled[0]);
+  };
+
   const handleLoadOfficialPack = async () => {
     try {
       const res = await fetch('/packs/pack_peliculas_oficial.json');
       if (!res.ok) throw new Error('No se pudo cargar el archivo');
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        setMovieBank(data);
-        const name = `Pack Oficial Fiesta (${data.length} películas)`;
+        // Mezclar aleatoriamente el pack de películas para que no salgan por categorías
+        const shuffled = shuffleArray(data);
+        setMovieBank(shuffled);
+        const name = `Pack Oficial Fiesta (${shuffled.length} películas)`;
         setActivePackName(name);
-        localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(data));
+        localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(shuffled));
         localStorage.setItem(`party_movie_pack_name_${roomCode}`, name);
         setMovieIndex(0);
         setMovieFrameLevel(1);
         setMovieRevealed(false);
         resetBuzzer();
-        syncMovieState(0, 1, false, undefined, data[0]);
+        syncMovieState(0, 1, false, undefined, shuffled[0]);
       }
     } catch (err) {
       alert('Error al cargar el pack oficial de películas');
@@ -97,7 +120,8 @@ export function useHostMoviesState({
   };
 
   const handleResetToDemo = () => {
-    setMovieBank(DEV_MOCK_MOVIES);
+    const shuffled = shuffleArray(DEV_MOCK_MOVIES);
+    setMovieBank(shuffled);
     setActivePackName('Modo Demo (Pruebas)');
     localStorage.removeItem(`party_movie_bank_${roomCode}`);
     localStorage.removeItem(`party_movie_pack_name_${roomCode}`);
@@ -105,7 +129,7 @@ export function useHostMoviesState({
     setMovieFrameLevel(1);
     setMovieRevealed(false);
     resetBuzzer();
-    syncMovieState(0, 1, false, undefined, DEV_MOCK_MOVIES[0]);
+    syncMovieState(0, 1, false, undefined, shuffled[0]);
   };
 
   const handleUploadJson = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,16 +140,17 @@ export function useHostMoviesState({
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setMovieBank(parsed);
-          const name = `Custom: ${file.name} (${parsed.length} pelis)`;
+          const shuffled = shuffleArray(parsed);
+          setMovieBank(shuffled);
+          const name = `Custom: ${file.name} (${shuffled.length} pelis)`;
           setActivePackName(name);
-          localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(parsed));
+          localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(shuffled));
           localStorage.setItem(`party_movie_pack_name_${roomCode}`, name);
           setMovieIndex(0);
           setMovieFrameLevel(1);
           setMovieRevealed(false);
           resetBuzzer();
-          syncMovieState(0, 1, false, undefined, parsed[0]);
+          syncMovieState(0, 1, false, undefined, shuffled[0]);
         } else {
           alert('El archivo no contiene un array válido de películas');
         }
@@ -235,6 +260,7 @@ export function useHostMoviesState({
     handleLoadOfficialPack,
     handleResetToDemo,
     handleUploadJson,
+    handleShuffleMovies,
     handleNextMovie,
     handlePrevMovie,
     handleSetFrameLevel,

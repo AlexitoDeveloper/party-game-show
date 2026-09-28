@@ -16,7 +16,8 @@ export interface BabyPhotoItem {
 //
 // 📁 CÓMO AÑADIR LAS FOTOS REALES:
 // 1. Guarda las imágenes en la carpeta: 'public/photos/bebes/' (ej: foto1.jpg, foto2.jpg)
-// 2. O cárgalas directamente desde el panel del Anfitrión (Host) durante la fiesta.
+// 2. Define la lista en 'public/packs/pack_fotos_bebes_oficial.json' o súbela como archivo JSON desde el Host.
+// 3. Desde el panel del Anfitrión (Host), pulsa "Pack Oficial Fiesta" para activar las fotos reales sin hacerte spoilers durante el desarrollo.
 // ============================================================================
 
 export const DEV_MOCK_BABY_PHOTOS: BabyPhotoItem[] = [

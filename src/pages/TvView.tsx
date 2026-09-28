@@ -272,6 +272,7 @@ export default function TvView() {
   const [babyPhotoIndex, setBabyPhotoIndex] = useState(0);
   const [babyPhotoRevealed, setBabyPhotoRevealed] = useState(false);
   const [remoteBabyPhoto, setRemoteBabyPhoto] = useState<BabyPhotoItem | null>(null);
+  const [babyPhotosCount, setBabyPhotosCount] = useState<number>(DEV_MOCK_BABY_PHOTOS.length);
 
   const currentBabyPhoto: BabyPhotoItem =
     remoteBabyPhoto || DEV_MOCK_BABY_PHOTOS[babyPhotoIndex % DEV_MOCK_BABY_PHOTOS.length] || DEV_MOCK_BABY_PHOTOS[0];
@@ -542,6 +543,9 @@ export default function TvView() {
         setBabyPhotoRevealed(event.payload.isRevealed);
         if (event.payload.photoData) {
           setRemoteBabyPhoto(event.payload.photoData);
+        }
+        if (event.payload.totalPhotos) {
+          setBabyPhotosCount(event.payload.totalPhotos);
         }
         if (event.payload.isRevealed) {
           triggerVictoryConfetti(false);
@@ -995,6 +999,7 @@ export default function TvView() {
           activeTeams={activeTeams}
           unassignedPlayers={unassignedPlayers}
           powerCards={powerCards}
+          roomCode={roomCode}
         />
       ) : room.status === 'presentation' ? (
         /* ================= VISTA PRESENTACIÓN DEL SHOW ================= */
@@ -1173,7 +1178,7 @@ export default function TvView() {
                 <TvBabyPhotosGame
                   currentBabyPhoto={currentBabyPhoto}
                   babyPhotoIndex={babyPhotoIndex}
-                  babyPhotosCount={DEV_MOCK_BABY_PHOTOS.length}
+                  babyPhotosCount={babyPhotosCount}
                   babyPhotoRevealed={babyPhotoRevealed}
                   buzzerLocked={buzzerLocked}
                   buzzerWinner={buzzerWinner}

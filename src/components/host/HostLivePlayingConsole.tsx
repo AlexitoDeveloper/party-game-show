@@ -511,6 +511,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           onLoadOfficialPack={moviesState.handleLoadOfficialPack}
           onUploadJson={moviesState.handleUploadJson}
           onResetToDemo={moviesState.handleResetToDemo}
+          onShuffleMovies={moviesState.handleShuffleMovies}
           movieIndex={moviesState.movieIndex}
           filteredMovies={moviesState.filteredMovies}
           movieCategoryFilter={moviesState.movieCategoryFilter}
@@ -531,6 +532,10 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
       {/* MINIJUEGO: FOTOS PROYECTOR (BEBÉS) */}
       {activeGame.id === 'fotos_proyector' && (
         <HostBabyPhotosControls
+          activePackName={babyPhotosState.activePackName}
+          onLoadOfficialPack={babyPhotosState.handleLoadOfficialPack}
+          onUploadJson={babyPhotosState.handleUploadJson}
+          onResetToDemo={babyPhotosState.handleResetToDemo}
           babyPhotoIndex={babyPhotosState.babyPhotoIndex}
           babyPhotosList={babyPhotosState.babyPhotosList}
           currentBabyPhoto={babyPhotosState.currentBabyPhoto}

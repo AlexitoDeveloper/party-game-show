@@ -5,23 +5,24 @@ import {
   EyeOff,
   ChevronRight,
   ChevronLeft,
-  FolderUp,
   PackageCheck,
   Sparkle,
   Check,
   X,
+  Shuffle,
 } from 'lucide-react';
 import { MovieItem } from '../../../lib/moviesData';
 
 export interface HostMoviesControlsProps {
   activePackName: string;
   onLoadOfficialPack: () => void;
-  onUploadJson: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onUploadJson?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onResetToDemo: () => void;
+  onShuffleMovies?: () => void;
   movieIndex: number;
   filteredMovies: MovieItem[];
-  movieCategoryFilter: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror';
-  onCategoryFilterChange: (cat: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror') => void;
+  movieCategoryFilter?: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror';
+  onCategoryFilterChange?: (cat: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror') => void;
   currentMovie: MovieItem;
   movieRevealed: boolean;
   onToggleReveal: () => void;
@@ -39,6 +40,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
   onLoadOfficialPack,
   onUploadJson,
   onResetToDemo,
+  onShuffleMovies,
   movieIndex,
   filteredMovies,
   movieCategoryFilter,
@@ -82,13 +84,6 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
             <span className="sm:hidden">Oficial</span>
           </button>
 
-          <label className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 font-vintage font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
-            <FolderUp className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Subir JSON</span>
-            <span className="sm:hidden">JSON</span>
-            <input type="file" accept=".json" onChange={onUploadJson} className="hidden" />
-          </label>
-
           {!activePackName.includes('Demo') && (
             <button
               onClick={onResetToDemo}
@@ -110,21 +105,23 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
           </span>
         </div>
 
-        {/* Filtros por Categoría: Taquillazos, Disney/Pixar, Terror */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {(['Todos', 'Taquillazos', 'Disney / Pixar', 'Terror'] as const).map((cat) => (
+        {/* Control de Orden Aleatorio / Mezcla */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30 font-vintage flex items-center gap-1.5 shadow-sm">
+            <span>🎲</span> Todas Mezcladas (Aleatorio)
+          </span>
+
+          {onShuffleMovies && (
             <button
-              key={cat}
-              onClick={() => onCategoryFilterChange(cat)}
-              className={`px-2.5 py-1 rounded-xl text-xs font-vintage font-bold whitespace-nowrap transition-all ${
-                movieCategoryFilter === cat
-                  ? 'bg-gold-gradient text-slate-950 shadow-md font-black border border-[#f5eedb]/50'
-                  : 'bg-[#14141e] text-amber-200/70 hover:text-white border border-[#d4af37]/30'
-              }`}
+              onClick={onShuffleMovies}
+              className="px-3 py-1 rounded-xl text-xs font-vintage font-bold bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+              title="Volver a mezclar aleatoriamente el orden de todas las películas"
             >
-              {cat === 'Taquillazos' ? '🍿 Taquillazos' : cat === 'Disney / Pixar' ? '🏰 Disney / Pixar' : cat === 'Terror' ? '👻 Terror' : '🎬 Todos'}
+              <Shuffle className="w-3.5 h-3.5 text-[#d4af37]" />
+              <span className="hidden sm:inline">Mezclar Orden</span>
+              <span className="sm:hidden">Mezclar</span>
             </button>
-          ))}
+          )}
         </div>
       </div>
 
