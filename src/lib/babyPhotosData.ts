@@ -1,56 +1,31 @@
 export interface BabyPhotoItem {
   id: string;
-  imageUrl: string;          // Ruta local (ej: '/photos/bebes/foto1.jpg') o URL web
-  personName?: string;       // Opcional: etiqueta de referencia interna
-  hint?: string;             // Pista opcional
-  ownerPlayerName?: string;  // Opcional
+  imageUrl: string; // Ruta local (ej: '/photos/bebes/foto1.jpg') o URL web
 }
 
 // ============================================================================
 // 🛠️ FOTOS DE PRUEBA / MODO DESARROLLO (ANTI-SPOILERS PARA EL DESARROLLADOR)
 // ============================================================================
-// Estos ejemplos son únicamente de prueba para diseñar y testear la interfaz.
-// No contienen las fotos reales de la fiesta para que puedas jugar como
-// participante sin conocer de antemano las soluciones.
-//
-// 📁 CÓMO AÑADIR LAS FOTOS REALES:
-// 1. Guarda las imágenes en la carpeta: 'public/photos/bebes/' (ej: foto1.jpg, foto2.jpg)
-// 2. Define la lista en 'public/packs/pack_fotos_bebes_oficial.json' o súbela como archivo JSON desde el Host.
-// 3. Desde el panel del Anfitrión (Host), pulsa "Pack Oficial Fiesta" para activar las fotos reales sin hacerte spoilers durante el desarrollo.
-// ============================================================================
-
 export const DEV_MOCK_BABY_PHOTOS: BabyPhotoItem[] = [
   {
     id: 'demo_bebe_1',
     imageUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Leo Messi (Bebé)',
-    hint: 'Astro del fútbol mundial con 8 balones de oro',
   },
   {
     id: 'demo_bebe_2',
     imageUrl: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Rosalía (Bebé)',
-    hint: 'Cantante icónica de Motomami',
   },
   {
     id: 'demo_bebe_3',
     imageUrl: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Jugador Secreto 1',
-    ownerPlayerName: 'Álex',
-    hint: 'Uno de los concursantes de esta noche',
   },
   {
     id: 'demo_bebe_4',
     imageUrl: 'https://images.unsplash.com/photo-1522771930-78848d9293e8?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Shakira (Bebé)',
-    hint: 'Estrella internacional del pop latino',
   },
   {
     id: 'demo_bebe_5',
     imageUrl: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=800&auto=format&fit=crop&q=80',
-    personName: '[DEMO] Jugador Secreto 2',
-    ownerPlayerName: 'Sara',
-    hint: 'Miembro de uno de los equipos en juego',
   },
 ];
 
@@ -60,222 +35,178 @@ export const DEV_MOCK_BABY_PHOTOS: BabyPhotoItem[] = [
 export const OFFICIAL_BABY_PHOTOS: BabyPhotoItem[] = [
   {
     "id": "bebe_1",
-    "imageUrl": "/photos/bebes/020ebfae6bf954160799df4311850eea.jpg",
-    "personName": "Foto 1"
+    "imageUrl": "/photos/bebes/020ebfae6bf954160799df4311850eea.jpg"
   },
   {
     "id": "bebe_2",
-    "imageUrl": "/photos/bebes/7b908c6b9164b1338858e8dc3ccb2112.jpg",
-    "personName": "Foto 2"
+    "imageUrl": "/photos/bebes/7b908c6b9164b1338858e8dc3ccb2112.jpg"
   },
   {
     "id": "bebe_3",
-    "imageUrl": "/photos/bebes/AIT.jpg",
-    "personName": "Foto 3"
+    "imageUrl": "/photos/bebes/AIT.jpg"
   },
   {
     "id": "bebe_4",
-    "imageUrl": "/photos/bebes/Annnna.jpg",
-    "personName": "Foto 4"
+    "imageUrl": "/photos/bebes/Annnna.jpg"
   },
   {
     "id": "bebe_5",
-    "imageUrl": "/photos/bebes/BB baby.jpg",
-    "personName": "Foto 5"
+    "imageUrl": "/photos/bebes/BB baby.jpg"
   },
   {
     "id": "bebe_6",
-    "imageUrl": "/photos/bebes/BE baby.avif",
-    "personName": "Foto 6"
+    "imageUrl": "/photos/bebes/BE baby.avif"
   },
   {
     "id": "bebe_7",
-    "imageUrl": "/photos/bebes/burn.webp",
-    "personName": "Foto 7"
+    "imageUrl": "/photos/bebes/burn.webp"
   },
   {
     "id": "bebe_8",
-    "imageUrl": "/photos/bebes/DB baby bule.webp",
-    "personName": "Foto 8"
+    "imageUrl": "/photos/bebes/DB baby bule.webp"
   },
   {
     "id": "bebe_9",
-    "imageUrl": "/photos/bebes/dustin-gaten.jpg",
-    "personName": "Foto 9"
+    "imageUrl": "/photos/bebes/dustin-gaten.jpg"
   },
   {
     "id": "bebe_10",
-    "imageUrl": "/photos/bebes/ES baby.jpg",
-    "personName": "Foto 10"
+    "imageUrl": "/photos/bebes/ES baby.jpg"
   },
   {
     "id": "bebe_11",
-    "imageUrl": "/photos/bebes/hcrls.jpg",
-    "personName": "Foto 11"
+    "imageUrl": "/photos/bebes/hcrls.jpg"
   },
   {
     "id": "bebe_12",
-    "imageUrl": "/photos/bebes/IMG-20230121-WA0030.jpg",
-    "personName": "Foto 12"
+    "imageUrl": "/photos/bebes/IMG-20230121-WA0030.jpg"
   },
   {
     "id": "bebe_13",
-    "imageUrl": "/photos/bebes/IMG-20260908-WA0012.jpg",
-    "personName": "Foto 13"
+    "imageUrl": "/photos/bebes/IMG-20260908-WA0012.jpg"
   },
   {
     "id": "bebe_14",
-    "imageUrl": "/photos/bebes/IMG-20260909-WA0000.jpg",
-    "personName": "Foto 14"
+    "imageUrl": "/photos/bebes/IMG-20260909-WA0000.jpg"
   },
   {
     "id": "bebe_15",
-    "imageUrl": "/photos/bebes/IMG-20260920-WA0033.jpg",
-    "personName": "Foto 15"
+    "imageUrl": "/photos/bebes/IMG-20260920-WA0033.jpg"
   },
   {
     "id": "bebe_16",
-    "imageUrl": "/photos/bebes/IMG-20260922-WA0000.jpg",
-    "personName": "Foto 16"
+    "imageUrl": "/photos/bebes/IMG-20260922-WA0000.jpg"
   },
   {
     "id": "bebe_17",
-    "imageUrl": "/photos/bebes/IMG-20260925-WA0002(1).jpg",
-    "personName": "Foto 17"
+    "imageUrl": "/photos/bebes/IMG-20260925-WA0002(1).jpg"
   },
   {
     "id": "bebe_18",
-    "imageUrl": "/photos/bebes/IMG-20260925-WA0004(1).jpg",
-    "personName": "Foto 18"
+    "imageUrl": "/photos/bebes/IMG-20260925-WA0004(1).jpg"
   },
   {
     "id": "bebe_19",
-    "imageUrl": "/photos/bebes/IMG-20260925-WA0011.jpg",
-    "personName": "Foto 19"
+    "imageUrl": "/photos/bebes/IMG-20260925-WA0011.jpg"
   },
   {
     "id": "bebe_20",
-    "imageUrl": "/photos/bebes/IMG-20260925-WA0018.jpg",
-    "personName": "Foto 20"
+    "imageUrl": "/photos/bebes/IMG-20260925-WA0018.jpg"
   },
   {
     "id": "bebe_21",
-    "imageUrl": "/photos/bebes/IMG-20260925-WA0021.jpg",
-    "personName": "Foto 21"
+    "imageUrl": "/photos/bebes/IMG-20260925-WA0021.jpg"
   },
   {
     "id": "bebe_22",
-    "imageUrl": "/photos/bebes/IMG-20260925-WA0022.jpg",
-    "personName": "Foto 22"
+    "imageUrl": "/photos/bebes/IMG-20260925-WA0022.jpg"
   },
   {
     "id": "bebe_23",
-    "imageUrl": "/photos/bebes/IMG_20260909_165558.jpg",
-    "personName": "Foto 23"
+    "imageUrl": "/photos/bebes/IMG_20260909_165558.jpg"
   },
   {
     "id": "bebe_24",
-    "imageUrl": "/photos/bebes/IMG_20260913_111231.jpg",
-    "personName": "Foto 24"
+    "imageUrl": "/photos/bebes/IMG_20260913_111231.jpg"
   },
   {
     "id": "bebe_25",
-    "imageUrl": "/photos/bebes/IMG_20260920_230333.jpg",
-    "personName": "Foto 25"
+    "imageUrl": "/photos/bebes/IMG_20260920_230333.jpg"
   },
   {
     "id": "bebe_26",
-    "imageUrl": "/photos/bebes/Jim C baby.jpg",
-    "personName": "Foto 26"
+    "imageUrl": "/photos/bebes/Jim C baby.jpg"
   },
   {
     "id": "bebe_27",
-    "imageUrl": "/photos/bebes/lamine-yamal-bebé-es-la-mole-v0-mpa0s1d5didh1.webp",
-    "personName": "Foto 27"
+    "imageUrl": "/photos/bebes/lamine-yamal-bebé-es-la-mole-v0-mpa0s1d5didh1.webp"
   },
   {
     "id": "bebe_28",
-    "imageUrl": "/photos/bebes/LLow.jpg",
-    "personName": "Foto 28"
+    "imageUrl": "/photos/bebes/LLow.jpg"
   },
   {
     "id": "bebe_29",
-    "imageUrl": "/photos/bebes/MC babr.jpg",
-    "personName": "Foto 29"
+    "imageUrl": "/photos/bebes/MC babr.jpg"
   },
   {
     "id": "bebe_30",
-    "imageUrl": "/photos/bebes/MJ baby.jpg",
-    "personName": "Foto 30"
+    "imageUrl": "/photos/bebes/MJ baby.jpg"
   },
   {
     "id": "bebe_31",
-    "imageUrl": "/photos/bebes/mo.jpg",
-    "personName": "Foto 31"
+    "imageUrl": "/photos/bebes/mo.jpg"
   },
   {
     "id": "bebe_32",
-    "imageUrl": "/photos/bebes/moe szyslak.webp",
-    "personName": "Foto 32"
+    "imageUrl": "/photos/bebes/moe szyslak.webp"
   },
   {
     "id": "bebe_33",
-    "imageUrl": "/photos/bebes/owBBvAE5pMbiaqrBqYaDW23mIvAEJAd2tpAli~tplv-tiktokx-origin.jpg",
-    "personName": "Foto 33"
+    "imageUrl": "/photos/bebes/owBBvAE5pMbiaqrBqYaDW23mIvAEJAd2tpAli~tplv-tiktokx-origin.jpg"
   },
   {
     "id": "bebe_34",
-    "imageUrl": "/photos/bebes/rap.jpg",
-    "personName": "Foto 34"
+    "imageUrl": "/photos/bebes/rap.jpg"
   },
   {
     "id": "bebe_35",
-    "imageUrl": "/photos/bebes/RN TEn.avif",
-    "personName": "Foto 35"
+    "imageUrl": "/photos/bebes/RN TEn.avif"
   },
   {
     "id": "bebe_36",
-    "imageUrl": "/photos/bebes/SE.jpeg",
-    "personName": "Foto 36"
+    "imageUrl": "/photos/bebes/SE.jpeg"
   },
   {
     "id": "bebe_37",
-    "imageUrl": "/photos/bebes/shinchan-baby-pictures-are-too-cute-which-one-do-you-like-v0-d07alypu3ulg1.jpg",
-    "personName": "Foto 37"
+    "imageUrl": "/photos/bebes/shinchan-baby-pictures-are-too-cute-which-one-do-you-like-v0-d07alypu3ulg1.jpg"
   },
   {
     "id": "bebe_38",
-    "imageUrl": "/photos/bebes/SR.jpg",
-    "personName": "Foto 38"
+    "imageUrl": "/photos/bebes/SR.jpg"
   },
   {
     "id": "bebe_39",
-    "imageUrl": "/photos/bebes/SY.jpg",
-    "personName": "Foto 39"
+    "imageUrl": "/photos/bebes/SY.jpg"
   },
   {
     "id": "bebe_40",
-    "imageUrl": "/photos/bebes/tazn.jpg",
-    "personName": "Foto 40"
+    "imageUrl": "/photos/bebes/tazn.jpg"
   },
   {
     "id": "bebe_41",
-    "imageUrl": "/photos/bebes/TH-nin-o-superman-1642151979.avif",
-    "personName": "Foto 41"
+    "imageUrl": "/photos/bebes/TH-nin-o-superman-1642151979.avif"
   },
   {
     "id": "bebe_42",
-    "imageUrl": "/photos/bebes/Timo.jpg",
-    "personName": "Foto 42"
+    "imageUrl": "/photos/bebes/Timo.jpg"
   },
   {
     "id": "bebe_43",
-    "imageUrl": "/photos/bebes/TR baby.webp",
-    "personName": "Foto 43"
+    "imageUrl": "/photos/bebes/TR baby.webp"
   },
   {
     "id": "bebe_44",
-    "imageUrl": "/photos/bebes/Z y C.jpg",
-    "personName": "Foto 44"
+    "imageUrl": "/photos/bebes/Z y C.jpg"
   }
 ];

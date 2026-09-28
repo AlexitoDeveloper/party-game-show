@@ -90,15 +90,11 @@ export function useHostBabyPhotosState({
                   return {
                     id: `foto_${idx + 1}`,
                     imageUrl: item,
-                    personName: `Foto ${idx + 1}`,
                   };
                 }
                 return {
                   id: item.id || `foto_${idx + 1}`,
                   imageUrl: item.imageUrl,
-                  personName: item.personName || `Foto ${idx + 1}`,
-                  hint: item.hint,
-                  ownerPlayerName: item.ownerPlayerName,
                 };
               });
             }
@@ -176,15 +172,11 @@ export function useHostBabyPhotosState({
               return {
                 id: `foto_${idx + 1}`,
                 imageUrl: item,
-                personName: `Foto ${idx + 1}`,
               };
             }
             return {
               id: item.id || `foto_${idx + 1}`,
               imageUrl: item.imageUrl,
-              personName: item.personName || `Foto ${idx + 1}`,
-              hint: item.hint,
-              ownerPlayerName: item.ownerPlayerName,
             };
           });
           setBabyPhotosList(normalized);
