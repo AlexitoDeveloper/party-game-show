@@ -636,8 +636,11 @@ export default function HostView() {
     roomSync.broadcast({ type: 'ROOM_UPDATE', payload: { status: 'presentation', presentation_slide: slide } });
   };
 
-  const handleFinishTest = (gameTitle?: string, winnerTeamName?: string) => {
-    const activeTitle = gameTitle || activeGame.title;
+  const handleFinishTest = (gameTitle?: unknown, winnerTeamName?: unknown) => {
+    const activeTitle =
+      typeof gameTitle === 'string' && gameTitle.trim() ? gameTitle : activeGame.title;
+    const safeWinnerTeamName =
+      typeof winnerTeamName === 'string' ? winnerTeamName : undefined;
 
     if (musicState.musicPlaying) {
       musicState.handleTogglePlayMusic();
@@ -652,7 +655,7 @@ export default function HostView() {
       type: 'TEST_FINISHED',
       payload: {
         gameTitle: activeTitle,
-        winnerTeamName,
+        winnerTeamName: safeWinnerTeamName,
       },
     });
 
@@ -1233,6 +1236,7 @@ export default function HostView() {
       {/* MODAL: VEREDICTO AUTOMÁTICO DE PRUEBA FINALIZADA */}
       {testFinishedModal && (
         <ErrorBoundary
+          asModal
           fallbackTitle="Aviso de Veredicto de Prueba"
           fallbackMessage="Se ha presentado una incidencia al desplegar la ventana de veredicto. Puedes cerrar este aviso y continuar la partida normalmente."
           onReset={() => setTestFinishedModal(null)}

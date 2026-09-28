@@ -6,6 +6,7 @@ interface Props {
   fallbackTitle?: string;
   fallbackMessage?: string;
   onReset?: () => void;
+  asModal?: boolean;
 }
 
 interface State {
@@ -36,8 +37,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      return (
-        <div className="bg-[#0c0c14]/95 border-2 border-red-500/50 rounded-2xl p-6 text-center shadow-deco-gold backdrop-blur-xl space-y-4">
+      const content = (
+        <div className="bg-[#0c0c14]/95 border-2 border-red-500/50 rounded-2xl p-6 text-center shadow-deco-gold backdrop-blur-xl space-y-4 max-w-md w-full">
           <div className="w-12 h-12 rounded-full bg-red-950/60 border border-red-500/40 flex items-center justify-center mx-auto text-red-400">
             <AlertTriangle className="w-6 h-6" />
           </div>
@@ -56,10 +57,20 @@ export class ErrorBoundary extends Component<Props, State> {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-gradient text-slate-950 font-broadway text-xs font-bold shadow-deco-gold hover:brightness-110 active:scale-95 transition-all"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Reintentar</span>
+            <span>Cerrar y Reintentar</span>
           </button>
         </div>
       );
+
+      if (this.props.asModal) {
+        return (
+          <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
+            {content}
+          </div>
+        );
+      }
+
+      return content;
     }
 
     return this.props.children;

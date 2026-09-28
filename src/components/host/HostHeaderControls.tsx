@@ -156,7 +156,7 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
           {room.status === 'playing' ? (
             <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
               <button
-                onClick={onFinishTest}
+                onClick={() => onFinishTest()}
                 className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-broadway text-xs uppercase px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-red-600/30 active:scale-95 transition-all border border-red-400/40"
                 title="Finalizar prueba actual, limpiar efectos y abrir veredicto"
               >
@@ -166,7 +166,7 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
               </button>
 
               <button
-                onClick={onFinishShowAndShowGazette}
+                onClick={() => onFinishShowAndShowGazette()}
                 className="bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
                 title="Proyectar portada de The Speakeasy Gazette y podio final en la TV"
               >
@@ -176,7 +176,7 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
               </button>
 
               <button
-                onClick={onReturnToLobby}
+                onClick={() => onReturnToLobby()}
                 className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs uppercase px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-1 shadow active:scale-95 transition-all"
                 title="Volver al Lobby"
               >

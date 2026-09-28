@@ -71,14 +71,16 @@ export function calculateTestVerdict(params: {
     activeEffects = [],
   } = params || {};
 
-  const safeTeams = Array.isArray(teams) ? teams : [];
-  const safeEffects = Array.isArray(activeEffects) ? activeEffects : [];
-  const isBingo = gameId === 'bingo';
+  const safeGameId = typeof gameId === 'string' ? gameId : '';
+  const safeGameTitle = typeof gameTitle === 'string' ? gameTitle : '';
+  const safeTeams = (Array.isArray(teams) ? teams : []).filter(Boolean);
+  const safeEffects = (Array.isArray(activeEffects) ? activeEffects : []).filter(Boolean);
+  const isBingo = safeGameId === 'bingo';
 
   if (safeTeams.length === 0) {
     return {
-      gameId,
-      gameTitle,
+      gameId: safeGameId,
+      gameTitle: safeGameTitle,
       results: [],
       consumedEffectIds: [],
     };
@@ -391,8 +393,8 @@ export function calculateTestVerdict(params: {
   });
 
   return {
-    gameId,
-    gameTitle,
+    gameId: safeGameId,
+    gameTitle: safeGameTitle,
     results,
     consumedEffectIds,
   };

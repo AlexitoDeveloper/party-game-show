@@ -50,13 +50,19 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
   onReturnToLobby,
 }) => {
   const results = currentVerdict?.results || [];
-  const safeActiveTeams = activeTeams || [];
-  const safeTeams = teams || [];
+  const safeActiveTeams = (activeTeams || []).filter(Boolean);
+  const safeTeams = (teams || []).filter(Boolean);
   const safeManualRanks = manualPodiumRanks || {};
   const safePowerCards = powerCards || { discardPile: [], teamHands: {}, activeEffects: [] };
   const safeTeamHands = safePowerCards.teamHands || {};
   const safeActiveEffects = safePowerCards.activeEffects || [];
   const consumedCount = (currentVerdict?.consumedEffectIds || []).length;
+  const safeGameTitle = typeof testFinishedModal?.gameTitle === 'string' && testFinishedModal.gameTitle.trim()
+    ? testFinishedModal.gameTitle
+    : 'Prueba Finalizada';
+  const safeGameId = typeof testFinishedModal?.gameId === 'string'
+    ? testFinishedModal.gameId
+    : '';
 
   return (
     <div className="fixed inset-0 z-50 bg-[#07070a]/90 backdrop-blur-xl flex items-center justify-center p-4">
@@ -69,11 +75,11 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
               <h3 className="text-base sm:text-lg font-broadway uppercase tracking-wide text-gold-gradient flex items-center gap-2">
                 <span>Veredicto de la Prueba</span>
                 <span className="px-2.5 py-0.5 rounded-full bg-[#14141e] text-amber-300 border border-[#d4af37]/40 text-xs font-vintage font-bold">
-                  {testFinishedModal?.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
+                  {safeGameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
                 </span>
               </h3>
               <p className="text-xs text-amber-200/90 font-vintage font-bold">
-                {testFinishedModal?.gameTitle || 'Prueba Finalizada'}
+                {safeGameTitle}
               </p>
             </div>
           </div>
@@ -340,7 +346,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
 
         {/* ACCIONES DE CIERRE O SALTO AL SIGUIENTE JUEGO */}
         <div className="pt-2 border-t border-slate-800 space-y-2">
-          {testFinishedModal.suggestedNextGame && (
+          {testFinishedModal?.suggestedNextGame?.title && (
             <button
               onClick={() => {
                 const next = testFinishedModal.suggestedNextGame!;
