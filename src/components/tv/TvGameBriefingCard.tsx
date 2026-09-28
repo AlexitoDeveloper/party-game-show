@@ -58,10 +58,10 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-300 font-bold">
+              <span className="text-xs uppercase font-vintage tracking-widest text-amber-300 font-bold">
                 {game.category}
               </span>
-              <span className="text-[9px] bg-black/80 text-amber-200 border border-[#d4af37]/40 px-2 py-0.2 rounded-full font-vintage font-bold">
+              <span className="text-xs bg-black/80 text-amber-200 border border-[#d4af37]/40 px-2 py-0.2 rounded-full font-vintage font-bold">
                 {game.engine === 'buzzer' ? '⚡ Pulsador Rápido' : game.engine === 'duel' ? '⚔️ Duelo de Mesa' : '🎲 Reto Presencial'}
               </span>
             </div>
@@ -75,10 +75,10 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
         <div className="flex items-center gap-2 bg-[#14141e]/90 border border-[#d4af37]/40 px-3 py-1 rounded-xl shrink-0 shadow-inner">
           <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <div className="text-left">
-            <span className="text-[10px] uppercase font-broadway text-amber-300 font-bold block">
+            <span className="text-xs uppercase font-broadway text-amber-300 font-bold block">
               {game.participantsLabel}
             </span>
-            <span className="text-[10px] font-vintage text-amber-100/70 block leading-tight hidden lg:inline">
+            <span className="text-xs font-vintage text-amber-100/70 block leading-tight hidden lg:inline">
               {game.participantsDescription}
             </span>
           </div>
@@ -88,7 +88,7 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
       {/* 1B. TIRA DE REPRESENTANTES DESIGNADOS POR BANDO */}
       {isRepGame && activeTeams.length > 0 && (
         <div className="w-full shrink-0 mb-1 bg-[#0c0c14]/90 border border-[#d4af37]/35 px-4 py-1.5 rounded-xl flex items-center justify-between gap-2 overflow-x-auto shadow-sm">
-          <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-broadway uppercase shrink-0">
+          <div className="flex items-center gap-1.5 text-amber-300 text-xs font-broadway uppercase shrink-0">
             <Users className="w-3.5 h-3.5 text-amber-400" />
             <span>Representantes al Ruedo:</span>
           </div>
@@ -101,7 +101,7 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
                 ? [rep.representativeName]
                 : [];
               return (
-                <div key={team.id} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 border border-[#d4af37]/30 text-[10px]">
+                <div key={team.id} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 border border-[#d4af37]/30 text-xs">
                   <span className={`w-2 h-2 rounded-full ${team.color_tw}`} />
                   <span className="font-vintage text-amber-100 font-bold">{team.name}:</span>
                   <span className="font-broadway text-amber-300">
@@ -143,14 +143,14 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
           {/* SECCIÓN 1: PUNTUACIÓN DE LA PRUEBA */}
           {actionOptions.length > 0 && (
             <div className="flex items-center gap-1.5 flex-nowrap">
-              <span className="text-[10px] uppercase font-broadway text-amber-400 font-bold flex items-center gap-1 bg-[#14141e] border border-[#d4af37]/35 px-2 py-0.5 rounded-md shrink-0">
+              <span className="text-xs uppercase font-broadway text-amber-400 font-bold flex items-center gap-1 bg-[#14141e] border border-[#d4af37]/35 px-2 py-0.5 rounded-md shrink-0">
                 🎯 Prueba:
               </span>
               <div className="flex items-center gap-1">
                 {actionOptions.map((opt) => (
                   <span
                     key={opt.id}
-                    className="bg-[#12121c] text-amber-100 text-[10px] font-vintage font-bold px-2 py-0.5 rounded-md border border-[#d4af37]/25 flex items-center gap-1 shadow-sm whitespace-nowrap"
+                    className="bg-[#12121c] text-amber-100 text-xs font-vintage font-bold px-2 py-0.5 rounded-md border border-[#d4af37]/25 flex items-center gap-1 shadow-sm whitespace-nowrap"
                   >
                     <span>{cleanLabel(opt.label)}</span>
                     <span className="text-emerald-400 font-broadway font-black">{opt.badge}</span>
@@ -168,14 +168,14 @@ export const TvGameBriefingCard: React.FC<TvGameBriefingCardProps> = ({
           {/* SECCIÓN 2: PUNTUACIÓN POR CLASIFICACIÓN */}
           {podiumOptions.length > 0 && (
             <div className="flex items-center gap-1.5 flex-nowrap">
-              <span className="text-[10px] uppercase font-broadway text-amber-400 font-bold flex items-center gap-1 bg-[#14141e] border border-[#d4af37]/35 px-2 py-0.5 rounded-md shrink-0">
+              <span className="text-xs uppercase font-broadway text-amber-400 font-bold flex items-center gap-1 bg-[#14141e] border border-[#d4af37]/35 px-2 py-0.5 rounded-md shrink-0">
                 🏆 Clasificación:
               </span>
               <div className="flex items-center gap-1">
                 {podiumOptions.map((opt) => (
                   <span
                     key={opt.id}
-                    className="bg-[#12121c] text-amber-100 text-[10px] font-vintage font-bold px-2 py-0.5 rounded-md border border-[#d4af37]/25 flex items-center gap-1 shadow-sm whitespace-nowrap"
+                    className="bg-[#12121c] text-amber-100 text-xs font-vintage font-bold px-2 py-0.5 rounded-md border border-[#d4af37]/25 flex items-center gap-1 shadow-sm whitespace-nowrap"
                   >
                     <span>{cleanLabel(opt.label)}</span>
                     <span className="text-amber-300 font-broadway font-black">{opt.badge}</span>

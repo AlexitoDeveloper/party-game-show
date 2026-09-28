@@ -62,14 +62,14 @@ export const HostUnDosTresControls: React.FC<HostUnDosTresControlsProps> = ({
         </h3>
 
         <div>
-          <span className="text-[10px] uppercase font-vintage font-bold text-amber-200/70 block mb-1">
+          <span className="text-xs uppercase font-vintage font-bold text-amber-200/70 block mb-1">
             Ejemplos válidos para comprobar al vuelo:
           </span>
           <div className="flex flex-wrap gap-1.5">
             {currentUdtChallenge.examples.map((ex, eIdx) => (
               <span
                 key={eIdx}
-                className="px-2.5 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 text-[11px] text-amber-200 font-vintage font-bold"
+                className="px-2.5 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 text-xs text-amber-200 font-vintage font-bold"
               >
                 {ex}
               </span>

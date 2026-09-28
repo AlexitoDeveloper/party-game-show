@@ -105,7 +105,7 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
                 ⚡
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider font-vintage">
+                <span className="text-xs uppercase font-bold text-amber-400 block tracking-wider font-vintage">
                   ¡HA PULSADO PRIMERO!
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -114,7 +114,7 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
                     <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
                   </span>
                   {isWinnerCaptain && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-[11px] font-black font-vintage">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-xs font-black font-vintage">
                       <Crown className="w-3 h-3 fill-amber-400 text-amber-400" /> CAPITÁN
                     </span>
                   )}

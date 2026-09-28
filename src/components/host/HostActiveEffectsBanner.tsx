@@ -29,14 +29,14 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
   return (
     <div className="bg-[#140b08]/90 border border-amber-500/40 p-3 sm:p-4 rounded-2xl space-y-2 shadow-inner">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
+        <span className="text-xs font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
           <Zap className="w-3.5 h-3.5 text-[#d4af37]" />
           <span className="hidden sm:inline">Efectos de Poder Activos en Esta Prueba:</span>
           <span className="sm:hidden">Efectos Activos ({powerCards.activeEffects.length}):</span>
         </span>
         <button
           onClick={onClearAllActiveEffects}
-          className="px-2.5 py-1 bg-red-950/90 hover:bg-red-900 border border-red-500/50 text-red-200 text-[10px] font-broadway uppercase rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow shrink-0"
+          className="px-2.5 py-1 bg-red-950/90 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-broadway uppercase rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow shrink-0"
           title="Caducar y descartar todos los efectos activos inmediatamente"
         >
           <Trash2 className="w-3 h-3 text-red-400" />
@@ -69,7 +69,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                 </span>
               )}
               {eff.sensoryLimitation && (
-                <span className="bg-purple-950/80 border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                <span className="bg-purple-950/80 border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-xs font-bold">
                   {eff.sensoryLimitation}
                 </span>
               )}
@@ -81,7 +81,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                     onScoreChange(eff.targetTeamId!, -3);
                     onRemoveActiveEffect(eff.id);
                   }}
-                  className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                  className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-xs shadow"
                 >
                   💣 Detonar (-3 pts)
                 </button>
@@ -93,7 +93,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                     onScoreChange(eff.sourceTeamId, 2);
                     onRemoveActiveEffect(eff.id);
                   }}
-                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow"
                 >
                   🎯 Cobrar (+2 pts)
                 </button>
@@ -108,7 +108,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                     onScoreChange(eff.sourceTeamId, 3);
                     onRemoveActiveEffect(eff.id);
                   }}
-                  className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[10px] shadow"
+                  className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs shadow"
                 >
                   👑 Destronar (-3 rival / +3 tú)
                 </button>
@@ -121,7 +121,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                       onScoreChange(eff.sourceTeamId, 6);
                       onRemoveActiveEffect(eff.id);
                     }}
-                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow"
+                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow"
                   >
                     +6 pts (1º-2º)
                   </button>
@@ -130,7 +130,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                       onScoreChange(eff.sourceTeamId, -4);
                       onRemoveActiveEffect(eff.id);
                     }}
-                    className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow"
+                    className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-xs shadow"
                   >
                     -4 pts (3º-5º)
                   </button>
@@ -143,7 +143,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                     onScoreChange(eff.targetTeamId!, -4);
                     onRemoveActiveEffect(eff.id);
                   }}
-                  className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold text-[10px] shadow"
+                  className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold text-xs shadow"
                 >
                   💀 Ejecutar (-4 pts)
                 </button>
@@ -168,7 +168,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                     onRemoveActiveEffect(eff.id);
                     alert(`💥 ¡Golpe Maestro! ${stolenTotal} pts recolectados de los rivales.`);
                   }}
-                  className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
+                  className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-xs shadow"
                 >
                   💥 Golpe Maestro (+1 de c/u)
                 </button>
@@ -191,7 +191,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                       alert(`👑 ¡Robo del Siglo! Has transferido ${steal} pts a tu equipo.`);
                     }
                   }}
-                  className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-[10px] shadow"
+                  className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-xs shadow"
                 >
                   👑 Robo 50%
                 </button>
@@ -212,7 +212,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                       alert(`🎩 ¡Impuesto del Padrino cobrado! +${half} pts transferidos a ${eff.sourceTeamName}.`);
                     }
                   }}
-                  className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-[10px] shadow"
+                  className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-black text-xs shadow"
                 >
                   🎩 Impuesto 50%
                 </button>
@@ -237,7 +237,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                       );
                     }
                   }}
-                  className="px-2 py-1 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white rounded-lg font-black text-[10px] shadow"
+                  className="px-2 py-1 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white rounded-lg font-black text-xs shadow"
                 >
                   🔥 Triplicar x3
                 </button>
@@ -247,7 +247,7 @@ export const HostActiveEffectsBanner: React.FC<HostActiveEffectsBannerProps> = (
                 onClick={() => {
                   onReturnCardToTeam(eff.sourceTeamId, eff.cardId, { removeEffectId: eff.id });
                 }}
-                className="ml-1 px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-white text-[10px] font-bold rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow"
+                className="ml-1 px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-white text-xs font-bold rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow"
                 title="Anular efecto y devolver esta carta a la mano de su equipo"
               >
                 <RotateCcw className="w-3 h-3" />

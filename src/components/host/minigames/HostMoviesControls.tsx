@@ -64,7 +64,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
             <span className="text-amber-200/70 font-vintage font-medium">Pack Activo: </span>
             <strong className="text-white font-broadway">{activePackName}</strong>
             {activePackName.includes('Demo') && (
-              <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-vintage">
+              <span className="ml-2 text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-vintage">
                 🛡️ Modo Anti-Spoiler Activo
               </span>
             )}
@@ -92,7 +92,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
           {!activePackName.includes('Demo') && (
             <button
               onClick={onResetToDemo}
-              className="px-2.5 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200/60 hover:text-white border border-[#d4af37]/30 text-[11px] font-vintage"
+              className="px-2.5 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200/60 hover:text-white border border-[#d4af37]/30 text-xs font-vintage"
               title="Volver a las películas de prueba para seguir desarrollando sin spoilers"
             >
               <span className="hidden sm:inline">Modo Demo</span>
@@ -116,7 +116,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
             <button
               key={cat}
               onClick={() => onCategoryFilterChange(cat)}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-vintage font-bold whitespace-nowrap transition-all ${
+              className={`px-2.5 py-1 rounded-xl text-xs font-vintage font-bold whitespace-nowrap transition-all ${
                 movieCategoryFilter === cat
                   ? 'bg-gold-gradient text-slate-950 shadow-md font-black border border-[#f5eedb]/50'
                   : 'bg-[#14141e] text-amber-200/70 hover:text-white border border-[#d4af37]/30'
@@ -133,7 +133,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
         <div className="space-y-1.5 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-lg">{currentMovie.genreEmoji}</span>
-            <span className="text-[10px] font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span className="text-xs font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
               {currentMovie.category} • Año {currentMovie.year}
             </span>
           </div>
@@ -152,19 +152,19 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
           {/* Emojis mostrados por fases al host */}
           <div className="flex flex-wrap items-center gap-2 py-1">
             <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-[10px] text-amber-400 font-broadway uppercase">P1 (2 emojis):</span>
+              <span className="text-xs text-amber-400 font-broadway uppercase">P1 (2 emojis):</span>
               {currentMovie.emojisStage1.map((em, idx) => (
                 <span key={idx}>{em}</span>
               ))}
             </div>
             <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-[10px] text-sky-400 font-broadway uppercase">P2 (4 emojis):</span>
+              <span className="text-xs text-sky-400 font-broadway uppercase">P2 (4 emojis):</span>
               {currentMovie.emojisStage2.map((em, idx) => (
                 <span key={idx}>{em}</span>
               ))}
             </div>
             <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-[10px] text-emerald-400 font-broadway uppercase">P3 (Completo):</span>
+              <span className="text-xs text-emerald-400 font-broadway uppercase">P3 (Completo):</span>
               {currentMovie.emojisFull.map((em, idx) => (
                 <span key={idx}>{em}</span>
               ))}

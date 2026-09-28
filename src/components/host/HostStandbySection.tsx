@@ -88,7 +88,7 @@ export const HostStandbySection: React.FC<HostStandbySectionProps> = ({
             📽️
           </div>
           <div>
-            <span className="text-[10px] uppercase font-broadway tracking-widest text-purple-300 block">
+            <span className="text-xs uppercase font-broadway tracking-widest text-purple-300 block">
               Paso Previo al Show
             </span>
             <h3 className="text-base sm:text-lg font-broadway uppercase tracking-wide text-gold-gradient">Presentación Oficial del Evento</h3>

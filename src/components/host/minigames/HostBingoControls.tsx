@@ -69,7 +69,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
             </div>
 
             {pendingClaims.length > 1 && (
-              <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-broadway border border-amber-400/40">
+              <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-broadway border border-amber-400/40">
                 1 de {pendingClaims.length} pendientes
               </span>
             )}
@@ -133,7 +133,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
 
           {/* COTEJO DE NÚMEROS CANTADOS */}
           <div className="mb-4">
-            <span className="text-[11px] font-vintage uppercase text-amber-300/80 block mb-1.5 font-bold">
+            <span className="text-xs font-vintage uppercase text-amber-300/80 block mb-1.5 font-bold">
               Números presentados por el jugador:
             </span>
             <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-xl bg-[#07070a]/90 border border-[#d4af37]/30">
@@ -207,7 +207,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-lg">{lineAwarded ? '✅' : '📏'}</span>
             <div>
-              <span className="text-[10px] uppercase font-broadway block tracking-wider">
+              <span className="text-xs uppercase font-broadway block tracking-wider">
                 Premio de Línea (+2 pts)
               </span>
               <span className="text-xs font-broadway font-bold text-white">
@@ -220,7 +220,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
             </div>
           </div>
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-broadway uppercase border ${
+            className={`px-2 py-0.5 rounded-full text-xs font-broadway uppercase border ${
               lineAwarded
                 ? 'bg-emerald-600 text-white border-emerald-400'
                 : 'bg-amber-400/10 text-amber-300 border-amber-400/30'
@@ -240,7 +240,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-lg">{bingoAwarded ? '🏆' : '🎱'}</span>
             <div>
-              <span className="text-[10px] uppercase font-broadway block tracking-wider">
+              <span className="text-xs uppercase font-broadway block tracking-wider">
                 Premio de Bingo (+6 pts)
               </span>
               <span className="text-xs font-broadway font-bold text-white">
@@ -253,7 +253,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
             </div>
           </div>
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-broadway uppercase border ${
+            className={`px-2 py-0.5 rounded-full text-xs font-broadway uppercase border ${
               bingoAwarded
                 ? 'bg-gold-gradient text-slate-950 border-[#f5eedb]/60 font-black'
                 : 'bg-amber-400/10 text-amber-300 border-amber-400/30'
@@ -296,7 +296,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
                   {bingoIsSpinning ? '?' : bingoCurrentBall || '—'}
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-broadway text-amber-400 block">
+                  <span className="text-xs uppercase font-broadway text-amber-400 block">
                     {bingoIsSpinning ? 'Ruleta en marcha...' : 'Última Bola:'}
                   </span>
                   <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export const HostBingoControls: React.FC<HostBingoControlsProps> = ({
                       {bingoIsSpinning ? '¡Girando bombo!' : bingoCurrentBall ? `Bola ${bingoCurrentBall}` : 'Ninguna bola aún'}
                     </span>
                     {nick && !bingoIsSpinning && (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-gold-gradient text-slate-950 font-broadway font-black text-[10px] uppercase shadow-sm">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-gold-gradient text-slate-950 font-broadway font-black text-xs uppercase shadow-sm">
                         {nick}
                       </span>
                     )}

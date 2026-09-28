@@ -93,7 +93,7 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
           >
-            <span className="text-[10px] uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-1">
+            <span className="text-xs uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-1">
               🎉 RESPUESTA CORRECTA
             </span>
             <div className="text-2xl sm:text-4xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
@@ -120,7 +120,7 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
               <div className="flex items-center gap-3">
                 <span className="text-3xl animate-bounce">⚡</span>
                 <div className="text-left">
-                  <span className="text-[10px] uppercase font-broadway tracking-wider text-amber-300">
+                  <span className="text-xs uppercase font-broadway tracking-wider text-amber-300">
                     {triviaReboundActive ? '¡Rebote cazado por:' : '¡Pulsó primero:'}
                   </span>
                   <div className="text-xl font-broadway text-gold-gradient">{buzzerWinner.teamName}</div>

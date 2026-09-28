@@ -95,7 +95,7 @@ export const PlayerBingoTicketCard: React.FC<PlayerBingoTicketCardProps> = ({
 
                     {/* INDICADOR DE BOLA SALIDA EN BOMBO */}
                     {isDrawn && (
-                      <span className="absolute bottom-0.5 text-[8px] sm:text-[9px] uppercase font-vintage font-bold text-amber-400 leading-none">
+                      <span className="absolute bottom-0.5 text-xs sm:text-xs uppercase font-vintage font-bold text-amber-400 leading-none">
                         ¡Salió!
                       </span>
                     )}

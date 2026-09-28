@@ -76,15 +76,15 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
         </div>
 
         <div className="flex flex-col text-left min-w-0">
-          <span className="text-[9px] uppercase font-vintage tracking-wider text-amber-300/80 flex items-center gap-1.5">
+          <span className="text-xs uppercase font-vintage tracking-wider text-amber-300/80 flex items-center gap-1.5">
             <Radio className="w-2.5 h-2.5 text-amber-400 shrink-0" />
             <span>Speakeasy Jukebox</span>
             {isSilenced ? (
-              <span className="text-[8px] bg-amber-500/20 text-amber-300/90 border border-amber-400/30 px-1 rounded font-bold">
+              <span className="text-xs bg-amber-500/20 text-amber-300/90 border border-amber-400/30 px-1 rounded font-bold">
                 (Pausa en prueba)
               </span>
             ) : isDucked ? (
-              <span className="text-[8px] text-amber-400 font-bold animate-pulse">
+              <span className="text-xs text-amber-400 font-bold animate-pulse">
                 (Atenuado)
               </span>
             ) : isPlaying ? (
@@ -96,7 +96,7 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
             ) : null}
           </span>
 
-          <span className="text-[11px] font-broadway text-amber-100 max-w-[180px] truncate leading-tight">
+          <span className="text-xs font-broadway text-amber-100 max-w-[180px] truncate leading-tight">
             {isSilenced
               ? 'Silencio para prueba'
               : currentTrack.title || 'Hilo Musical 1920s'}
@@ -123,15 +123,15 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] uppercase font-vintage tracking-wider text-amber-300 font-bold">
+              <span className="text-xs uppercase font-vintage tracking-wider text-amber-300 font-bold">
                 Mando Jukebox (Suena en TV)
               </span>
               {isDucked ? (
-                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-vintage animate-pulse">
+                <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-vintage animate-pulse">
                   Ducking Activo
                 </span>
               ) : state?.contextReason ? (
-                <span className={`text-[9px] px-1.5 py-0.2 rounded font-vintage border ${
+                <span className={`text-xs px-1.5 py-0.2 rounded font-vintage border ${
                   state.contextFactor === 0 ? 'bg-red-500/20 text-red-300 border-red-500/30' :
                   state.contextFactor && state.contextFactor < 0.5 ? 'bg-amber-500/20 text-amber-300 border-amber-400/30' :
                   'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
@@ -199,7 +199,7 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
           className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#d4af37]"
           title="Volumen del hilo musical en la TV"
         />
-        <span className="text-[11px] font-vintage text-amber-200 w-8 text-right">
+        <span className="text-xs font-vintage text-amber-200 w-8 text-right">
           {isMuted ? '0%' : `${Math.round(effectiveVolume * 100)}%`}
         </span>
       </div>

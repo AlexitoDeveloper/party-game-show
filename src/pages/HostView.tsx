@@ -942,7 +942,7 @@ export default function HostView() {
       <nav className="sticky top-2 z-50 grid grid-cols-5 gap-1 p-1 bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-2xl shadow-deco-gold backdrop-blur-xl">
         <button
           onClick={() => setActiveTab('live')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
             activeTab === 'live'
               ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
               : 'bg-[#14141e]/80 hover:bg-[#1c1c2b] text-amber-200/70 hover:text-white border border-[#d4af37]/20 font-medium'
@@ -958,7 +958,7 @@ export default function HostView() {
 
         <button
           onClick={() => setActiveTab('cards')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
             activeTab === 'cards'
               ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
               : 'bg-[#14141e]/80 hover:bg-[#1c1c2b] text-amber-200/70 hover:text-white border border-[#d4af37]/20 font-medium'
@@ -968,7 +968,7 @@ export default function HostView() {
           <span className="text-base sm:text-sm">🃏</span>
           <span className="truncate">Cartas</span>
           {powerCards.activeEffects.length > 0 && (
-            <span className="text-[9px] bg-slate-950 text-amber-300 border border-amber-400 px-1 rounded-full font-black">
+            <span className="text-xs bg-slate-950 text-amber-300 border border-amber-400 px-1 rounded-full font-black">
               {powerCards.activeEffects.length}
             </span>
           )}
@@ -976,7 +976,7 @@ export default function HostView() {
 
         <button
           onClick={() => setActiveTab('teams')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
             activeTab === 'teams'
               ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
               : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
@@ -989,7 +989,7 @@ export default function HostView() {
 
         <button
           onClick={() => setActiveTab('catalog')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
             activeTab === 'catalog'
               ? 'bg-purple-500 text-white shadow-md shadow-purple-500/25'
               : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
@@ -1002,7 +1002,7 @@ export default function HostView() {
 
         <button
           onClick={() => setActiveTab('soundboard')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
             activeTab === 'soundboard'
               ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25'
               : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
@@ -1078,7 +1078,7 @@ export default function HostView() {
                   <span className="text-xs font-black uppercase text-white block truncate">
                     {activeGame.title} en curso
                   </span>
-                  <span className="text-[10px] text-slate-400 block truncate">
+                  <span className="text-xs text-slate-400 block truncate">
                     Concluye la prueba, caduca las cartas y asigna puntuaciones finales
                   </span>
                 </div>
@@ -1121,7 +1121,7 @@ export default function HostView() {
               </div>
               <button
                 onClick={() => setActiveTab('teams')}
-                className="text-[11px] text-amber-300 hover:text-amber-200 font-bold transition-colors flex items-center gap-1 shrink-0"
+                className="text-xs text-amber-300 hover:text-amber-200 font-bold transition-colors flex items-center gap-1 shrink-0"
               >
                 <Users className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden sm:inline">Gestionar Equipos</span>

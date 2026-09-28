@@ -88,7 +88,7 @@ export const HostTriviaControls: React.FC<HostTriviaControlsProps> = ({
 
         <div className="p-3.5 rounded-xl bg-[#07070a] border-2 border-emerald-400/60 flex items-center justify-between shadow-md">
           <div>
-            <span className="text-[10px] uppercase font-broadway font-black text-emerald-400 block">Respuesta Correcta:</span>
+            <span className="text-xs uppercase font-broadway font-black text-emerald-400 block">Respuesta Correcta:</span>
             <span className="text-base font-broadway text-emerald-300">{currentTriviaQuestion.correctAnswer}</span>
           </div>
           {currentTriviaQuestion.hint && (

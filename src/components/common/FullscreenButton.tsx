@@ -71,7 +71,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
         )}
 
         {showLabel && (
-          <span className="font-broadway text-[10px] sm:text-xs uppercase tracking-wider whitespace-nowrap">
+          <span className="font-broadway text-xs sm:text-xs uppercase tracking-wider whitespace-nowrap">
             {label || (isFullscreen ? 'Ventana' : 'Pantalla Completa')}
           </span>
         )}
@@ -103,7 +103,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 
             <div className="space-y-2.5 text-xs font-vintage bg-[#141420] p-3 rounded-2xl border border-[#d4af37]/25">
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-gold-gradient text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                <span className="w-5 h-5 rounded-full bg-gold-gradient text-slate-950 font-black flex items-center justify-center text-xs shrink-0 mt-0.5">
                   1
                 </span>
                 <span>
@@ -112,7 +112,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
               </div>
 
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-gold-gradient text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                <span className="w-5 h-5 rounded-full bg-gold-gradient text-slate-950 font-black flex items-center justify-center text-xs shrink-0 mt-0.5">
                   2
                 </span>
                 <span>
@@ -121,7 +121,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
               </div>
 
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-gold-gradient text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                <span className="w-5 h-5 rounded-full bg-gold-gradient text-slate-950 font-black flex items-center justify-center text-xs shrink-0 mt-0.5">
                   3
                 </span>
                 <span>
@@ -130,7 +130,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
               </div>
             </div>
 
-            <div className="text-[11px] font-vintage text-amber-300/80 bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-xl flex items-center gap-2">
+            <div className="text-xs font-vintage text-amber-300/80 bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-xl flex items-center gap-2">
               <Info className="w-4 h-4 text-amber-400 shrink-0" />
               <span>
                 También puedes pulsar <strong>"aA"</strong> en Safari y seleccionar <em>"Ocultar barra de herramientas"</em>.

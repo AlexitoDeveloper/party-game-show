@@ -49,7 +49,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
         {/* LADO IZQUIERDO: PLACA DE SALA */}
         <div className="flex items-center gap-2">
           <div className="bg-[#0e0e16]/90 border border-[#d4af37]/50 rounded-xl px-2.5 py-1 shadow-inner">
-            <span className="text-[9px] uppercase font-vintage tracking-widest text-amber-200/60 block leading-none">
+            <span className="text-xs uppercase font-vintage tracking-widest text-amber-200/60 block leading-none">
               SALA
             </span>
             <span className="text-xl font-broadway text-gold-gradient block leading-tight font-black">
@@ -62,7 +62,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             <div className="bg-[#121008] border border-[#d4af37]/40 rounded-xl px-2 py-1 flex items-center gap-1.5 shadow-sm">
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
               <div className="leading-tight">
-                <span className="text-[8px] font-vintage uppercase text-amber-300/70 block">PUNTOS</span>
+                <span className="text-xs font-vintage uppercase text-amber-300/70 block">PUNTOS</span>
                 <span className="text-xs font-broadway font-black text-white">{teamScore}</span>
               </div>
             </div>
@@ -98,7 +98,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
               {/* Badge Emoji */}
               {player?.badge_emoji && !player?.is_captain && (
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#0c0c14] border border-[#d4af37] flex items-center justify-center shadow">
-                  <TwemojiText className="text-[10px]">{player.badge_emoji}</TwemojiText>
+                  <TwemojiText className="text-xs">{player.badge_emoji}</TwemojiText>
                 </div>
               )}
             </div>
@@ -107,11 +107,11 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             <div className="text-right">
               <div className="flex items-center justify-end gap-1">
                 {player?.is_captain && (
-                  <span className="text-[9px] font-broadway uppercase tracking-wider text-amber-400 font-bold">
+                  <span className="text-xs font-broadway uppercase tracking-wider text-amber-400 font-bold">
                     CAPITÁN
                   </span>
                 )}
-                <span className="text-[9px] uppercase font-vintage tracking-widest text-amber-200/60 block leading-tight">
+                <span className="text-xs uppercase font-vintage tracking-widest text-amber-200/60 block leading-tight">
                   MESA
                 </span>
               </div>

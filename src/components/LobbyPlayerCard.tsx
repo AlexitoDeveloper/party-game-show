@@ -84,11 +84,11 @@ export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[10px] uppercase font-bold text-slate-400">
+            <span className="text-xs uppercase font-bold text-slate-400">
               {theme.name}
             </span>
             {isCaptain && (
-              <span className="text-[8px] font-black uppercase text-amber-300 bg-amber-400/15 border border-amber-400/40 px-1 py-0.2 rounded tracking-wider">
+              <span className="text-xs font-black uppercase text-amber-300 bg-amber-400/15 border border-amber-400/40 px-1 py-0.2 rounded tracking-wider">
                 CAPITÁN
               </span>
             )}

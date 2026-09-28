@@ -81,7 +81,7 @@ export const TvUnDosTresGame: React.FC<TvUnDosTresGameProps> = ({
               <span className={`w-3 h-3 rounded-full ${catalog.twBg} mb-1 shadow`} />
               <span className="text-xs font-broadway text-white truncate max-w-full">{team.name}</span>
               <span
-                className={`text-[10px] font-vintage font-black uppercase mt-1 ${
+                className={`text-xs font-vintage font-black uppercase mt-1 ${
                   isEliminated ? 'text-red-400' : isCurrentTurn ? 'text-amber-300 font-bold' : 'text-amber-200/50'
                 }`}
               >

@@ -110,7 +110,7 @@ export const TvMoviesGame: React.FC<TvMoviesGameProps> = ({
 
               {/* Explicación de los emojis */}
               <div className="mt-6 bg-[#0c0c14]/90 border border-[#d4af37]/40 px-5 py-3 rounded-2xl max-w-xl text-xs md:text-sm text-amber-100/90 text-left font-vintage">
-                <span className="text-[10px] uppercase font-broadway text-gold-gradient block mb-1">
+                <span className="text-xs uppercase font-broadway text-gold-gradient block mb-1">
                   Descifrado del Acertijo:
                 </span>
                 {currentMovie.explanation}

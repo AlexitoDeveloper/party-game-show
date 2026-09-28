@@ -46,7 +46,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-2xl">🃏</span>
               <h2 className="text-base sm:text-lg font-broadway uppercase tracking-wide text-gold-gradient">Cartas de Poder Speakeasy</h2>
-              <span className="text-[10px] font-vintage font-bold uppercase tracking-wider bg-[#14141e] text-amber-300 border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full shadow-sm">
+              <span className="text-xs font-vintage font-bold uppercase tracking-wider bg-[#14141e] text-amber-300 border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full shadow-sm">
                 Mazo Clandestino
               </span>
             </div>
@@ -105,7 +105,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
           <div className="bg-[#07070a]/90 border border-[#d4af37]/30 p-3.5 rounded-2xl flex items-center gap-3 shadow-inner">
             <span className="text-2xl">🎴</span>
             <div>
-              <span className="text-[10px] text-amber-200/70 font-vintage font-bold uppercase block">En Mazo Común</span>
+              <span className="text-xs text-amber-200/70 font-vintage font-bold uppercase block">En Mazo Común</span>
               <span className="text-lg font-broadway text-gold-gradient">{powerCards.deck.length} cartas</span>
             </div>
           </div>
@@ -113,7 +113,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
           <div className="bg-[#07070a]/90 border border-[#d4af37]/30 p-3.5 rounded-2xl flex items-center gap-3 shadow-inner">
             <span className="text-2xl">👥</span>
             <div>
-              <span className="text-[10px] text-amber-200/70 font-vintage font-bold uppercase block">En Manos</span>
+              <span className="text-xs text-amber-200/70 font-vintage font-bold uppercase block">En Manos</span>
               <span className="text-lg font-broadway text-emerald-300">
                 {Object.values(powerCards.teamHands).reduce((acc, h) => acc + h.length, 0)} cartas
               </span>
@@ -127,7 +127,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
           >
             <span className="text-2xl group-hover:scale-110 transition-transform">🪦</span>
             <div>
-              <span className="text-[10px] text-amber-200/70 font-vintage font-bold uppercase block group-hover:text-amber-300">
+              <span className="text-xs text-amber-200/70 font-vintage font-bold uppercase block group-hover:text-amber-300">
                 Descartes (Ver)
               </span>
               <span className="text-lg font-broadway text-amber-100">{powerCards.discardPile.length} cartas</span>
@@ -137,7 +137,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
           <div className="bg-[#07070a]/90 border border-[#d4af37]/30 p-3.5 rounded-2xl flex items-center gap-3 shadow-inner">
             <span className="text-2xl">⚡</span>
             <div>
-              <span className="text-[10px] text-amber-200/70 font-vintage font-bold uppercase block">Efectos Activos</span>
+              <span className="text-xs text-amber-200/70 font-vintage font-bold uppercase block">Efectos Activos</span>
               <span className="text-lg font-broadway text-amber-300">{powerCards.activeEffects.length}</span>
             </div>
           </div>
@@ -147,14 +147,14 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
         {powerCards.activeEffects.length > 0 && (
           <div className="bg-[#140b08]/90 border border-amber-500/40 p-3 sm:p-4 rounded-2xl space-y-2 shadow-inner">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-[#d4af37]" />
                 <span className="hidden sm:inline">Efectos de Poder Activos en Esta Prueba:</span>
                 <span className="sm:hidden">Efectos Activos ({powerCards.activeEffects.length}):</span>
               </span>
               <button
                 onClick={onClearAllActiveEffects}
-                className="px-2.5 py-1 bg-red-950/90 hover:bg-red-900 border border-red-500/50 text-red-200 text-[10px] font-broadway uppercase rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow shrink-0"
+                className="px-2.5 py-1 bg-red-950/90 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-broadway uppercase rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow shrink-0"
                 title="Caducar y descartar todos los efectos activos inmediatamente"
               >
                 <Trash2 className="w-3 h-3 text-red-400" />
@@ -187,7 +187,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                       </span>
                     )}
                     {eff.sensoryLimitation && (
-                      <span className="bg-[#1f0b2a] border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-[11px] font-vintage font-bold">
+                      <span className="bg-[#1f0b2a] border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded text-xs font-vintage font-bold">
                         {eff.sensoryLimitation}
                       </span>
                     )}
@@ -199,7 +199,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                           onScoreChange(eff.targetTeamId!, -3);
                           onRemoveActiveEffect(eff.id);
                         }}
-                        className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-broadway text-[10px] shadow"
+                        className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-broadway text-xs shadow"
                       >
                         💣 Detonar (-3 pts)
                       </button>
@@ -211,7 +211,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                           onScoreChange(eff.sourceTeamId, 2);
                           onRemoveActiveEffect(eff.id);
                         }}
-                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-broadway text-[10px] shadow"
+                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-broadway text-xs shadow"
                       >
                         🎯 Cobrar (+2 pts)
                       </button>
@@ -226,7 +226,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                           onScoreChange(eff.sourceTeamId, 3);
                           onRemoveActiveEffect(eff.id);
                         }}
-                        className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-broadway text-[10px] shadow"
+                        className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-broadway text-xs shadow"
                       >
                         👑 Destronar (-3 rival / +3 tú)
                       </button>
@@ -239,7 +239,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                             onScoreChange(eff.sourceTeamId, 6);
                             onRemoveActiveEffect(eff.id);
                           }}
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-broadway text-[10px] shadow"
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-broadway text-xs shadow"
                         >
                           +6 pts (1º-2º)
                         </button>
@@ -248,7 +248,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                             onScoreChange(eff.sourceTeamId, -4);
                             onRemoveActiveEffect(eff.id);
                           }}
-                          className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-broadway text-[10px] shadow"
+                          className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-broadway text-xs shadow"
                         >
                           -4 pts (3º-5º)
                         </button>
@@ -261,7 +261,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                           onScoreChange(eff.targetTeamId!, -4);
                           onRemoveActiveEffect(eff.id);
                         }}
-                        className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-broadway text-[10px] shadow"
+                        className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-broadway text-xs shadow"
                       >
                         💀 Ejecutar (-4 pts)
                       </button>
@@ -318,7 +318,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-xs font-broadway text-white truncate">{card.name}</span>
                                   <span
-                                    className={`text-[8px] font-vintage font-bold px-1.5 py-0.2 rounded border shrink-0 ${
+                                    className={`text-xs font-vintage font-bold px-1.5 py-0.2 rounded border shrink-0 ${
                                       card.rarity === 'Legendaria'
                                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                         : card.rarity === 'Épica'
@@ -331,7 +331,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                                     {card.rarity}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-amber-100/60 font-vintage truncate hidden sm:block">{card.tagline}</span>
+                                <span className="text-xs text-amber-100/60 font-vintage truncate hidden sm:block">{card.tagline}</span>
                               </div>
                             </div>
 
@@ -340,14 +340,14 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                                 <>
                                   <button
                                     onClick={() => onScoreChange(team.id, -1)}
-                                    className="px-2 py-1 rounded-lg bg-red-950/80 hover:bg-red-800 text-red-200 border border-red-500/40 text-[10px] font-broadway uppercase transition-all"
+                                    className="px-2 py-1 rounded-lg bg-red-950/80 hover:bg-red-800 text-red-200 border border-red-500/40 text-xs font-broadway uppercase transition-all"
                                     title="Penalizar 1 punto al equipo por conservar la maldición al terminar la prueba"
                                   >
                                     💀 -1 pt
                                   </button>
                                   <button
                                     onClick={() => onPlayCardDirectly(team.id, card.id)}
-                                    className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-[10px] font-broadway uppercase transition-all"
+                                    className="px-2 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-xs font-broadway uppercase transition-all"
                                     title="Descartar la maldición perdiendo 3 puntos"
                                   >
                                     ✕ Descartar (-3)
@@ -356,7 +356,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
                               ) : (
                                 <button
                                   onClick={() => onInitiatePlayCard(team.id, card)}
-                                  className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-[#d4af37]/40 text-[10px] font-broadway uppercase transition-all"
+                                  className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-[#d4af37]/40 text-xs font-broadway uppercase transition-all"
                                   title="Activar carta"
                                 >
                                   Jugar
@@ -365,7 +365,7 @@ export const HostPowerCardsTab: React.FC<HostPowerCardsTabProps> = ({
 
                               <button
                                 onClick={() => onRevokeCardFromTeam(team.id, card.id)}
-                                className="p-1 rounded-lg bg-[#14141e] hover:bg-red-950/60 text-amber-200/60 hover:text-red-300 border border-[#d4af37]/30 hover:border-red-500/40 text-[10px] active:scale-95 transition-all"
+                                className="p-1 rounded-lg bg-[#14141e] hover:bg-red-950/60 text-amber-200/60 hover:text-red-300 border border-[#d4af37]/30 hover:border-red-500/40 text-xs active:scale-95 transition-all"
                                 title="Quitar carta de la mano y enviar al descarte"
                               >
                                 ✕

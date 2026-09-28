@@ -43,7 +43,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
             <h3 className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
               Teléfono Dibujado — Panel de Valoración
             </h3>
-            <span className="text-[11px] font-vintage text-amber-200/70">
+            <span className="text-xs font-vintage text-amber-200/70">
               Dinámica en papel real: J1 dibuja ➔ J2 escribe ➔ J3 dibuja ➔ J4 escribe ➔ J5 dibuja
             </span>
           </div>
@@ -77,7 +77,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
               >
                 <span className={`w-3 h-3 rounded-full ${catalog.twBg} shadow-sm`} />
                 <span>{team.name}</span>
-                <span className="text-[10px] font-vintage bg-black/40 px-1.5 py-0.5 rounded border border-white/10 text-amber-300">
+                <span className="text-xs font-vintage bg-black/40 px-1.5 py-0.5 rounded border border-white/10 text-amber-300">
                   {hits} {hits === 1 ? 'acierto' : 'aciertos'}
                 </span>
               </button>
@@ -127,7 +127,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
                   +5 Aciertos
                 </span>
               </div>
-              <p className="text-[11px] font-vintage text-amber-100/70">
+              <p className="text-xs font-vintage text-amber-100/70">
                 El concepto de J1 llegó intacto a la obra final de J5 (+5 aciertos y +5 pts).
               </p>
             </button>
@@ -156,7 +156,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
                   +2 Aciertos
                 </span>
               </div>
-              <p className="text-[11px] font-vintage text-emerald-100/70">
+              <p className="text-xs font-vintage text-emerald-100/70">
                 Votado como el dibujo con mayor arte, detalle o mérito (+2 aciertos y +2 pts).
               </p>
             </button>
@@ -185,7 +185,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
                   +1 Acierto
                 </span>
               </div>
-              <p className="text-[11px] font-vintage text-purple-100/70">
+              <p className="text-xs font-vintage text-purple-100/70">
                 Votado como el dibujo más cómico, desastroso o surrealista (+1 acierto y +1 pt).
               </p>
             </button>
@@ -194,7 +194,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
       )}
 
       {/* RESUMEN DE LA DINÁMICA */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-amber-200/80">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs text-amber-200/80">
         <div className="bg-[#14141e] p-2.5 rounded-xl border border-[#d4af37]/30 font-vintage">
           <span className="text-amber-400 font-broadway block mb-0.5">1.º Turno (Dibujo)</span>
           J1 piensa su idea y la dibuja. Dobla el papel y se lo entrega a J2.

@@ -112,60 +112,60 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               {team.name}
             </span>
             {powerCardsCount > 0 && (
-              <span className="text-[10px] bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1.5 py-0.5 rounded-md font-bold font-mono shadow-sm">
+              <span className="text-xs bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1.5 py-0.5 rounded-md font-bold font-mono shadow-sm">
                 🃏{powerCardsCount}
               </span>
             )}
             {activeEffects.hasDouble && (
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-md font-black animate-pulse">
+              <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-md font-black animate-pulse">
                 x2
               </span>
             )}
             {activeEffects.hasGamble && (
-              <span className="text-[10px] bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse flex items-center gap-0.5 shadow-sm shadow-amber-500/30">
+              <span className="text-xs bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse flex items-center gap-0.5 shadow-sm shadow-amber-500/30">
                 ⭐x2
               </span>
             )}
             {activeEffects.hasBomb && (
-              <span className="text-[10px] bg-orange-500/30 text-orange-300 border border-orange-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-orange-500/30" title="Bomba activa">
+              <span className="text-xs bg-orange-500/30 text-orange-300 border border-orange-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-orange-500/30" title="Bomba activa">
                 💣
               </span>
             )}
             {activeEffects.hasShield && (
-              <span className="text-[10px] bg-blue-500/30 text-blue-300 border border-blue-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-blue-500/30" title="Escudo protector">
+              <span className="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-blue-500/30" title="Escudo protector">
                 🛡️
               </span>
             )}
             {activeEffects.hasSentence && (
-              <span className="text-[10px] bg-red-700/40 text-red-300 border border-red-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="La Sentencia activa">
+              <span className="text-xs bg-red-700/40 text-red-300 border border-red-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="La Sentencia activa">
                 💀
               </span>
             )}
             {activeEffects.hasRussianRoulette && (
-              <span className="text-[10px] bg-purple-500/30 text-purple-300 border border-purple-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Ruleta Rusa">
+              <span className="text-xs bg-purple-500/30 text-purple-300 border border-purple-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Ruleta Rusa">
                 🎰
               </span>
             )}
             {activeEffects.hasCurse && (
-              <span className="text-[10px] bg-red-950/80 text-red-400 border border-red-600/70 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Mano con Maldición (Fallos restan el DOBLE)">
+              <span className="text-xs bg-red-950/80 text-red-400 border border-red-600/70 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Mano con Maldición (Fallos restan el DOBLE)">
                 ☠️
               </span>
             )}
             {activeEffects.hasPhoenix && (
-              <span className="text-[10px] bg-gradient-to-r from-amber-600/50 to-red-600/50 text-amber-200 border border-amber-400/80 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-amber-500/40 flex items-center gap-0.5" title="Ave Fénix (x3 puntos conseguidos en esta prueba)">
+              <span className="text-xs bg-gradient-to-r from-amber-600/50 to-red-600/50 text-amber-200 border border-amber-400/80 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-amber-500/40 flex items-center gap-0.5" title="Ave Fénix (x3 puntos conseguidos en esta prueba)">
                 🔥x3
               </span>
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
             {teamCaptain && (
-              <span className="text-[10px] text-[#f3e5ab]/80 font-vintage font-bold truncate flex items-center gap-1">
+              <span className="text-xs text-[#f3e5ab]/80 font-vintage font-bold truncate flex items-center gap-1">
                 <Crown className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37] shrink-0" />
                 {teamCaptain.nickname}
               </span>
             )}
             {subtitleScore && (
-              <span className="text-[9px] text-[#d4af37]/70 font-vintage font-bold truncate">
+              <span className="text-xs text-[#d4af37]/70 font-vintage font-bold truncate">
                 • {subtitleScore}
               </span>
             )}
@@ -231,7 +231,7 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                 />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] uppercase font-vintage font-bold text-[#c5a059] tracking-widest block">
+                <span className="text-xs uppercase font-vintage font-bold text-[#c5a059] tracking-widest block">
                   Equipo {team.team_index}
                 </span>
                 <h3 className={`text-xl font-black font-broadway uppercase tracking-wider ${theme.twText} truncate leading-tight`}>
@@ -249,21 +249,21 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
           {/* MARCADOR DE PUNTUACIÓN - PLACA DE LATÓN GRABADA */}
           <div className="my-3 py-3 px-4 rounded-2xl bg-brass-plate flex items-center justify-between shadow-xl">
             <div>
-              <span className="text-[9px] uppercase font-vintage font-bold tracking-widest text-[#c5a059] block">
+              <span className="text-xs uppercase font-vintage font-bold tracking-widest text-[#c5a059] block">
                 PUNTUACIÓN
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-4xl font-black font-broadway text-gold-gradient leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
                   <CountUp end={team.score} duration={1.2} preserveValue />
                 </span>
-                <span className="text-[11px] font-black text-[#d4af37] font-broadway">PTS</span>
+                <span className="text-xs font-black text-[#d4af37] font-broadway">PTS</span>
               </div>
             </div>
           </div>
 
           {/* CARTAS DE PODER ASIGNADAS (MÁXIMO 3) */}
           <div className="mb-2 py-2 px-3 rounded-xl bg-[#0a0a0f] border border-[#d4af37]/40 flex items-center justify-between">
-            <span className="text-[10px] uppercase font-vintage font-bold text-[#f3e5ab] flex items-center gap-1.5">
+            <span className="text-xs uppercase font-vintage font-bold text-[#f3e5ab] flex items-center gap-1.5">
               <span>🃏 Cartas de Poder:</span>
             </span>
             <span className="text-xs font-black font-mono text-[#f3e5ab] bg-[#d4af37]/20 border border-[#d4af37]/50 px-2 py-0.5 rounded-lg shadow-sm">
@@ -297,7 +297,7 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                   <span className="truncate">{m.nickname}</span>
                 </div>
                 {m.is_captain ? (
-                  <span className="text-[9px] font-black uppercase text-amber-300 bg-black/50 px-1.5 py-0.5 rounded border border-amber-400/30 shrink-0">
+                  <span className="text-xs font-black uppercase text-amber-300 bg-black/50 px-1.5 py-0.5 rounded border border-amber-400/30 shrink-0">
                     CAPITÁN
                   </span>
                 ) : (

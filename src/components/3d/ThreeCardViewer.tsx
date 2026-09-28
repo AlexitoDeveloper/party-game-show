@@ -319,7 +319,7 @@ export const ThreeCardViewer: React.FC<ThreeCardViewerProps> = ({
           <span>{isFlipped ? 'Ver Anverso' : 'Dar la Vuelta 3D'}</span>
         </button>
 
-        <span className="text-[10px] text-amber-400/70 font-vintage tracking-wider uppercase">
+        <span className="text-xs text-amber-400/70 font-vintage tracking-wider uppercase">
           Arrastra para inclinar
         </span>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Swords, Radio } from 'lucide-react';
 import { TeamTheme } from '../lib/teamThemes';
@@ -37,7 +37,22 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const { playBuzzer } = useGameAudio();
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+  const lastPressTimeRef = useRef(0);
+
+  const handlePressAction = (e: React.SyntheticEvent) => {
+    // Detener propagación a elementos padres y evitar clicks sintéticos indeseados
+    e.stopPropagation();
+    if (e.cancelable && e.type !== 'click') {
+      e.preventDefault();
+    }
+
+    // Evitar disparos dobles en Safari iOS (pointerdown + touchstart + click consecutivamente)
+    const now = Date.now();
+    if (now - lastPressTimeRef.current < 250) {
+      return;
+    }
+    lastPressTimeRef.current = now;
+
     if (isLocked || disabled) return;
 
     // Reproducción sonora instantánea en el móvil
@@ -47,9 +62,21 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
     playerHaptics.press();
 
     // Posición del toque para la onda ripple dorada
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const currentTarget = e.currentTarget as HTMLElement;
+    const rect = currentTarget.getBoundingClientRect();
+    let clientX = rect.left + rect.width / 2;
+    let clientY = rect.top + rect.height / 2;
+
+    if ('clientX' in e && typeof (e as any).clientX === 'number') {
+      clientX = (e as any).clientX;
+      clientY = (e as any).clientY;
+    } else if ('touches' in e && (e as any).touches?.[0]) {
+      clientX = (e as any).touches[0].clientX;
+      clientY = (e as any).touches[0].clientY;
+    }
+
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     const newRipple = { id: Date.now(), x, y };
 
     setRipples((prev) => [...prev.slice(-3), newRipple]);
@@ -95,7 +122,7 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
       )}
 
       {/* 2. Chasis Exterior: Ficha de Casino de Gran Denominación con Bisel de Latón Estriado */}
-      <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full arcade-buzzer-base p-3 flex items-center justify-center shadow-2xl">
+      <div className="relative w-[min(65vw,256px)] h-[min(65vw,256px)] sm:w-72 sm:h-72 rounded-full arcade-buzzer-base p-3 flex items-center justify-center shadow-2xl">
         {/* Anillo de Palos de Naipes Grabados en Bajorrelieve (♠, ♥, ♣, ♦) */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
           <span className="absolute top-1 text-xs text-[#f5eedb]/80 font-serif drop-shadow-md select-none">♠</span>
@@ -114,11 +141,13 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
             key={isLocked ? 'buzzer-locked' : 'buzzer-ready'}
             type="button"
             aria-disabled={isDisabledState}
-            onPointerDown={handlePointerDown}
+            onPointerDown={handlePressAction}
+            onTouchStart={handlePressAction}
+            onClick={handlePressAction}
             animate={{ y: 0, scale: 1 }}
             whileTap={!isDisabledState ? { y: 7, scale: 0.95 } : undefined}
             transition={{ type: 'spring', stiffness: 550, damping: 28 }}
-            className={`w-full h-full rounded-full relative overflow-hidden flex flex-col items-center justify-center p-5 border-4 transition-all duration-150 select-none ${
+            className={`w-full h-full rounded-full relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-5 border-4 transition-all duration-150 select-none touch-manipulation arcade-buzzer-btn ${
               isDisabledState
                 ? 'bg-[#15151e] border-[#2d2d3d] opacity-65 cursor-not-allowed shadow-none'
                 : isMeWinner
@@ -126,6 +155,7 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
                 : `${theme.twBg} border-[#f3e5ab]/80 cursor-pointer active:translate-y-1`
             }`}
             style={{
+              touchAction: 'manipulation',
               boxShadow: isDisabledState
                 ? 'none'
                 : isMeWinner
@@ -172,7 +202,7 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
                   <span className="text-2xl sm:text-3xl font-black font-broadway uppercase tracking-widest text-slate-950 drop-shadow-sm">
                     ¡TU TURNO!
                   </span>
-                  <span className="text-[10px] font-broadway uppercase tracking-wider text-slate-900/90 font-bold mt-0.5">
+                  <span className="text-xs font-broadway uppercase tracking-wider text-slate-900/90 font-bold mt-0.5">
                     ¡ERES EL MÁS RÁPIDO!
                   </span>
                 </>

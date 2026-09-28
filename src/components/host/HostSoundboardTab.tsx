@@ -32,7 +32,7 @@ export const HostSoundboardTab: React.FC<HostSoundboardTabProps> = ({
             <div>
               <h3 className="text-base font-broadway text-gold-gradient uppercase tracking-wider flex items-center gap-2">
                 Fonoteca & Caja de Ruidos (Soundboard)
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40 font-bold font-vintage">
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40 font-bold font-vintage">
                   Sincronizado con TV
                 </span>
               </h3>
@@ -41,7 +41,7 @@ export const HostSoundboardTab: React.FC<HostSoundboardTabProps> = ({
               </p>
             </div>
           </div>
-          <span className="text-[10px] text-amber-200/80 font-mono hidden sm:inline bg-black/40 px-2 py-1 rounded-lg border border-[#d4af37]/30">
+          <span className="text-xs text-amber-200/80 font-mono hidden sm:inline bg-black/40 px-2 py-1 rounded-lg border border-[#d4af37]/30">
             Audio WebAPI • Suena exclusivamente en la TV
           </span>
         </div>
@@ -128,7 +128,7 @@ export const HostSoundboardTab: React.FC<HostSoundboardTabProps> = ({
               <h4 className="text-xs font-broadway uppercase tracking-wider text-gold-gradient">
                 Efectos Temáticos Speakeasy & Casino 1930s
               </h4>
-              <p className="text-[11px] text-amber-200/70 font-vintage">
+              <p className="text-xs text-amber-200/70 font-vintage">
                 Sonidos táctiles procedimentales de naipes, fichas de casino y metales de big band.
               </p>
             </div>

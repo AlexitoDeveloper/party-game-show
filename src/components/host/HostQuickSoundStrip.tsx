@@ -12,7 +12,7 @@ export const HostQuickSoundStrip: React.FC<HostQuickSoundStripProps> = ({
 }) => {
   return (
     <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl p-2 flex items-center justify-between gap-1 shadow-deco-gold">
-      <div className="flex items-center gap-1.5 pl-1.5 text-[11px] font-vintage font-bold text-amber-300 whitespace-nowrap">
+      <div className="flex items-center gap-1.5 pl-1.5 text-xs font-vintage font-bold text-amber-300 whitespace-nowrap">
         <Volume2 className="w-3.5 h-3.5 text-[#d4af37]" />
         <span className="hidden sm:inline">Efectos:</span>
       </div>
@@ -60,7 +60,7 @@ export const HostQuickSoundStrip: React.FC<HostQuickSoundStripProps> = ({
       </div>
       <button
         onClick={onOpenSoundboardTab}
-        className="text-[11px] text-amber-200/80 hover:text-amber-300 font-vintage font-bold px-2 py-1 transition-colors whitespace-nowrap"
+        className="text-xs text-amber-200/80 hover:text-amber-300 font-vintage font-bold px-2 py-1 transition-colors whitespace-nowrap"
         title="Ver todos los efectos"
       >
         <span className="hidden sm:inline">Todos</span>

@@ -91,7 +91,7 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
             <span className="text-red-500">♠</span>
             <span className="text-gold-emboss">EL GRAMÓFONO CLANDESTINO</span>
             <span className="text-[#d4af37]/40">•</span>
-            <span className="text-amber-100/80 font-vintage text-[11px]">DISCOS 78 RPM</span>
+            <span className="text-amber-100/80 font-vintage text-xs">DISCOS 78 RPM</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -143,11 +143,11 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                   />
                 ) : (
                   <>
-                    <span className="text-[6px] font-broadway uppercase tracking-widest text-slate-950 font-black">
+                    <span className="text-xs font-broadway uppercase tracking-widest text-slate-950 font-black">
                       HIS MASTER'S VOICE
                     </span>
                     <span className="text-sm select-none my-0.5">🎶</span>
-                    <span className="text-[5px] font-vintage uppercase text-slate-900 font-bold">
+                    <span className="text-xs font-vintage uppercase text-slate-900 font-bold">
                       78 R.P.M.
                     </span>
                   </>
@@ -170,7 +170,7 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                   className="w-full p-4 sm:p-5 rounded-2xl bg-black/90 border-2 shadow-deco-gold flex flex-col items-center md:items-start gap-3"
                   style={{ borderColor: buzzerWinner.teamColorHex || '#d4af37' }}
                 >
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/60 text-amber-300 text-[11px] font-broadway uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/60 text-amber-300 text-xs font-broadway uppercase tracking-wider">
                     <span>⚡</span> ¡HA PULSADO PRIMERO!
                   </div>
 
@@ -228,7 +228,7 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                   exit={{ opacity: 0, scale: 0.9 }}
                   className="w-full"
                 >
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/90 text-amber-300 text-[11px] font-broadway uppercase tracking-wider mb-2 border border-[#d4af37]/45 shadow-sm">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/90 text-amber-300 text-xs font-broadway uppercase tracking-wider mb-2 border border-[#d4af37]/45 shadow-sm">
                     <Sparkles className="w-3 h-3 text-[#d4af37]" />
                     <span>PISTA EN EL SALÓN DE JUEGO</span>
                   </div>
@@ -262,7 +262,7 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                     ))}
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#d4af37]/20 flex items-center justify-center md:justify-start gap-2 text-[11px] font-vintage text-amber-200/60">
+                  <div className="mt-4 pt-3 border-t border-[#d4af37]/20 flex items-center justify-center md:justify-start gap-2 text-xs font-vintage text-amber-200/60">
                     <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                     <span>Acierto: suma puntos al marcador de la ronda</span>
                   </div>
@@ -288,7 +288,7 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                     </div>
                   )}
                   <div className="min-w-0 text-left">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#d4af37]/15 text-amber-300 text-[10px] font-broadway uppercase tracking-wider mb-1.5 border border-[#d4af37]/40">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#d4af37]/15 text-amber-300 text-xs font-broadway uppercase tracking-wider mb-1.5 border border-[#d4af37]/40">
                       🎉 ¡MELODÍA RESUELTA!
                     </div>
                     <h4 className="text-xl sm:text-2xl font-broadway uppercase text-gold-emboss leading-tight truncate">
@@ -303,11 +303,11 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                           Año {currentSong.year}
                         </span>
                       ) : null}
-                      <span className="bg-red-950/60 border border-red-800/60 text-red-200 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase">
+                      <span className="bg-red-950/60 border border-red-800/60 text-red-200 px-2 py-0.5 rounded-md font-bold text-xs uppercase">
                         Sello Oficial
                       </span>
                       {buzzerWinner && (
-                        <span className="text-[11px] text-amber-300 font-bold">
+                        <span className="text-xs text-amber-300 font-bold">
                           • Pulsado por: {buzzerWinner.playerName} ({buzzerWinner.teamName})
                         </span>
                       )}

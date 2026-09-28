@@ -46,12 +46,12 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
           <div className="flex items-center gap-2.5">
             <GameIcon name="Users" size={22} color="#d4af37" glow="#d4af37" weight="fill" />
             <div>
-              <span className="text-[10px] text-amber-200/70 block uppercase font-vintage font-bold">Jugadores</span>
+              <span className="text-xs text-amber-200/70 block uppercase font-vintage font-bold">Jugadores</span>
               <span className="text-base font-broadway text-white">{players.length} conectados</span>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-[10px] text-amber-200/70 block uppercase font-vintage font-bold">Equipos</span>
+            <span className="text-xs text-amber-200/70 block uppercase font-vintage font-bold">Equipos</span>
             <span className="text-base font-broadway text-gold-gradient">{activeTeams.length} / {TEAMS_CATALOG.length}</span>
           </div>
         </div>
@@ -59,7 +59,7 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
         {/* JUGADORES ENTRADOS QUE ESTÁN ELIGIENDO BANDO */}
         {unassignedPlayers.length > 0 && (
           <div className="w-full bg-amber-500/10 border-2 border-amber-400/40 rounded-2xl p-3 my-2 text-left animate-pulse">
-            <span className="text-[10px] uppercase font-vintage font-bold text-amber-300 block mb-1.5 flex items-center gap-1">
+            <span className="text-xs uppercase font-vintage font-bold text-amber-300 block mb-1.5 flex items-center gap-1">
               <GameIcon name="Lightning" size={14} color="#d4af37" weight="fill" glow="#d4af37" />
               <span>Recién llegados ({unassignedPlayers.length}):</span>
             </span>
@@ -76,7 +76,7 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  {p.badge_emoji && <TwemojiText className="text-[10px]">{p.badge_emoji}</TwemojiText>}
+                  {p.badge_emoji && <TwemojiText className="text-xs">{p.badge_emoji}</TwemojiText>}
                   <span className="font-vintage">{p.nickname}</span>
                 </div>
               ))}

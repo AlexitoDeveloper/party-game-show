@@ -16,7 +16,7 @@ export const HellCasinoSuitsDivider: React.FC<HellCasinoSuitsDividerProps> = ({
         <span className="text-xs text-amber-400 font-serif">♠</span>
         <span className="text-xs text-red-500 font-serif">♥</span>
         {label && (
-          <span className="text-[10px] font-broadway uppercase tracking-widest text-amber-200/90 px-1 font-bold">
+          <span className="text-xs font-broadway uppercase tracking-widest text-amber-200/90 px-1 font-bold">
             {label}
           </span>
         )}

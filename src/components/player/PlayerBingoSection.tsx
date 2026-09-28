@@ -286,7 +286,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
     return (
       <div className="my-auto w-full max-w-sm space-y-4 text-center px-2 py-3 select-none">
         <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/70 rounded-3xl p-6 shadow-deco-gold backdrop-blur-xl hell-card-frame">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
             <span>🎱</span> SALÓN DE BINGO ART DÉCO
           </div>
 
@@ -312,7 +312,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
           {/* RESUMEN DE LA BOLA ACTUAL DEL BOMBO */}
           <div className="bg-[#07070a] border border-[#d4af37]/35 rounded-2xl p-3 mb-5 flex items-center justify-between">
             <div className="text-left">
-              <span className="text-[10px] uppercase font-broadway text-amber-300/80 block">
+              <span className="text-xs uppercase font-broadway text-amber-300/80 block">
                 Última Bola del Bombo
               </span>
               <span className="text-sm font-broadway text-gold-gradient">
@@ -324,7 +324,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
               </span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-vintage text-amber-200/60 block">Extraídas</span>
+              <span className="text-xs font-vintage text-amber-200/60 block">Extraídas</span>
               <span className="text-xs font-broadway text-white">
                 {bingoDrawnBalls.length} / 90
               </span>
@@ -347,7 +347,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
           </button>
 
           {isPortrait && (
-            <p className="text-[10px] font-vintage text-amber-300/60 mt-3 italic">
+            <p className="text-xs font-vintage text-amber-300/60 mt-3 italic">
               * Recuerda desactivar el bloqueo de rotación de tu móvil si no gira automáticamente.
             </p>
           )}
@@ -372,7 +372,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
       <div className="w-[125px] sm:w-[150px] flex-shrink-0 flex flex-col justify-between bg-[#0a0a14]/95 border-2 border-[#d4af37]/60 rounded-2xl sm:rounded-3xl p-2 shadow-deco-gold backdrop-blur-xl hell-card-frame">
         {/* CABECERA: BOLA EN TIEMPO REAL */}
         <div className="flex flex-col items-center text-center">
-          <div className="text-[9px] sm:text-[10px] uppercase font-broadway tracking-wider text-amber-300/80 mb-1">
+          <div className="text-xs sm:text-xs uppercase font-broadway tracking-wider text-amber-300/80 mb-1">
             {bingoIsSpinning ? 'Ruleta...' : 'Última Bola'}
           </div>
 
@@ -400,7 +400,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
           </div>
 
           {/* CONTADOR DE BOLAS */}
-          <div className="mt-1 text-[9px] sm:text-[10px] font-broadway text-amber-200/80">
+          <div className="mt-1 text-xs sm:text-xs font-broadway text-amber-200/80">
             <span className="text-gold-gradient font-black">{bingoDrawnBalls.length}</span>
             <span className="text-amber-200/50">/90</span>
           </div>
@@ -411,7 +411,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
           <button
             onClick={() => handleOpenClaimModal('line')}
             disabled={localLineAwarded}
-            className={`w-full py-2 sm:py-2.5 px-1 rounded-xl text-[10px] sm:text-xs font-broadway font-black uppercase tracking-wider flex items-center justify-center gap-1 border shadow-sm transition-all ${
+            className={`w-full py-2 sm:py-2.5 px-1 rounded-xl text-xs sm:text-xs font-broadway font-black uppercase tracking-wider flex items-center justify-center gap-1 border shadow-sm transition-all ${
               localLineAwarded
                 ? 'bg-[#101018] text-slate-500 border-slate-800/80 cursor-not-allowed opacity-60 line-through'
                 : lineStatus.hasValidDrawnLine
@@ -427,7 +427,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
           <button
             onClick={() => handleOpenClaimModal('bingo')}
             disabled={localBingoAwarded}
-            className={`w-full py-2 sm:py-2.5 px-1 rounded-xl text-[10px] sm:text-xs font-broadway font-black uppercase tracking-wider flex items-center justify-center gap-1 border shadow-deco-gold transition-all ${
+            className={`w-full py-2 sm:py-2.5 px-1 rounded-xl text-xs sm:text-xs font-broadway font-black uppercase tracking-wider flex items-center justify-center gap-1 border shadow-deco-gold transition-all ${
               localBingoAwarded
                 ? 'bg-[#101018] text-slate-500 border-slate-800/80 cursor-not-allowed opacity-60 line-through'
                 : bingoStatus.hasValidDrawnBingo
@@ -445,7 +445,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
         <button
           onClick={handleExitFullscreen}
           onPointerDown={(e) => e.stopPropagation()}
-          className="w-full py-1 text-[9px] font-vintage text-amber-300/70 hover:text-amber-200 flex items-center justify-center gap-1 border border-[#d4af37]/25 rounded-lg bg-[#101018]"
+          className="w-full py-1 text-xs font-vintage text-amber-300/70 hover:text-amber-200 flex items-center justify-center gap-1 border border-[#d4af37]/25 rounded-lg bg-[#101018]"
           title="Salir de pantalla completa y volver"
         >
           <Minimize2 className="w-3 h-3" />
@@ -456,7 +456,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
       {/* ÁREA PRINCIPAL DERECHA: BARRA SUPERIOR + CARTÓN ÚNICO 3x9 */}
       <div className="flex-1 flex flex-col justify-between h-full overflow-hidden">
         {/* BARRA SUPERIOR CON ESTADO Y DESMARCAR */}
-        <div className="flex items-center justify-between px-2.5 py-1 bg-[#0a0a14]/90 border border-[#d4af37]/40 rounded-xl mb-1 text-[10px] sm:text-xs font-vintage">
+        <div className="flex items-center justify-between px-2.5 py-1 bg-[#0a0a14]/90 border border-[#d4af37]/40 rounded-xl mb-1 text-xs sm:text-xs font-vintage">
           <div className="flex items-center gap-2">
             <span className="font-broadway text-amber-300 uppercase tracking-wider">
               Tu Cartón Oficial
@@ -469,7 +469,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
 
           <button
             onClick={handleResetMarks}
-            className="text-amber-300/70 hover:text-amber-200 underline text-[10px] sm:text-xs font-vintage"
+            className="text-amber-300/70 hover:text-amber-200 underline text-xs sm:text-xs font-vintage"
           >
             Desmarcar todo
           </button>

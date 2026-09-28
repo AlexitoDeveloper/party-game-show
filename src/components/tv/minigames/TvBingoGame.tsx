@@ -135,10 +135,10 @@ export const TvBingoGame: React.FC<TvBingoGameProps> = ({
         {/* COLUMNA DERECHA: PANEL COMPLETO DE LOS 90 NÚMEROS (10x9, SIN SCROLL) */}
         <div className="lg:col-span-8 p-3 sm:p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 shadow-inner flex flex-col justify-center">
           <div className="flex items-center justify-between mb-2.5 px-1">
-            <span className="text-[11px] uppercase font-broadway tracking-wider text-amber-300">
+            <span className="text-xs uppercase font-broadway tracking-wider text-amber-300">
               Panel de Números Extraídos:
             </span>
-            <span className="text-[11px] font-broadway text-gold-gradient font-black">
+            <span className="text-xs font-broadway text-gold-gradient font-black">
               {bingoDrawnBalls.length} de 90 bolas
             </span>
           </div>
@@ -152,7 +152,7 @@ export const TvBingoGame: React.FC<TvBingoGameProps> = ({
               return (
                 <div
                   key={num}
-                  className={`h-6 sm:h-7 rounded-md flex items-center justify-center text-[11px] sm:text-xs font-mono font-black transition-all ${
+                  className={`h-6 sm:h-7 rounded-md flex items-center justify-center text-xs sm:text-xs font-mono font-black transition-all ${
                     isCurrent
                       ? `bg-gradient-to-tr ${theme.bgGradient} ${theme.gridTextClass} scale-110 shadow-deco-gold ring-2 ring-amber-300 z-10 animate-pulse`
                       : isDrawn

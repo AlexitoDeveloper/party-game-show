@@ -124,7 +124,7 @@ export default function HomePage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
               Título del Evento / Show:
             </label>
             <input
@@ -134,7 +134,7 @@ export default function HomePage() {
               placeholder="GAME SHOW ARENA (o tu título personalizado)"
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-400"
             />
-            <p className="text-[10px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Sustituye el rótulo "GAME SHOW ARENA" en la pantalla de la TV (ej: Cumpleaños de Alex, Fiestón 2026...)
             </p>
           </div>

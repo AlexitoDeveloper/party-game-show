@@ -140,11 +140,11 @@ export const GameCoverImage: React.FC<GameCoverImageProps> = ({
           {/* Cabecera del cartel horizontal */}
           <div className="z-10 mt-1 flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 border border-[#d4af37]/40 shadow-sm">
-              <span className="text-[10px] sm:text-xs uppercase font-broadway tracking-widest text-amber-300 font-black">
+              <span className="text-xs sm:text-xs uppercase font-broadway tracking-widest text-amber-300 font-black">
                 DESAFÍO #{gameIndex + 1}
               </span>
             </div>
-            <span className="text-[10px] sm:text-xs uppercase font-vintage tracking-wider text-amber-100/70">
+            <span className="text-xs sm:text-xs uppercase font-vintage tracking-wider text-amber-100/70">
               • {game.category}
             </span>
           </div>

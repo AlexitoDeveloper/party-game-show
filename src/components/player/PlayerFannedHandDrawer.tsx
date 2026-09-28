@@ -17,6 +17,7 @@ interface PlayerFannedHandDrawerProps {
   myTeamId: string | null;
   rivalPlayers: Player[];
   powerCards: PowerCardsState | null;
+  isBuzzerActive?: boolean;
   onPlayCard: (card: PowerCard) => void;
   onExecuteCardAction: (
     card: PowerCard,
@@ -40,6 +41,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
   myTeamId,
   rivalPlayers,
   powerCards,
+  isBuzzerActive = false,
   onPlayCard,
   onExecuteCardAction,
   onToast,
@@ -51,8 +53,11 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
   const [targetCardId, setTargetCardId] = useState<string | undefined>(undefined);
   const [isManualPlayerEntry, setIsManualPlayerEntry] = useState(false);
 
-  const toggleDrawer = (e?: React.MouseEvent | React.TouchEvent) => {
+  const toggleDrawer = (e?: React.MouseEvent | React.TouchEvent | React.SyntheticEvent) => {
     if (e) {
+      if (typeof (e as any).preventDefault === 'function') {
+        (e as any).preventDefault();
+      }
       e.stopPropagation();
     }
     // Evitar que toques o clics accidentales/fantasmas durante o justo tras salir de pantalla completa abran la mano
@@ -94,22 +99,26 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
 
   return (
     <>
-      {/* 1. BOTÓN / LENGÜETA INFERIOR (SOLO VISIBLE CUANDO EL PANEL ESTÁ CERRADO) */}
+      {/* 1. BOTÓN / LENGÜETA INFERIOR (CENTRADO HORIZONTAL EN LA PARTE INFERIOR) */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && (!isBuzzerActive || cardCount > 0) && (
           <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none select-none pb-[max(env(safe-area-inset-bottom,0px),4px)]">
             <motion.button
               key="peek-flap-btn"
               type="button"
               onClick={toggleDrawer}
               onPointerDown={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                toggleDrawer(e);
+              }}
               initial={{ y: 25, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 25, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.97 }}
-              className={`pointer-events-auto px-5 py-2.5 rounded-t-2xl border-t-2 border-x-2 shadow-2xl flex items-center gap-3 backdrop-blur-xl transition-all cursor-pointer ${
+              className={`pointer-events-auto px-4 py-2 rounded-t-2xl border-t-2 border-x-2 shadow-2xl flex items-center gap-2.5 backdrop-blur-xl transition-all cursor-pointer ${
                 cardCount > 0
                   ? 'bg-gradient-to-t from-[#0e0a05] via-[#1c1409] to-[#281c0c] border-[#d4af37] text-amber-100 shadow-[0_-8px_25px_rgba(212,175,55,0.35)]'
                   : 'bg-[#090910]/95 border-[#d4af37]/30 text-amber-200/50'
@@ -178,7 +187,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
                     <h3 className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
                       Tapete de Naipes de Poder
                     </h3>
-                    <span className="text-[10px] font-vintage text-amber-200/70 block">
+                    <span className="text-xs font-vintage text-amber-200/70 block">
                       {selectedTeam?.name} • Mano Secreta de Mesa
                     </span>
                   </div>
@@ -227,7 +236,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
                                 }`}
                               >
                                 <span>{team.name}</span>
-                                {isSelected && <span className="font-broadway uppercase text-[10px]">✓ Marcado</span>}
+                                {isSelected && <span className="font-broadway uppercase text-xs">✓ Marcado</span>}
                               </button>
                             );
                           })}
@@ -244,7 +253,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
                         <button
                           type="button"
                           onClick={() => setIsManualPlayerEntry(!isManualPlayerEntry)}
-                          className="text-[10px] text-amber-400 underline font-vintage font-bold"
+                          className="text-xs text-amber-400 underline font-vintage font-bold"
                         >
                           {isManualPlayerEntry ? 'Volver a lista' : 'Escribir nombre'}
                         </button>
@@ -285,12 +294,12 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
                                     <span className="text-base">{p.badge_emoji || '👤'}</span>
                                     <div>
                                       <span className="block leading-tight text-xs font-black font-broadway">{p.nickname}</span>
-                                      <span className={`text-[9px] uppercase font-bold block ${isSelected ? 'text-slate-950' : 'text-stone-400'}`}>
+                                      <span className={`text-xs uppercase font-bold block ${isSelected ? 'text-slate-950' : 'text-stone-400'}`}>
                                         {pTeam?.name || 'Rival'}
                                       </span>
                                     </div>
                                   </div>
-                                  {isSelected && <span className="text-[10px] font-black font-broadway">✓ Elegido</span>}
+                                  {isSelected && <span className="text-xs font-black font-broadway">✓ Elegido</span>}
                                 </button>
                               );
                             })}
@@ -337,7 +346,7 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
                                 }`}
                               >
                                 <span>{dCard.name}</span>
-                                <span className="text-[9px] uppercase opacity-75">{dCard.rarity}</span>
+                                <span className="text-xs uppercase opacity-75">{dCard.rarity}</span>
                               </button>
                             );
                           })}

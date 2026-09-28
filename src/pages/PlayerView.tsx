@@ -902,7 +902,7 @@ export default function PlayerView() {
                     <span className={`w-2.5 h-2.5 rounded-full ${cat.twBg}`} />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-vintage font-bold text-amber-200/70 block">Mesa {cat.index}</span>
+                    <span className="text-xs uppercase font-vintage font-bold text-amber-200/70 block">Mesa {cat.index}</span>
                     <span className={`text-base font-broadway uppercase tracking-wide ${cat.twText}`}>{cat.name}</span>
                   </div>
                 </motion.button>
@@ -962,7 +962,7 @@ export default function PlayerView() {
           </div>
 
           <div className="p-3 rounded-2xl bg-[#0c0c14]/90 border border-[#d4af37]/40 w-full text-center">
-            <span className="text-[10px] text-amber-200/70 uppercase font-vintage font-bold block">Tu Bando</span>
+            <span className="text-xs text-amber-200/70 uppercase font-vintage font-bold block">Tu Bando</span>
             <div className="flex items-center justify-center gap-2 mt-1">
               <span className={`w-3 h-3 rounded-full ${selectedTeam.twBg}`} />
               <span className={`text-base font-broadway uppercase tracking-wide ${selectedTeam.twText}`}>
@@ -978,7 +978,7 @@ export default function PlayerView() {
         </div>
       ) : (
         /* PASO 3C: MANDO EN JUEGO */
-        <div className="flex-1 min-h-0 flex flex-col justify-between my-1 sm:my-2 pb-12 z-10 max-w-sm mx-auto w-full items-center overflow-y-auto no-scrollbar">
+        <div className="flex-1 min-h-0 flex flex-col justify-between my-1 sm:my-2 pb-20 sm:pb-24 z-10 max-w-sm mx-auto w-full items-center overflow-y-auto no-scrollbar touch-manipulation">
           {/* BANNER DE EQUIPO Y JUEGO ACTIVO */}
           <div className="w-full space-y-2">
             <div className="w-full flex items-center justify-between bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl px-4 py-2.5 shadow-md">
@@ -990,7 +990,7 @@ export default function PlayerView() {
               </div>
               <button
                 onClick={() => setSelectedTeam(null)}
-                className="text-[10px] text-amber-300/80 hover:text-white uppercase font-vintage font-bold"
+                className="text-xs text-amber-300/80 hover:text-white uppercase font-vintage font-bold"
               >
                 Cambiar Bando
               </button>
@@ -1000,12 +1000,12 @@ export default function PlayerView() {
             <div className="w-full flex flex-col gap-2 px-1">
               <div className="w-full flex items-center justify-between gap-2">
                 {player?.is_captain ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase shadow-sm">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase shadow-sm">
                     <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
                     <span>👑 Eres el Capitán</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14141e] border border-[#d4af37]/25 text-amber-200/70 text-[10px] font-vintage font-bold">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14141e] border border-[#d4af37]/25 text-amber-200/70 text-xs font-vintage font-bold">
                     <UserCheck className="w-3 h-3 text-amber-400" />
                     <span>Miembro de Mesa</span>
                   </div>
@@ -1016,7 +1016,7 @@ export default function PlayerView() {
                   <button
                     onClick={() => setIsDoubleModalOpen(true)}
                     disabled={!!(myTeamId && captainGambles[myTeamId])}
-                    className={`px-3 py-1 rounded-full text-[10px] font-broadway uppercase tracking-wider flex items-center gap-1 transition-all shadow-md active:scale-95 ${
+                    className={`px-3 py-1 rounded-full text-xs font-broadway uppercase tracking-wider flex items-center gap-1 transition-all shadow-md active:scale-95 ${
                       myTeamId && captainGambles[myTeamId]
                         ? 'bg-amber-500/20 text-amber-300 border border-[#d4af37]/50 opacity-70'
                         : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold font-black'
@@ -1032,13 +1032,13 @@ export default function PlayerView() {
               {player?.is_captain && isRepGame && (
                 <button
                   onClick={() => setIsRepModalOpen(true)}
-                  className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/30 via-yellow-500/20 to-amber-700/30 border border-[#d4af37]/60 text-amber-200 hover:text-white flex items-center justify-between gap-2 text-[11px] font-vintage font-bold transition-all shadow-sm active:scale-98"
+                  className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/30 via-yellow-500/20 to-amber-700/30 border border-[#d4af37]/60 text-amber-200 hover:text-white flex items-center justify-between gap-2 text-xs font-vintage font-bold transition-all shadow-sm active:scale-98"
                 >
                   <div className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-amber-400" />
                     <span>Designar Representantes</span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-broadway font-black ${
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-broadway font-black ${
                     repIds.length > 0 ? 'bg-gold-gradient text-slate-950' : 'bg-stone-800 text-amber-300'
                   }`}>
                     {repIds.length > 0 ? `${repIds.length}/${maxRepresentatives} Elegidos` : `Elegir (${maxRepresentatives})`}
@@ -1048,7 +1048,7 @@ export default function PlayerView() {
 
               {/* Indicador para los compañeros cuando ya hay representantes */}
               {!player?.is_captain && isRepGame && hasDesignatedReps && (
-                <div className="w-full py-1 px-3 rounded-xl bg-[#14141e]/90 border border-[#d4af37]/25 flex items-center justify-between text-[10px] font-vintage">
+                <div className="w-full py-1 px-3 rounded-xl bg-[#14141e]/90 border border-[#d4af37]/25 flex items-center justify-between text-xs font-vintage">
                   <span className="text-amber-200/70">Tu posición en esta prueba:</span>
                   <span className={`font-broadway uppercase ${isMeRepresentative ? 'text-gold-gradient font-black' : 'text-amber-300/80'}`}>
                     {isMeRepresentative ? '⭐ ¡En el Ruedo!' : '🍿 En el Banquillo'}
@@ -1063,10 +1063,10 @@ export default function PlayerView() {
                 <span className="text-xl shrink-0">{activeGame.emoji}</span>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] uppercase font-vintage font-bold text-amber-300 tracking-wider">
+                    <span className="text-xs uppercase font-vintage font-bold text-amber-300 tracking-wider">
                       {activeGame.category}
                     </span>
-                    <span className="text-[9px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-1.5 py-0.2 rounded-full font-bold font-vintage">
+                    <span className="text-xs bg-amber-500/20 text-amber-200 border border-amber-400/40 px-1.5 py-0.2 rounded-full font-bold font-vintage">
                       {activeGame.participantsLabel}
                     </span>
                   </div>
@@ -1075,7 +1075,7 @@ export default function PlayerView() {
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-vintage font-bold text-amber-200/90 px-2 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 shrink-0">
+              <span className="text-xs font-vintage font-bold text-amber-200/90 px-2 py-0.5 rounded-lg bg-[#14141e] border border-[#d4af37]/30 shrink-0">
                 {activeGame.engine === 'buzzer' ? '⚡ Pulsador' : activeGame.engine === 'challenges' ? '🎨 Reto' : '🎲 Mesa'}
               </span>
             </div>
@@ -1094,10 +1094,10 @@ export default function PlayerView() {
               <div className="w-full bg-[#1e0a2e]/95 border-2 border-purple-500 rounded-2xl px-3.5 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
                 <Skull className="w-5 h-5 text-purple-400 animate-bounce" />
                 <div className="text-left">
-                  <span className="text-[10px] font-broadway uppercase tracking-wider text-purple-300 block">
+                  <span className="text-xs font-broadway uppercase tracking-wider text-purple-300 block">
                     ¡MESA BAJO LA MALDICIÓN!
                   </span>
-                  <span className="text-[11px] font-vintage text-purple-200 font-bold block leading-tight">
+                  <span className="text-xs font-vintage text-purple-200 font-bold block leading-tight">
                     Tu cuadrilla tiene penalización de puntos aplicada por un rival.
                   </span>
                 </div>
@@ -1108,10 +1108,10 @@ export default function PlayerView() {
               <div className="w-full bg-[#2a1305]/95 border-2 border-amber-500 rounded-2xl px-3.5 py-2 text-center shadow-lg flex items-center justify-center gap-2">
                 <Target className="w-5 h-5 text-amber-400 animate-spin" />
                 <div className="text-left">
-                  <span className="text-[10px] font-broadway uppercase tracking-wider text-amber-300 block">
+                  <span className="text-xs font-broadway uppercase tracking-wider text-amber-300 block">
                     ¡OBJETIVO EN EL PUNTO DE MIRA!
                   </span>
-                  <span className="text-[11px] font-vintage text-amber-200 font-bold block leading-tight">
+                  <span className="text-xs font-vintage text-amber-200 font-bold block leading-tight">
                     Si no ganas esta prueba, tu rival sumará puntos adicionales.
                   </span>
                 </div>
@@ -1122,10 +1122,10 @@ export default function PlayerView() {
               <div className="w-full bg-[#3a0808]/95 border-2 border-red-500 rounded-2xl px-3.5 py-2 text-center shadow-lg flex items-center justify-center gap-2 animate-pulse">
                 <Bomb className="w-5 h-5 text-red-400 animate-bounce" />
                 <div className="text-left">
-                  <span className="text-[10px] font-broadway uppercase tracking-wider text-red-300 block">
+                  <span className="text-xs font-broadway uppercase tracking-wider text-red-300 block">
                     ¡TRAMPA EXPLOSIVA ACTIVADA!
                   </span>
-                  <span className="text-[11px] font-vintage text-red-200 font-bold block leading-tight">
+                  <span className="text-xs font-vintage text-red-200 font-bold block leading-tight">
                     Si quedas por debajo del rival, perderás puntos del marcador.
                   </span>
                 </div>
@@ -1143,7 +1143,7 @@ export default function PlayerView() {
 
             {myForcedChange && (
               <div className="w-full bg-[#2a1a05]/95 border-2 border-amber-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
-                <span className="text-[10px] font-broadway uppercase tracking-wider text-amber-300 block">
+                <span className="text-xs font-broadway uppercase tracking-wider text-amber-300 block">
                   🔄 Cambio Forzoso Activo
                 </span>
                 <span className="text-xs font-vintage font-bold text-white block">
@@ -1154,7 +1154,7 @@ export default function PlayerView() {
 
             {myLimitation && (
               <div className="w-full bg-[#1e0a2e]/95 border-2 border-purple-400 rounded-2xl px-3 py-2 text-center shadow-lg space-y-0.5 animate-pulse">
-                <span className="text-[10px] font-broadway uppercase tracking-wider text-purple-300 block">
+                <span className="text-xs font-broadway uppercase tracking-wider text-purple-300 block">
                   {myLimitation.title}
                 </span>
                 <span className="text-xs font-vintage font-bold text-white block">
@@ -1181,7 +1181,7 @@ export default function PlayerView() {
                 </div>
 
                 <div className="flex items-center justify-between gap-2 px-1">
-                  <span className="text-[10px] uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
+                  <span className="text-xs uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
                     PRUEBA #{GAMES_CATALOG.findIndex((g) => g.id === activeGame.id) + 1}
                   </span>
                   <span className="text-xs font-vintage font-bold text-amber-300">
@@ -1199,7 +1199,7 @@ export default function PlayerView() {
                     <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>{activeGame.participantsLabel}</span>
                   </div>
-                  <p className="text-[11px] font-vintage text-amber-100/80 mt-1 leading-snug">
+                  <p className="text-xs font-vintage text-amber-100/80 mt-1 leading-snug">
                     {activeGame.participantsDescription}
                   </p>
                 </div>
@@ -1220,7 +1220,7 @@ export default function PlayerView() {
                               : `⚡ ¡Designar ${maxRepresentatives} Representantes!`}
                           </span>
                         </button>
-                        <p className="text-[10px] font-vintage text-amber-200/70">
+                        <p className="text-xs font-vintage text-amber-200/70">
                           {repIds.length > 0
                             ? 'Has asignado a los combatientes. El juego comenzará cuando el anfitrión dé la señal.'
                             : 'Como Capitán 👑, debes elegir quiénes salen al ruedo para que el anfitrión pueda iniciar la prueba.'}
@@ -1230,13 +1230,13 @@ export default function PlayerView() {
                       <div className="p-2.5 rounded-xl bg-black/60 border border-[#d4af37]/30 text-center">
                         {hasDesignatedReps ? (
                           <div>
-                            <span className="text-[10px] font-vintage text-amber-300 block uppercase font-bold">
+                            <span className="text-xs font-vintage text-amber-300 block uppercase font-bold">
                               Representantes designados por tu Capitán:
                             </span>
                             <span className="text-xs font-broadway text-gold-gradient block mt-0.5">
                               ⭐ {repNames.join(', ')}
                             </span>
-                            <span className="text-[10px] font-vintage text-amber-100/70 block mt-1">
+                            <span className="text-xs font-vintage text-amber-100/70 block mt-1">
                               {isMeRepresentative
                                 ? '¡Prepárate! Vas a competir en el ruedo.'
                                 : 'Estarás en el banquillo asesorando a tu equipo.'}
@@ -1296,7 +1296,7 @@ export default function PlayerView() {
             /* 🎨 TELÉFONO DIBUJADO */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
               <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
                   <span>🎨</span> TALLER DE CARICATURAS
                 </div>
                 <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">Cadena en Papel Físico</h3>
@@ -1308,7 +1308,7 @@ export default function PlayerView() {
                   <div>💡 J1 piensa su idea y dibuja (sin frases impuestas)</div>
                   <div>✍️ J2 adivina por escrito y oculta el dibujo anterior</div>
                   <div>🎨 J3 dibuja lo escrito... ¡hasta la revelación final!</div>
-                  <div className="text-[11px] text-amber-300/70 pt-1 font-vintage">
+                  <div className="text-xs text-amber-300/70 pt-1 font-vintage">
                     El anfitrión asignará los puntos al final según los resultados y el humor.
                   </div>
                 </div>
@@ -1318,7 +1318,7 @@ export default function PlayerView() {
             /* 🎮 TORNEO DE JUEGOS */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
               <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
                   <span>🎮</span> SALÓN DE JUEGOS CLANDESTINOS
                 </div>
                 <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">UNO • Dominó • Parchís</h3>
@@ -1329,7 +1329,7 @@ export default function PlayerView() {
                   <div>🥇 1.º Campeón: +5 pts</div>
                   <div>🥈 2.º Subcampeón: +3 pts</div>
                   <div>🥉 3.º Puesto: +2 pts</div>
-                  <div className="text-[11px] text-amber-300/70 pt-1">El anfitrión registrará la clasificación al acabar.</div>
+                  <div className="text-xs text-amber-300/70 pt-1">El anfitrión registrará la clasificación al acabar.</div>
                 </div>
               </div>
             </div>
@@ -1337,7 +1337,7 @@ export default function PlayerView() {
             /* ⚡ 1, 2, 3 ¿YA? */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
               <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
                   <span>⚡</span> 1, 2, 3 ¿YA? (5s)
                 </div>
                 <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">¡5 Segundos para 3 Respuestas!</h3>
@@ -1355,7 +1355,7 @@ export default function PlayerView() {
             /* 🍺 BEER PONG */
             <div className="my-auto w-full max-w-sm space-y-3 text-center px-1">
               <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-5 shadow-deco-gold backdrop-blur-xl deco-card-frame">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-[11px] font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/40 shadow-sm mb-3">
                   <span>🍺</span> TABERNA SPEAKEASY
                 </div>
                 <h3 className="text-lg font-broadway uppercase text-gold-gradient mb-1">Beer Pong en Mesa</h3>
@@ -1406,6 +1406,7 @@ export default function PlayerView() {
           myTeamId={myTeamId}
           rivalPlayers={rivalPlayers}
           powerCards={powerCards}
+          isBuzzerActive={activeGame.engine === 'buzzer'}
           onPlayCard={handlePlayCard}
           onExecuteCardAction={executeCardAction}
           onToast={(msg) => {
@@ -1435,7 +1436,7 @@ export default function PlayerView() {
       />
 
       {/* FOOTER */}
-      <footer className="text-center text-[10px] text-slate-600 uppercase tracking-widest z-10 shrink-0 select-none">
+      <footer className="text-center text-xs text-slate-600 uppercase tracking-widest z-10 shrink-0 select-none">
         Mando Táctil • Sincronía Instantánea • Web Haptics
       </footer>
     </main>

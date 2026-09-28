@@ -46,7 +46,7 @@ export const HostBeerPongControls: React.FC<HostBeerPongControlsProps> = ({
             <h3 className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
               Beer Pong — Marcador Rápido de Vasos
             </h3>
-            <span className="text-[11px] font-vintage text-amber-200/70">
+            <span className="text-xs font-vintage text-amber-200/70">
               Control en vivo de vasos encestados por equipo
             </span>
           </div>
@@ -76,7 +76,7 @@ export const HostBeerPongControls: React.FC<HostBeerPongControlsProps> = ({
                     {team.name}
                   </span>
                 </div>
-                <span className="text-[10px] font-vintage text-amber-200/70 bg-black/40 px-2 py-0.5 rounded-lg border border-[#d4af37]/20">
+                <span className="text-xs font-vintage text-amber-200/70 bg-black/40 px-2 py-0.5 rounded-lg border border-[#d4af37]/20">
                   Total: {team.score} pts
                 </span>
               </div>

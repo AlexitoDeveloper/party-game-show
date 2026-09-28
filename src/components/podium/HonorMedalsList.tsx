@@ -99,10 +99,10 @@ export const HonorMedalsList: React.FC<HonorMedalsListProps> = ({
     <div className="w-full flex-1 flex flex-col justify-between py-1">
       {/* CABECERA EDITORIAL COMPACTA: SEGUNDA PLANA Y CRÓNICA DE INFAMIA */}
       <div className="text-center mb-1.5 shrink-0">
-        <div className="inline-flex items-center gap-2 bg-[#1a130e] text-[#f5eedb] px-3 py-0.5 text-[9px] sm:text-[10px] font-broadway uppercase tracking-widest rounded-sm shadow-sm">
+        <div className="inline-flex items-center gap-2 bg-[#1a130e] text-[#f5eedb] px-3 py-0.5 text-xs sm:text-xs font-broadway uppercase tracking-widest rounded-sm shadow-sm">
           <span>🎖️ SEGUNDA PLANA: SALÓN DE LA INFAMIA & CONDECORACIONES DE HONOR 🎖️</span>
         </div>
-        <p className="text-[10px] font-editorial text-stone-700 italic mt-0.5">
+        <p className="text-xs font-editorial text-stone-700 italic mt-0.5">
           "El tribunal clandestino otorga las condecoraciones a los comportamientos más memorables de la noche"
         </p>
       </div>
@@ -125,26 +125,26 @@ export const HonorMedalsList: React.FC<HonorMedalsListProps> = ({
                 <div className="w-7 h-7 rounded-xl bg-[#dfd3ba] border border-[#3b2c1a]/60 flex items-center justify-center text-sm shadow-sm">
                   {award.badgeEmoji}
                 </div>
-                <span className="text-[9px] font-broadway text-[#3b2c1a] font-bold px-1.5 py-0.5 rounded bg-[#e2d5bb] border border-[#3b2c1a]/30">
+                <span className="text-xs font-broadway text-[#3b2c1a] font-bold px-1.5 py-0.5 rounded bg-[#e2d5bb] border border-[#3b2c1a]/30">
                   {award.cardSuit} {award.statBadge}
                 </span>
               </div>
 
-              <span className="text-[8px] font-vintage uppercase tracking-wider text-[#8c6a21] font-black block">
+              <span className="text-xs font-vintage uppercase tracking-wider text-[#8c6a21] font-black block">
                 {award.subtitle}
               </span>
               <h4 className="text-xs font-broadway newsprint-ink tracking-wide leading-tight mt-0.5 line-clamp-2">
                 {award.title}
               </h4>
 
-              <p className="text-[10px] font-editorial text-stone-700 leading-snug my-1.5 line-clamp-2">
+              <p className="text-xs font-editorial text-stone-700 leading-snug my-1.5 line-clamp-2">
                 {award.description}
               </p>
             </div>
 
             {/* PIE DE EQUIPO PREMIADO */}
             <div className="pt-1.5 border-t border-[#3b2c1a]/30 flex items-center justify-between bg-[#e5d9bf] -mx-3 -mb-3 p-2 rounded-b-xl">
-              <span className="text-[9px] font-vintage uppercase text-stone-700 font-bold">
+              <span className="text-xs font-vintage uppercase text-stone-700 font-bold">
                 Galardonado:
               </span>
               <div className="flex items-center gap-1.5 min-w-0">
@@ -162,7 +162,7 @@ export const HonorMedalsList: React.FC<HonorMedalsListProps> = ({
       </div>
 
       {/* PIE DECORATIVO DE PRENSA HISTÓRICA */}
-      <div className="text-center pt-2 border-t border-[#3b2c1a]/30 text-[10px] font-editorial italic text-stone-700">
+      <div className="text-center pt-2 border-t border-[#3b2c1a]/30 text-xs font-editorial italic text-stone-700">
         "En esta casa de juego, quien arriesga su honor pasa a la posteridad de la Ley Seca."
       </div>
     </div>

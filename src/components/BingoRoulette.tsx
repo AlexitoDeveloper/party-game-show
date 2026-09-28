@@ -128,14 +128,14 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
                   <span className="text-3xl sm:text-4xl font-black font-broadway text-gold-gradient drop-shadow-[0_0_15px_rgba(212,175,55,0.9)]">
                     {displayedTempNum}
                   </span>
-                  <span className="text-[9px] uppercase font-broadway tracking-widest text-[#f3e5ab] mt-0.5 animate-pulse">
+                  <span className="text-xs uppercase font-broadway tracking-widest text-[#f3e5ab] mt-0.5 animate-pulse">
                     ¡GIRANDO!
                   </span>
                 </motion.div>
               ) : (
                 <div className="flex flex-col items-center">
                   <span className="text-2xl text-[#d4af37]">🎱</span>
-                  <span className="text-[10px] uppercase font-broadway tracking-widest text-[#f3e5ab] mt-0.5">
+                  <span className="text-xs uppercase font-broadway tracking-widest text-[#f3e5ab] mt-0.5">
                     BOMBO
                   </span>
                 </div>
@@ -162,7 +162,7 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3e5ab] font-vintage font-bold text-[11px] uppercase tracking-wider"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#f3e5ab] font-vintage font-bold text-xs uppercase tracking-wider"
             >
               <span className="w-2 h-2 rounded-full bg-[#d4af37] animate-ping" />
               <span>Extrayendo bola de la suerte...</span>
@@ -202,13 +202,13 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
                     ¡Bola {currentBall}!
                   </span>
                   {nickname && (
-                    <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-[#d4af37] to-[#c5a059] text-[#0a0a0e] font-broadway text-[10px] uppercase shadow-md flex items-center gap-1 border border-white/40">
+                    <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-[#d4af37] to-[#c5a059] text-[#0a0a0e] font-broadway text-xs uppercase shadow-md flex items-center gap-1 border border-white/40">
                       <Sparkles className="w-3 h-3" />
                       <span>{nickname}</span>
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 font-vintage font-bold tracking-wider">
+                <span className="text-xs text-slate-400 mt-0.5 font-vintage font-bold tracking-wider">
                   Extraídas: <strong className="text-[#d4af37]">{drawnBalls.length}</strong> / 90
                 </span>
               </motion.div>
@@ -223,7 +223,7 @@ export const BingoRoulette: React.FC<BingoRouletteProps> = ({
               <div className="w-14 h-14 rounded-full border border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xl font-mono mx-auto mb-1">
                 —
               </div>
-              <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+              <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">
                 Esperando primera bola
               </p>
             </motion.div>

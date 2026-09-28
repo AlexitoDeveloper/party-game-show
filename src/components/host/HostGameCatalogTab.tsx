@@ -51,7 +51,7 @@ export const HostGameCatalogTab: React.FC<HostGameCatalogTabProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-2xl">{game.emoji}</span>
-                    <span className="text-[10px] font-broadway uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/90 border border-[#d4af37]/40 text-amber-300">
+                    <span className="text-xs font-broadway uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/90 border border-[#d4af37]/40 text-amber-300">
                       {game.category}
                     </span>
                   </div>
@@ -62,8 +62,8 @@ export const HostGameCatalogTab: React.FC<HostGameCatalogTabProps> = ({
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#d4af37]/20 flex items-center justify-between text-[11px] gap-1">
-                  <span className="text-amber-300 font-vintage font-bold bg-[#d4af37]/15 border border-[#d4af37]/30 px-2 py-0.5 rounded-full text-[10px]">
+                <div className="mt-4 pt-3 border-t border-[#d4af37]/20 flex items-center justify-between text-xs gap-1">
+                  <span className="text-amber-300 font-vintage font-bold bg-[#d4af37]/15 border border-[#d4af37]/30 px-2 py-0.5 rounded-full text-xs">
                     {game.participantsLabel}
                   </span>
                   {isSelected && (

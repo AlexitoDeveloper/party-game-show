@@ -87,10 +87,10 @@ export const HellCasinoBackground: React.FC<HellCasinoBackgroundProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 opacity-25 hover:opacity-50 transition-opacity">
               <span className="text-xl sm:text-2xl text-amber-400 font-serif drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]">♠</span>
-              <span className="hidden sm:inline text-[9px] font-broadway uppercase tracking-widest text-[#d4af37]/60">Spades</span>
+              <span className="hidden sm:inline text-xs font-broadway uppercase tracking-widest text-[#d4af37]/60">Spades</span>
             </div>
             <div className="flex items-center gap-1.5 opacity-25 hover:opacity-50 transition-opacity">
-              <span className="hidden sm:inline text-[9px] font-broadway uppercase tracking-widest text-red-500/60">Hearts</span>
+              <span className="hidden sm:inline text-xs font-broadway uppercase tracking-widest text-red-500/60">Hearts</span>
               <span className="text-xl sm:text-2xl text-red-600 font-serif drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]">♥</span>
             </div>
           </div>
@@ -99,10 +99,10 @@ export const HellCasinoBackground: React.FC<HellCasinoBackgroundProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 opacity-25 hover:opacity-50 transition-opacity">
               <span className="text-xl sm:text-2xl text-amber-400 font-serif drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]">♣</span>
-              <span className="hidden sm:inline text-[9px] font-broadway uppercase tracking-widest text-[#d4af37]/60">Clubs</span>
+              <span className="hidden sm:inline text-xs font-broadway uppercase tracking-widest text-[#d4af37]/60">Clubs</span>
             </div>
             <div className="flex items-center gap-1.5 opacity-25 hover:opacity-50 transition-opacity">
-              <span className="hidden sm:inline text-[9px] font-broadway uppercase tracking-widest text-red-500/60">Diamonds</span>
+              <span className="hidden sm:inline text-xs font-broadway uppercase tracking-widest text-red-500/60">Diamonds</span>
               <span className="text-xl sm:text-2xl text-red-600 font-serif drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]">♦</span>
             </div>
           </div>

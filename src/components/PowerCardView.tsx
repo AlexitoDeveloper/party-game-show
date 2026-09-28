@@ -130,13 +130,13 @@ export default function PowerCardView({
             </div>
             <div className="my-auto flex flex-col items-center">
               <span className="text-5xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">{card.emoji}</span>
-              <span className="text-[10px] text-[#d4af37] font-vintage font-bold uppercase tracking-widest mt-2">
+              <span className="text-xs text-[#d4af37] font-vintage font-bold uppercase tracking-widest mt-2">
                 ★ {card.rarity} ★
               </span>
             </div>
             {showRule && size !== 'sm' && (
               <div className="bg-black/80 border border-[#d4af37]/30 p-2.5 rounded-xl">
-                <p className="text-[11px] text-[#f5eedb]/90 font-editorial leading-snug">
+                <p className="text-xs text-[#f5eedb]/90 font-editorial leading-snug">
                   {card.description}
                 </p>
               </div>
@@ -170,7 +170,7 @@ export default function PowerCardView({
               e.stopPropagation();
               setShow3dModal(true);
             }}
-            className="absolute top-2.5 right-2.5 z-30 px-2 py-0.5 rounded-full bg-black/70 border border-[#d4af37]/70 text-[#f3e5ab] text-[10px] font-vintage tracking-wider hover:bg-black active:scale-95"
+            className="absolute top-2.5 right-2.5 z-30 px-2 py-0.5 rounded-full bg-black/70 border border-[#d4af37]/70 text-[#f3e5ab] text-xs font-vintage tracking-wider hover:bg-black active:scale-95"
           >
             3D 🔍
           </button>

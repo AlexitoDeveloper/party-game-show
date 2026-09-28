@@ -19,7 +19,7 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
         <div className="flex items-center gap-3">
           <span className="text-2xl animate-pulse">✨</span>
           <div>
-            <span className="text-[11px] font-vintage uppercase tracking-widest text-amber-300/80 block">
+            <span className="text-xs font-vintage uppercase tracking-widest text-amber-300/80 block">
               PROGRAMA TEATRAL OFICIAL DE LA VELADA
             </span>
             <h2 className="text-xl font-broadway tracking-wider text-gold-gradient uppercase">
@@ -74,7 +74,7 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
               />
             </div>
             <div className="w-full shrink-0 mt-1.5 text-center">
-              <span className="text-[11px] sm:text-xs font-vintage uppercase tracking-widest text-amber-300 flex items-center justify-center gap-2 font-bold">
+              <span className="text-xs sm:text-xs font-vintage uppercase tracking-widest text-amber-300 flex items-center justify-center gap-2 font-bold">
                 <span>🏆</span> 10 Retos • Puntuación Progresiva • Elenco en Vivo
               </span>
             </div>
@@ -172,13 +172,13 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-base">{r.icon}</span>
                       <span
-                        className={`text-[9px] font-vintage uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/90 border border-current ${r.colorText}`}
+                        className={`text-xs font-vintage uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/90 border border-current ${r.colorText}`}
                       >
                         {r.badge}
                       </span>
                     </div>
                     <h4 className={`text-lg font-broadway uppercase tracking-wider ${r.colorText}`}>{r.rarity}</h4>
-                    <p className="text-[11px] font-vintage text-amber-100/80 mt-0.5 mb-1.5 leading-tight">{r.desc}</p>
+                    <p className="text-xs font-vintage text-amber-100/80 mt-0.5 mb-1.5 leading-tight">{r.desc}</p>
                   </div>
 
                   <div className="my-auto flex flex-col items-center select-none pointer-events-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)]">

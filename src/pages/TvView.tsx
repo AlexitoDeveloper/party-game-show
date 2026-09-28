@@ -958,10 +958,10 @@ export default function TvView() {
                 <QRCodeSVG value={joinUrl} size={42} level="L" />
               </div>
               <div className="text-left leading-tight">
-                <span className="text-[9px] uppercase font-broadway text-amber-300 tracking-wider block">
+                <span className="text-xs uppercase font-broadway text-amber-300 tracking-wider block">
                   ¿Reconectar?
                 </span>
-                <span className="text-[11px] font-vintage text-slate-200 block">
+                <span className="text-xs font-vintage text-slate-200 block">
                   Escanea el QR
                 </span>
               </div>
@@ -971,7 +971,7 @@ export default function TvView() {
           {/* PLACA DE LATÓN DE CÓDIGO DE SALA */}
           <div className="flex items-center gap-4 bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-2xl px-5 py-2 shadow-deco-gold backdrop-blur-md relative overflow-hidden">
             <div className="text-right">
-              <span className="text-[10px] uppercase tracking-widest text-amber-200/70 block font-vintage font-bold">SALA</span>
+              <span className="text-xs uppercase tracking-widest text-amber-200/70 block font-vintage font-bold">SALA</span>
               <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 justify-end font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> EN VIVO
               </span>
@@ -1033,10 +1033,10 @@ export default function TvView() {
               <span className="text-3xl">{activeGame.emoji}</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-300 block">
+                  <span className="text-xs uppercase font-vintage tracking-widest text-amber-300 block">
                     {activeGame.category}
                   </span>
-                  <span className="text-[10px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-bold font-vintage shadow-sm">
+                  <span className="text-xs bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-bold font-vintage shadow-sm">
                     {activeGame.participantsLabel}
                   </span>
                 </div>
@@ -1049,7 +1049,7 @@ export default function TvView() {
             <div className="flex flex-wrap items-center gap-2 justify-center md:justify-end">
               {activeGame.scoringOptions.filter((o) => o.type !== 'podium').length > 0 && (
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
+                  <span className="text-xs uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
                     🎯 Prueba:
                   </span>
                   {activeGame.scoringOptions
@@ -1057,7 +1057,7 @@ export default function TvView() {
                     .map((opt) => (
                       <span
                         key={opt.id}
-                        className="bg-[#14141e]/90 text-amber-100 text-[10px] font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
+                        className="bg-[#14141e]/90 text-amber-100 text-xs font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
                       >
                         <span>{opt.label.replace(/\s*\([+-]?\d+.*?\)$/i, '')}</span>
                         <span className="text-emerald-400 font-broadway font-black">{opt.badge}</span>
@@ -1068,7 +1068,7 @@ export default function TvView() {
 
               {activeGame.scoringOptions.filter((o) => o.type === 'podium').length > 0 && (
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
+                  <span className="text-xs uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
                     🏆 Clasificación:
                   </span>
                   {activeGame.scoringOptions
@@ -1076,7 +1076,7 @@ export default function TvView() {
                     .map((opt) => (
                       <span
                         key={opt.id}
-                        className="bg-[#14141e]/90 text-amber-100 text-[10px] font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
+                        className="bg-[#14141e]/90 text-amber-100 text-xs font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
                       >
                         <span>{opt.label.replace(/\s*\([+-]?\d+.*?\)$/i, '')}</span>
                         <span className="text-amber-300 font-broadway font-black">{opt.badge}</span>
@@ -1097,7 +1097,7 @@ export default function TvView() {
               <div className="flex items-center gap-3">
                 <Crown className="w-8 h-8 text-amber-300 animate-bounce shrink-0 drop-shadow-md" />
                 <div className="text-left">
-                  <span className="text-[10px] uppercase font-vintage tracking-widest text-amber-200 block">
+                  <span className="text-xs uppercase font-vintage tracking-widest text-amber-200 block">
                     ⚔️ DESAFÍO DIRECTO ENTRE LÍDERES
                   </span>
                   <h4 className="text-xl font-broadway text-gold-gradient uppercase tracking-wider drop-shadow-sm">
@@ -1106,7 +1106,7 @@ export default function TvView() {
                 </div>
               </div>
               <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-xl px-4 py-2 text-right">
-                <span className="text-[10px] text-amber-300 uppercase font-vintage tracking-wider font-black block">REGLA EXCLUSIVA</span>
+                <span className="text-xs text-amber-300 uppercase font-vintage tracking-wider font-black block">REGLA EXCLUSIVA</span>
                 <span className="text-xs text-white font-vintage font-bold">Solo pueden pulsar los Capitanes 👑</span>
               </div>
             </motion.div>
@@ -1132,7 +1132,7 @@ export default function TvView() {
           {/* TIRA DE EFECTOS DE CARTAS DE PODER ACTIVOS */}
           {powerCards && powerCards.activeEffects.length > 0 && (
             <div className="mb-4 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
-              <span className="text-[10px] uppercase font-vintage tracking-wider text-slate-950 bg-gold-gradient px-3 py-1 rounded-full border border-[#f5eedb]/40 flex items-center gap-1 shadow-sm font-black">
+              <span className="text-xs uppercase font-vintage tracking-wider text-slate-950 bg-gold-gradient px-3 py-1 rounded-full border border-[#f5eedb]/40 flex items-center gap-1 shadow-sm font-black">
                 <Zap className="w-3 h-3" /> Poderes en Juego:
               </span>
               {powerCards.activeEffects.map((eff) => {
@@ -1149,7 +1149,7 @@ export default function TvView() {
                     {targetTeam && <span className="text-red-400 font-extrabold">➔ {targetTeam.name}</span>}
                     {eff.targetPlayerName && <span className="text-red-400 font-extrabold">➔ {eff.targetPlayerName}</span>}
                     {eff.sensoryLimitation && (
-                      <span className="text-amber-300 font-extrabold bg-[#1a1405] border border-[#d4af37]/60 px-2 py-0.5 rounded-lg text-[11px] shadow-sm">
+                      <span className="text-amber-300 font-extrabold bg-[#1a1405] border border-[#d4af37]/60 px-2 py-0.5 rounded-lg text-xs shadow-sm">
                         {eff.sensoryLimitation}
                       </span>
                     )}
@@ -1337,7 +1337,7 @@ export default function TvView() {
                           <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2 shadow`} />
                           <span className="text-sm font-broadway text-white">{team.name}</span>
                           <span className="text-3xl font-broadway text-gold-gradient mt-1">{cups} 🥤</span>
-                          <span className="text-[11px] font-vintage text-amber-300/80 uppercase tracking-wide">
+                          <span className="text-xs font-vintage text-amber-300/80 uppercase tracking-wide">
                             {cups === 1 ? 'Vaso encestado' : 'Vasos encestados'}
                           </span>
                         </div>
@@ -1409,7 +1409,7 @@ export default function TvView() {
                       <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} mx-auto mb-2 shadow`} />
                       <span className={`text-base font-broadway uppercase ${catalog.twText}`}>{team.name}</span>
                       <span className="text-3xl font-broadway text-gold-gradient mt-2">{team.score}</span>
-                      <span className="text-[10px] text-amber-300/70 uppercase font-vintage font-bold">puntos</span>
+                      <span className="text-xs text-amber-300/70 uppercase font-vintage font-bold">puntos</span>
                     </div>
                   );
                 })}
@@ -1624,7 +1624,7 @@ export default function TvView() {
                   </div>
                 ) : testFinishedNotification.winnerTeamName ? (
                   <div className="bg-gold-gradient/15 border-2 border-[#d4af37]/60 rounded-2xl p-4 shadow-inner">
-                    <span className="text-[11px] uppercase font-broadway tracking-wider text-amber-300 block">
+                    <span className="text-xs uppercase font-broadway tracking-wider text-amber-300 block">
                       Equipo más destacado:
                     </span>
                     <span className="text-2xl font-broadway text-gold-gradient uppercase mt-1 block">

@@ -59,7 +59,7 @@ export const LobbyProfilePicker: React.FC<LobbyProfilePickerProps> = ({
         {/* Controles de Avatar */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 flex items-center gap-1">
+            <span className="text-xs uppercase font-black tracking-widest text-slate-400 flex items-center gap-1">
               <Sparkle size={12} weight="fill" className="text-amber-400" />
               <span>TU AVATAR</span>
             </span>
@@ -70,7 +70,7 @@ export const LobbyProfilePicker: React.FC<LobbyProfilePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => onAvatarStyleChange('avataaars')}
-                  className={`px-2 py-0.5 text-[9px] font-black uppercase rounded transition-all ${
+                  className={`px-2 py-0.5 text-xs font-black uppercase rounded transition-all ${
                     avatarStyle === 'avataaars' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -79,7 +79,7 @@ export const LobbyProfilePicker: React.FC<LobbyProfilePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => onAvatarStyleChange('adventurer')}
-                  className={`px-2 py-0.5 text-[9px] font-black uppercase rounded transition-all ${
+                  className={`px-2 py-0.5 text-xs font-black uppercase rounded transition-all ${
                     avatarStyle === 'adventurer' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -88,7 +88,7 @@ export const LobbyProfilePicker: React.FC<LobbyProfilePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => onAvatarStyleChange('funEmoji')}
-                  className={`px-2 py-0.5 text-[9px] font-black uppercase rounded transition-all ${
+                  className={`px-2 py-0.5 text-xs font-black uppercase rounded transition-all ${
                     avatarStyle === 'funEmoji' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >

@@ -62,7 +62,7 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
               Sala {roomCode}
             </h1>
             <span
-              className={`text-[10px] px-2.5 py-0.5 rounded-full font-broadway uppercase tracking-wider ${
+              className={`text-xs px-2.5 py-0.5 rounded-full font-broadway uppercase tracking-wider ${
                 room.status === 'lobby'
                   ? 'bg-amber-500/15 text-amber-300 border border-[#d4af37]/40'
                   : room.status === 'presentation'
@@ -130,7 +130,7 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
               : activeGame.emoji}
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[9px] uppercase font-vintage font-bold tracking-widest text-amber-300 block truncate">
+            <span className="text-xs uppercase font-vintage font-bold tracking-widest text-amber-300 block truncate">
               {room.status === 'lobby'
                 ? 'SALA EN ESPERA'
                 : room.status === 'presentation'
@@ -274,7 +274,7 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
             <span className="text-xs font-broadway uppercase tracking-wider text-gold-gradient flex items-center gap-1.5">
               <span>📽️</span> Mando de Diapositivas en TV:
             </span>
-            <span className="text-[11px] font-vintage text-amber-200/70">
+            <span className="text-xs font-vintage text-amber-200/70">
               Diapositiva {(room.presentation_slide || 0) + 1} de 2
             </span>
           </div>

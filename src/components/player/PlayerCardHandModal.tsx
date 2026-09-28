@@ -80,7 +80,7 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
             <span className="text-xl">🃏</span>
             <div>
               <h3 className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">Naipes de tu Bando</h3>
-              <span className="text-[10px] font-vintage text-amber-200/70">
+              <span className="text-xs font-vintage text-amber-200/70">
                 {selectedTeam?.name} • Baraja de Casino
               </span>
             </div>
@@ -142,7 +142,7 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsManualPlayerEntry(!isManualPlayerEntry)}
-                    className="text-[10px] text-amber-400 hover:text-amber-300 underline font-bold"
+                    className="text-xs text-amber-400 hover:text-amber-300 underline font-bold"
                   >
                     {isManualPlayerEntry ? 'Volver a lista' : 'Escribir a mano'}
                   </button>
@@ -184,12 +184,12 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                               <span className="text-base">{p.badge_emoji || '👤'}</span>
                               <div>
                                 <span className="block leading-tight text-xs font-black">{p.nickname}</span>
-                                <span className={`text-[9px] uppercase font-bold block ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
+                                <span className={`text-xs uppercase font-bold block ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
                                   {pCat?.name || pTeam?.name || 'Equipo Rival'}
                                 </span>
                               </div>
                             </div>
-                            {isSelected && <span className="text-[10px] font-black">✓ Elegido</span>}
+                            {isSelected && <span className="text-xs font-black">✓ Elegido</span>}
                           </button>
                         );
                       })}
@@ -205,7 +205,7 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none focus:border-amber-400"
                     />
 
-                    <span className="text-[10px] text-slate-500 block uppercase font-bold">
+                    <span className="text-xs text-slate-500 block uppercase font-bold">
                       Equipo del jugador:
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -216,7 +216,7 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                             key={t.id}
                             type="button"
                             onClick={() => setTargetTeamId(t.id)}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                               targetTeamId === t.id
                                 ? 'bg-amber-400 text-slate-950'
                                 : 'bg-slate-950 text-slate-400 border border-slate-800'
@@ -263,7 +263,7 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                             <span className="text-base">{dCard.emoji}</span>
                             <div>
                               <span className="block">{dCard.name}</span>
-                              <span className="text-[10px] opacity-75 font-normal">
+                              <span className="text-xs opacity-75 font-normal">
                                 ★ {dCard.rarity}
                               </span>
                             </div>
@@ -307,19 +307,19 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                 <p className="text-xs text-amber-200/70 font-vintage">
                   Tu equipo no tiene cartas de poder en este momento.
                 </p>
-                <p className="text-[11px] text-amber-400/80 italic font-editorial">
+                <p className="text-xs text-amber-400/80 italic font-editorial">
                   ¡Atento a la TV cuando el anfitrión reparta cartas al inicio o tras una prueba!
                 </p>
               </div>
             ) : (
               <div className="flex flex-col items-center">
                 {/* Header bar indicando rol del jugador */}
-                <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-[11px] text-amber-300 font-vintage mb-2">
+                <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs text-amber-300 font-vintage mb-2">
                   <div className="flex items-center gap-1.5">
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
                     <span>{player?.is_captain ? 'Eres el Capitán: Puedes Jugar Naipes' : 'Solo Capitán puede jugarlas'}</span>
                   </div>
-                  <span className="text-[10px] text-amber-400/70">
+                  <span className="text-xs text-amber-400/70">
                     {myTeamCards.length} en mano
                   </span>
                 </div>

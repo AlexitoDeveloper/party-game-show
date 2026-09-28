@@ -176,7 +176,7 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
               aria-label={`Ver carta ${i + 1}`}
             />
           ))}
-          <span className="text-[11px] font-vintage text-amber-300/80 ml-2">
+          <span className="text-xs font-vintage text-amber-300/80 ml-2">
             {safeIndex + 1} de {cards.length}
           </span>
         </div>
@@ -189,7 +189,7 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
             <span className="text-xs font-broadway uppercase tracking-wider text-gold-gradient">
               {activeCard.name}
             </span>
-            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-950/90 border border-amber-500/40 text-amber-300 font-vintage font-bold">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-950/90 border border-amber-500/40 text-amber-300 font-vintage font-bold">
               {activeCard.timing}
             </span>
           </div>
@@ -307,7 +307,7 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
               <h3 className="text-base font-broadway text-amber-300 mb-0.5">
                 {inspectingCard.name}
               </h3>
-              <p className="text-[11px] text-amber-200/70 font-vintage uppercase tracking-widest mb-3">
+              <p className="text-xs text-amber-200/70 font-vintage uppercase tracking-widest mb-3">
                 {inspectingCard.rarity} · Inspección 3D con Foil Dorado
               </p>
 

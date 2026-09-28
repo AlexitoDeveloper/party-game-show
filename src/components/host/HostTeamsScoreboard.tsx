@@ -76,22 +76,22 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <span className="text-[10px] uppercase font-vintage font-bold text-amber-300/80 block">Equipo {team.team_index}</span>
+                      <span className="text-xs uppercase font-vintage font-bold text-amber-300/80 block">Equipo {team.team_index}</span>
                       <span className={`text-base font-broadway uppercase tracking-wide ${cat.twText}`}>{team.name}</span>
-                      <span className="text-[11px] text-amber-100/70 font-vintage block mt-0.5">
+                      <span className="text-xs text-amber-100/70 font-vintage block mt-0.5">
                         {teamMembers.length} {teamMembers.length === 1 ? 'jugador' : 'jugadores'}
                       </span>
                     </div>
                     <div className="text-right">
                       <span className="text-3xl font-broadway text-gold-gradient drop-shadow-sm">{team.score}</span>
-                      <span className="text-[10px] text-amber-300/70 block font-vintage font-bold">PTS</span>
+                      <span className="text-xs text-amber-300/70 block font-vintage font-bold">PTS</span>
                     </div>
                   </div>
 
                   {/* Lista de Miembros con Selector de Capitán */}
                   {teamMembers.length > 0 && (
                     <div className="my-2 p-2 bg-[#07070a]/90 rounded-2xl border border-[#d4af37]/30 flex flex-wrap gap-1.5 items-center">
-                      <span className="text-[10px] uppercase font-vintage font-bold text-amber-300/70 w-full flex items-center gap-1">
+                      <span className="text-xs uppercase font-vintage font-bold text-amber-300/70 w-full flex items-center gap-1">
                         <Users className="w-3 h-3 text-[#d4af37]" />
                         <span>Miembros:</span>
                       </span>
@@ -100,7 +100,7 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
                           key={m.id}
                           onClick={() => onSetCaptain(team.id, m.id)}
                           title={m.is_captain ? 'Capitán activo (Clic para desasignar o deshacer capitanía)' : 'Nombrar Capitán a este jugador'}
-                          className={`px-2 py-1 rounded-xl text-[10px] font-vintage font-bold flex items-center gap-1 transition-all active:scale-95 ${
+                          className={`px-2 py-1 rounded-xl text-xs font-vintage font-bold flex items-center gap-1 transition-all active:scale-95 ${
                             m.is_captain
                               ? 'bg-gold-gradient hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-md border border-[#f5eedb]/40'
                               : 'bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 border border-[#d4af37]/30'
@@ -108,7 +108,7 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
                         >
                           <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current text-slate-950' : 'text-amber-400'}`} />
                           <span>{m.nickname}</span>
-                          {m.is_captain && <span className="text-[9px] opacity-80 ml-0.5">✕</span>}
+                          {m.is_captain && <span className="text-xs opacity-80 ml-0.5">✕</span>}
                         </button>
                       ))}
                     </div>
@@ -162,7 +162,7 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onClearPlayers}
-              className="text-[11px] text-red-300 hover:text-white bg-red-950/50 hover:bg-red-900/60 border border-red-500/40 px-3 py-1 rounded-xl font-vintage font-bold transition-all active:scale-95 flex items-center gap-1 shadow-sm"
+              className="text-xs text-red-300 hover:text-white bg-red-950/50 hover:bg-red-900/60 border border-red-500/40 px-3 py-1 rounded-xl font-vintage font-bold transition-all active:scale-95 flex items-center gap-1 shadow-sm"
               title="Vaciar lista de jugadores"
             >
               <Trash2 className="w-3 h-3" />
@@ -170,7 +170,7 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
             </button>
             <button
               onClick={onRescanPlayers}
-              className="text-[11px] text-amber-200 hover:text-white bg-[#14141e] hover:bg-[#1f1f2e] border border-[#d4af37]/40 px-3 py-1 rounded-xl font-vintage font-bold flex items-center gap-1 shadow-sm"
+              className="text-xs text-amber-200 hover:text-white bg-[#14141e] hover:bg-[#1f1f2e] border border-[#d4af37]/40 px-3 py-1 rounded-xl font-vintage font-bold flex items-center gap-1 shadow-sm"
               title="Re-escanear jugadores"
             >
               <RefreshCw className="w-3 h-3" />
@@ -203,14 +203,14 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
                     {p.nickname}
                     {p.is_captain && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
                   </span>
-                  <span className="text-[10px] text-amber-200/60 font-vintage truncate">
+                  <span className="text-xs text-amber-200/60 font-vintage truncate">
                     {teamCatalog ? `(${teamCatalog.name})` : '(Sin bando)'}
                   </span>
                   {assignedTeam && (
                     <button
                       onClick={() => onSetCaptain(assignedTeam.id, p.id)}
                       title={p.is_captain ? 'Capitán activo (Clic para desasignar o deshacer)' : 'Nombrar Capitán de su equipo'}
-                      className={`ml-1 px-2 py-0.5 rounded-lg text-[10px] font-vintage font-black flex items-center gap-1 transition-all active:scale-95 shrink-0 ${
+                      className={`ml-1 px-2 py-0.5 rounded-lg text-xs font-vintage font-black flex items-center gap-1 transition-all active:scale-95 shrink-0 ${
                         p.is_captain
                           ? 'bg-gold-gradient hover:bg-red-500 hover:text-white text-slate-950 shadow-sm border border-[#f5eedb]/30'
                           : 'bg-[#07070a] hover:bg-[#201628] text-amber-300 border border-[#d4af37]/30'

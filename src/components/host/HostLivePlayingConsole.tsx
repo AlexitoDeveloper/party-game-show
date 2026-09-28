@@ -107,7 +107,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
+                  <span className="text-xs uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
                     FASE DE PRESENTACIÓN / BRIEFING
                   </span>
                   <span className="text-xs text-amber-300 font-vintage font-bold">
@@ -147,7 +147,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                   </button>
                   <button
                     onClick={onStartActiveRound}
-                    className="text-[10px] uppercase font-vintage text-amber-400/80 hover:text-amber-200 underline text-center md:text-right"
+                    className="text-xs uppercase font-vintage text-amber-400/80 hover:text-amber-200 underline text-center md:text-right"
                     title="Forzar inicio de prueba sin esperar a los capitanes"
                   >
                     ⚡ Forzar inicio de todos modos
@@ -178,7 +178,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           </div>
           <button
             onClick={onToggleBriefing}
-            className="text-[11px] font-broadway uppercase text-amber-300 hover:text-white bg-[#14141e] border border-[#d4af37]/40 px-3 py-1 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
+            className="text-xs font-broadway uppercase text-amber-300 hover:text-white bg-[#14141e] border border-[#d4af37]/40 px-3 py-1 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
             title="Volver a mostrar el cartel de reglas en la TV"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
@@ -188,11 +188,11 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#d4af37]/30 pb-3 gap-2">
         <div>
-          <span className="text-[10px] uppercase font-bold text-amber-400 tracking-widest flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs uppercase font-bold text-amber-400 tracking-widest flex items-center gap-1.5 flex-wrap">
             <Award className="w-4 h-4" />
             <span className="hidden sm:inline">MESA DE PUNTUACIÓN</span>
             <span className="sm:hidden">PUNTOS</span>
-            <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full text-[10px] font-bold normal-case">
+            <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full text-xs font-bold normal-case">
               {activeGame.participantsLabel}
             </span>
           </span>
@@ -237,7 +237,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                 Representantes en el Ruedo ({activeGame.participantsLabel})
               </span>
             </div>
-            <span className="text-[10px] font-vintage text-amber-200/60">
+            <span className="text-xs font-vintage text-amber-200/60">
               {activeGame.participantsMode === 'solo' ? '1 por bando' : activeGame.participantsMode === 'duo' ? '2 por bando' : 'Hasta 3 por bando'}
             </span>
           </div>
@@ -258,12 +258,12 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                   className="bg-[#12121c] border border-[#d4af37]/30 rounded-xl p-2.5 flex flex-col justify-between shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className={`text-[11px] font-broadway uppercase ${cat?.twText || 'text-amber-200'}`}>
+                    <span className={`text-xs font-broadway uppercase ${cat?.twText || 'text-amber-200'}`}>
                       {team.name}
                     </span>
                     <span className={`w-2 h-2 rounded-full ${cat?.twBg}`} />
                   </div>
-                  <div className="text-[11px] font-vintage">
+                  <div className="text-xs font-vintage">
                     {names.length > 0 ? (
                       <span className="text-amber-100 font-bold block truncate">
                         ⭐ {names.join(', ')}
@@ -291,14 +291,14 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                 Miniduelo <span className="hidden sm:inline">de Capitanes</span>
               </span>
               {captainDuel?.isActive && (
-                <span className="bg-red-500/25 border border-red-500/50 text-red-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1">
+                <span className="bg-red-500/25 border border-red-500/50 text-red-300 text-xs font-black uppercase px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1">
                   <Swords className="w-3 h-3" />
                   <span className="hidden sm:inline">DUELO ACTIVO EN TV & MÓVILES</span>
                   <span className="sm:hidden">ACTIVO</span>
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 hidden sm:block">
+            <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
               {captainDuel?.isActive
                 ? '¡Atención! Solo los capitanes 👑 tienen el pulsador habilitado. El resto de jugadores tienen el buzzer bloqueado.'
                 : 'Activa un desempate o duelo rápido donde solo pueden pulsar los capitanes de cada equipo.'}
@@ -390,7 +390,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
         {/* 1. PUNTUACIÓN DE LA PRUEBA (EN DIRECTO) */}
         {activeGame.scoringOptions.filter((o) => o.type !== 'podium').length > 0 && (
           <div>
-            <span className="text-[11px] uppercase font-broadway text-amber-400 font-bold block mb-1.5 flex items-center gap-1">
+            <span className="text-xs uppercase font-broadway text-amber-400 font-bold block mb-1.5 flex items-center gap-1">
               <span>🎯</span> Puntuación de la Prueba (Aciertos / Fallos):
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -423,7 +423,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                         </span>
                       </div>
                       {opt.description && (
-                        <span className="text-[10px] opacity-70 block">{opt.description}</span>
+                        <span className="text-xs opacity-70 block">{opt.description}</span>
                       )}
                     </button>
                   );
@@ -435,7 +435,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
         {/* 2. PUNTUACIÓN POR CLASIFICACIÓN (PODIO) */}
         {activeGame.scoringOptions.filter((o) => o.type === 'podium').length > 0 && (
           <div>
-            <span className="text-[11px] uppercase font-broadway text-amber-400 font-bold block mb-1.5 flex items-center gap-1">
+            <span className="text-xs uppercase font-broadway text-amber-400 font-bold block mb-1.5 flex items-center gap-1">
               <span>🏆</span> Puntuación por Clasificación (Podio):
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -464,7 +464,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                         </span>
                       </div>
                       {opt.description && (
-                        <span className="text-[10px] opacity-70 block">{opt.description}</span>
+                        <span className="text-xs opacity-70 block">{opt.description}</span>
                       )}
                     </button>
                   );

@@ -146,7 +146,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
         {/* CABECERA EDITORIAL COMPACTA Y DE IMPACTO ART DÉCO */}
         <header className="border-b-2 border-[#1a130e] pb-1.5 mb-1.5 shrink-0">
           {/* CINTILLO SUPERIOR DE EDICIÓN */}
-          <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-vintage uppercase tracking-widest text-[#4a3520] font-bold border-b border-[#1a130e]/30 pb-0.5 mb-1">
+          <div className="flex items-center justify-between text-xs sm:text-xs font-vintage uppercase tracking-widest text-[#4a3520] font-bold border-b border-[#1a130e]/30 pb-0.5 mb-1">
             <span className="flex items-center gap-1">
               <span className="text-red-900 font-black">●</span> EDICIÓN EXTRAORDINARIA DE MEDIANOCHE
             </span>
@@ -161,7 +161,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
             {/* ALA ART DÉCO IZQUIERDA */}
             <div className="hidden md:flex items-center gap-1.5 text-[#8c6a21] text-xs font-broadway">
               <span>❖ ══</span>
-              <span className="text-[9px] font-vintage uppercase text-[#5c4024] font-bold">CHICAGO & N.Y.</span>
+              <span className="text-xs font-vintage uppercase text-[#5c4024] font-bold">CHICAGO & N.Y.</span>
               <span>══ ❖</span>
             </div>
 
@@ -178,7 +178,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
               <div className="flex items-center gap-1 bg-[#dfd4bd] border border-[#5c4024] px-2 py-0.5 rounded-full">
                 <span className={`w-1.5 h-1.5 rounded-full ${activePage === 'podium' ? 'bg-[#8c6a21]' : 'bg-stone-400'}`} />
                 <span className={`w-1.5 h-1.5 rounded-full ${activePage === 'medals' ? 'bg-[#8c6a21]' : 'bg-stone-400'}`} />
-                <span className="text-[8px] font-broadway uppercase font-bold text-[#1a130e]">
+                <span className="text-xs font-broadway uppercase font-bold text-[#1a130e]">
                   {activePage === 'podium' ? 'P. 1' : 'P. 2'}
                 </span>
               </div>
@@ -187,7 +187,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
           </div>
 
           {/* LÍNEA EDITORIAL INFERIOR ULTRA-COMPACTA */}
-          <div className="flex items-center justify-between text-[8px] sm:text-[9px] font-vintage text-[#4a3520] border-t border-[#1a130e]/30 pt-0.5 mt-0.5 font-bold">
+          <div className="flex items-center justify-between text-xs sm:text-xs font-vintage text-[#4a3520] border-t border-[#1a130e]/30 pt-0.5 mt-0.5 font-bold">
             <span>{currentDateFormatted.toUpperCase()}</span>
             <span className="font-broadway uppercase tracking-widest text-[#8c6a21]">
               ★ REPORTE OFICIAL DE CLAUSURA ★
@@ -210,7 +210,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
               >
                 {/* TITULAR PUNCHY Y ELEGANTE DE UN SOLO RENGLÓN */}
                 <div className="text-center mb-1.5 shrink-0">
-                  <div className="inline-flex items-center gap-2 bg-[#1a130e] text-[#f5eedb] px-3.5 py-0.5 text-[9px] sm:text-[11px] font-broadway uppercase tracking-widest rounded-sm shadow-sm">
+                  <div className="inline-flex items-center gap-2 bg-[#1a130e] text-[#f5eedb] px-3.5 py-0.5 text-xs sm:text-xs font-broadway uppercase tracking-widest rounded-sm shadow-sm">
                     <span className="text-amber-400">★ ¡GRAN GOLPE A LA BANCA!</span>
                     <span>LA CUADRILLA DE <span className="underline decoration-[#8c6a21] decoration-2">"{winner.name.toUpperCase()}"</span> SE CORONA CAMPEONA</span>
                     <span className="text-amber-400">★</span>
@@ -225,7 +225,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                       <span className="text-lg sm:text-xl font-broadway uppercase tracking-widest text-[#8a1c2a] block leading-none">
                         ★ SE BUSCA ★
                       </span>
-                      <span className="text-[8px] sm:text-[9px] font-vintage uppercase tracking-widest text-stone-800 font-black block mt-0.5">
+                      <span className="text-xs sm:text-xs font-vintage uppercase tracking-widest text-stone-800 font-black block mt-0.5">
                         ENEMIGOS PÚBLICOS N.º 1 DEL SALÓN
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                         className="w-full h-full object-contain filter sepia-[0.3] contrast-125"
                       />
                       {/* SELLO DE CERA ROJA DE ÉPOCA DEL CAPITÁN */}
-                      <div className="absolute -bottom-2 -right-2 bg-[#8a1c2a] text-[#f5eedb] text-[8px] sm:text-[9px] font-broadway uppercase px-2.5 py-0.5 rounded-full border-2 border-[#f5eedb] shadow-lg rotate-[-8deg] tracking-wider">
+                      <div className="absolute -bottom-2 -right-2 bg-[#8a1c2a] text-[#f5eedb] text-xs sm:text-xs font-broadway uppercase px-2.5 py-0.5 rounded-full border-2 border-[#f5eedb] shadow-lg rotate-[-8deg] tracking-wider">
                         👑 GRAN CAPITÁN
                       </div>
                     </div>
@@ -255,7 +255,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                         {winner.name}
                       </h3>
                       {winnerCaptain && (
-                        <span className="text-[10px] font-editorial text-stone-700 italic block mt-0.5 truncate">
+                        <span className="text-xs font-editorial text-stone-700 italic block mt-0.5 truncate">
                           Liderados por "{winnerCaptain.nickname}"
                         </span>
                       )}
@@ -263,27 +263,27 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
 
                     {/* PLACA DE RECOMPENSA EN DÓLARES */}
                     <div className="w-full mt-1 pt-1 border-t-2 border-dashed border-[#3b2c1a]/60 bg-[#e4d6be]/70 rounded-xl p-1.5">
-                      <span className="text-[8px] font-vintage uppercase tracking-widest text-stone-700 block font-bold">
+                      <span className="text-xs font-vintage uppercase tracking-widest text-stone-700 block font-bold">
                         RECOMPENSA OFICIAL DE LA NOCHE
                       </span>
                       <span className="text-xl sm:text-2xl font-broadway newsprint-ink block font-black text-[#7a5917] leading-tight">
                         ${(winner.score * 1000).toLocaleString()} DÓLARES
                       </span>
-                      <span className="text-[8px] font-vintage text-stone-600 block uppercase tracking-wider">
+                      <span className="text-xs font-vintage text-stone-600 block uppercase tracking-wider">
                         ({winner.score} Puntos de Botín Acumulados)
                       </span>
                     </div>
 
                     {/* INTEGRANTES DE LA CUADRILLA */}
                     <div className="w-full mt-1 pt-1 border-t border-[#3b2c1a]/30">
-                      <span className="text-[8px] font-vintage uppercase tracking-wider text-stone-700 font-bold block mb-1">
+                      <span className="text-xs font-vintage uppercase tracking-wider text-stone-700 font-bold block mb-1">
                         Cómplices de la Cuadrilla:
                       </span>
                       <div className="flex flex-wrap justify-center gap-1 max-h-10 overflow-y-auto">
                         {winnerMembers.map((m) => (
                           <span
                             key={m.id}
-                            className="text-[8px] font-vintage font-bold px-1.5 py-0.5 rounded bg-black/10 text-stone-900 border border-stone-400 truncate max-w-[90px]"
+                            className="text-xs font-vintage font-bold px-1.5 py-0.5 rounded bg-black/10 text-stone-900 border border-stone-400 truncate max-w-[90px]"
                           >
                             {m.nickname}
                           </span>
@@ -300,7 +300,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                           <Trophy className="w-4 h-4 text-[#8c6a21]" />
                           <span>Clasificación del Veredicto Final</span>
                         </h3>
-                        <span className="text-[8px] sm:text-[9px] font-vintage uppercase tracking-wider text-stone-700 font-bold">
+                        <span className="text-xs sm:text-xs font-vintage uppercase tracking-wider text-stone-700 font-bold">
                           {rankedTeams.length} Cuadrillas
                         </span>
                       </div>
@@ -351,7 +351,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                                       {team.name}
                                     </h4>
                                   </div>
-                                  <span className="text-[8px] sm:text-[9px] font-editorial text-stone-700 italic block leading-none">
+                                  <span className="text-xs sm:text-xs font-editorial text-stone-700 italic block leading-none">
                                     {isChampion
                                       ? 'Campeones del Show'
                                       : isSecond
@@ -367,7 +367,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                                 <span className="text-base sm:text-xl font-broadway newsprint-ink block font-black leading-none">
                                   {team.score}
                                 </span>
-                                <span className="text-[7px] sm:text-[8px] font-vintage uppercase text-stone-600 tracking-wider block">
+                                <span className="text-xs sm:text-xs font-vintage uppercase text-stone-600 tracking-wider block">
                                   Puntos
                                 </span>
                               </div>
@@ -378,7 +378,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                     </div>
 
                     {/* CITA EDITORIAL Y FIRMA AL PIE */}
-                    <div className="mt-1.5 pt-1.5 border-t-2 border-[#1a130e]/30 flex items-center justify-between text-[9px] font-editorial text-stone-800 italic">
+                    <div className="mt-1.5 pt-1.5 border-t-2 border-[#1a130e]/30 flex items-center justify-between text-xs font-editorial text-stone-800 italic">
                       <span className="truncate max-w-[320px]">"La Ley Seca caerá con el tiempo, pero el honor permanecerá."</span>
                       <span className="font-broadway uppercase text-[#8c6a21] font-bold not-italic shrink-0">
                         Consorcio Clandestino
@@ -404,7 +404,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
         </div>
 
         {/* PIE DE IMPRENTA EDITORIAL */}
-        <footer className="shrink-0 pt-1 border-t-2 border-[#1a130e]/40 flex items-center justify-between text-[8px] sm:text-[9px] font-vintage uppercase text-[#4a3520] font-bold mt-1">
+        <footer className="shrink-0 pt-1 border-t-2 border-[#1a130e]/40 flex items-center justify-between text-xs sm:text-xs font-vintage uppercase text-[#4a3520] font-bold mt-1">
           <span>♠ The Speakeasy Gazette Press • 1931</span>
           <span className="font-broadway text-[#8c6a21] hidden sm:inline">★ ★ ★ ★ ★</span>
           <span>♦ Veredicto Inapelable del Tribunal</span>

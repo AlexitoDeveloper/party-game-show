@@ -119,16 +119,16 @@ export const HostMusicControls: React.FC<HostMusicControlsProps> = ({
 
           <div className="space-y-1 flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-broadway">
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-broadway">
                 Fonoteca {currentSongTrack.year ? `• ${currentSongTrack.year}` : ''}
               </span>
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-black/80 text-amber-200/60 border border-[#d4af37]/30 hidden sm:inline-block font-vintage">
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-black/80 text-amber-200/60 border border-[#d4af37]/30 hidden sm:inline-block font-vintage">
                 Audio 30s
               </span>
             </div>
 
             <div>
-              <span className="text-[9px] uppercase font-broadway font-bold text-amber-400/80 block tracking-wider">
+              <span className="text-xs uppercase font-broadway font-bold text-amber-400/80 block tracking-wider">
                 SOLUCIÓN (TV):
               </span>
               <h3 className="text-base sm:text-xl font-broadway text-white flex items-center gap-1.5 truncate">
@@ -295,13 +295,13 @@ export const HostMusicControls: React.FC<HostMusicControlsProps> = ({
                       <p className="text-xs font-broadway text-white truncate group-hover:text-amber-300">
                         {track.title}
                       </p>
-                      <p className="text-[10px] text-amber-200/70 font-vintage truncate">
+                      <p className="text-xs text-amber-200/70 font-vintage truncate">
                         {track.artist} {track.year ? `• ${track.year}` : ''}
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 group-hover:bg-gold-gradient group-hover:text-slate-950 transition-all flex items-center gap-1 text-[10px] font-broadway font-black"
+                      className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 group-hover:bg-gold-gradient group-hover:text-slate-950 transition-all flex items-center gap-1 text-xs font-broadway font-black"
                       title="Poner en TV"
                     >
                       <Play className="w-3 h-3 fill-current" />
@@ -335,7 +335,7 @@ export const HostMusicControls: React.FC<HostMusicControlsProps> = ({
                 <span className="hidden sm:inline">{isImportingPlaylist ? 'Importando...' : 'Importar'}</span>
               </button>
             </form>
-            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-amber-100/70 font-vintage">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-amber-100/70 font-vintage">
               <span className="font-semibold text-amber-200">💡 Sugeridas:</span>
               <button
                 type="button"
@@ -418,20 +418,20 @@ export const HostMusicControls: React.FC<HostMusicControlsProps> = ({
                       <p className={`text-xs font-broadway truncate ${isCurrent ? 'text-gold-gradient font-bold' : 'text-white'}`}>
                         {track.title}
                       </p>
-                      <p className="text-[10px] text-amber-200/60 font-vintage truncate">
+                      <p className="text-xs text-amber-200/60 font-vintage truncate">
                         {track.artist} {track.year ? `• ${track.year}` : ''}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
                       {isCurrent ? (
-                        <span className="text-[9px] font-broadway font-black uppercase px-2 py-0.5 rounded-md bg-gold-gradient text-slate-950 shadow-sm">
+                        <span className="text-xs font-broadway font-black uppercase px-2 py-0.5 rounded-md bg-gold-gradient text-slate-950 shadow-sm">
                           TV
                         </span>
                       ) : (
                         <button
                           type="button"
-                          className="px-2 py-1 rounded-md bg-[#14141e] text-amber-200 border border-[#d4af37]/30 hover:bg-gold-gradient hover:text-slate-950 text-[10px] flex items-center gap-1 transition-all"
+                          className="px-2 py-1 rounded-md bg-[#14141e] text-amber-200 border border-[#d4af37]/30 hover:bg-gold-gradient hover:text-slate-950 text-xs flex items-center gap-1 transition-all"
                           title="Poner en TV"
                         >
                           <Play className="w-2.5 h-2.5 fill-current" />

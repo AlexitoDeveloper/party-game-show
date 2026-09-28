@@ -96,7 +96,7 @@ export const CaptainRepSelectorModal: React.FC<CaptainRepSelectorModalProps> = (
                 <h3 className="text-base font-broadway uppercase tracking-wider text-gold-gradient leading-tight">
                   Designar Representantes
                 </h3>
-                <p className="text-[10px] font-vintage text-amber-200/70">
+                <p className="text-xs font-vintage text-amber-200/70">
                   Prueba: <span className="font-bold text-amber-100">{gameTitle}</span>
                 </p>
               </div>
@@ -113,13 +113,13 @@ export const CaptainRepSelectorModal: React.FC<CaptainRepSelectorModalProps> = (
           <div className="mt-3 bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-amber-950/40 border border-[#d4af37]/35 rounded-xl p-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="text-[11px] font-vintage text-amber-100/90 font-bold">
+              <span className="text-xs font-vintage text-amber-100/90 font-bold">
                 {maxRepresentatives === 1
                   ? 'Elige al campeón de tu equipo para este reto'
                   : `Elige hasta ${maxRepresentatives} representantes para competir`}
               </span>
             </div>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-broadway font-black ${
+            <span className={`px-2 py-0.5 rounded-full text-xs font-broadway font-black ${
               selectedIds.length === maxRepresentatives
                 ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300'
                 : selectedIds.length > 0
@@ -177,12 +177,12 @@ export const CaptainRepSelectorModal: React.FC<CaptainRepSelectorModalProps> = (
                             {member.nickname}
                           </span>
                           {member.is_captain && (
-                            <span className="text-[9px] font-vintage uppercase text-amber-400/90 font-bold">
+                            <span className="text-xs font-vintage uppercase text-amber-400/90 font-bold">
                               (Capitán)
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] font-vintage text-amber-200/50 block">
+                        <span className="text-xs font-vintage text-amber-200/50 block">
                           {isSelected ? '⭐ En el Ruedo' : 'En el Banquillo'}
                         </span>
                       </div>

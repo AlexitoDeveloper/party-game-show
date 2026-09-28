@@ -68,7 +68,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
             <div>
               <h3 className="text-base sm:text-lg font-broadway uppercase tracking-wide text-gold-gradient flex items-center gap-2">
                 <span>Veredicto de la Prueba</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#14141e] text-amber-300 border border-[#d4af37]/40 text-[10px] font-vintage font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#14141e] text-amber-300 border border-[#d4af37]/40 text-xs font-vintage font-bold">
                   {testFinishedModal?.gameId === 'bingo' ? 'Bingo (+6 / +2)' : 'Podio (+5 / +3 / +2 / +1)'}
                 </span>
               </h3>
@@ -88,11 +88,11 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
         {/* TABLA DE CLASIFICACIÓN Y PUNTOS AUTOMÁTICOS */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-broadway uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
               <Trophy className="w-3.5 h-3.5 text-[#d4af37]" />
               Clasificación y Puntuaciones Calculadas:
             </span>
-            <span className="text-[10px] text-amber-200/60 font-vintage">
+            <span className="text-xs text-amber-200/60 font-vintage">
               Aciertos en vivo • Podio editable
             </span>
           </div>
@@ -146,7 +146,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                             {res.teamName}
                           </span>
                         </div>
-                        <div className="text-[10px] text-amber-200/60 font-vintage">
+                        <div className="text-xs text-amber-200/60 font-vintage">
                           Marcador actual: {safeTeams.find((t) => t.id === res.teamId)?.score || 0} pts
                         </div>
                       </div>
@@ -155,7 +155,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                   {/* CONTADOR DE ACIERTOS (CON + Y -) */}
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-1 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/35 shadow-sm">
-                      <span className="text-[10px] text-amber-200/70 font-vintage font-bold mr-1">Aciertos:</span>
+                      <span className="text-xs text-amber-200/70 font-vintage font-bold mr-1">Aciertos:</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -190,12 +190,12 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                     {/* DESGLOSE: PUNTOS BASE + CARTAS = TOTAL */}
                     <div className="flex items-center gap-2">
                       <div className="text-right">
-                        <span className="text-[10px] text-amber-200/70 block font-vintage">
+                        <span className="text-xs text-amber-200/70 block font-vintage">
                           Base: +{res.basePoints}
                         </span>
                         {res.totalCardDelta !== 0 && (
                           <span
-                            className={`text-[10px] font-broadway block ${
+                            className={`text-xs font-broadway block ${
                               res.totalCardDelta > 0 ? 'text-emerald-400' : 'text-red-400'
                             }`}
                           >
@@ -225,7 +225,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                         <span
                           key={impIdx}
                           title={impact.explanation}
-                          className={`text-[10px] font-vintage font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 cursor-help ${
+                          className={`text-xs font-vintage font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 cursor-help ${
                             impact.delta >= 0
                               ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
                               : 'bg-red-500/15 text-red-300 border-red-500/40'
@@ -261,7 +261,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
         {/* RECURSOS ADICIONALES: DAR CARTA BONUS O TRANSFERIR MALDICIÓN */}
         <div className="pt-2.5 border-t border-[#d4af37]/30 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-broadway uppercase text-amber-300/80">
+            <span className="text-xs font-broadway uppercase text-amber-300/80">
               Opciones complementarias:
             </span>
           </div>
@@ -309,7 +309,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
             if (cursedTeams.length === 0) return null;
             return (
               <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 space-y-1.5">
-                <span className="text-[10px] font-black uppercase text-purple-300 flex items-center gap-1">
+                <span className="text-xs font-black uppercase text-purple-300 flex items-center gap-1">
                   <span>☠️</span> La Maldición (Patata Caliente - Fallos restan x2):
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -326,7 +326,7 @@ export const HostTestVerdictModal: React.FC<HostTestVerdictModalProps> = ({
                           onTransferMaldicion(cTeam, target);
                         }
                       }}
-                      className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 border border-purple-400/50 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow active:scale-95"
+                      className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 border border-purple-400/50 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow active:scale-95"
                       title="Pasar La Maldición a un equipo superado"
                     >
                       <span>🔄 Pasar Maldición de {cTeam.name}</span>

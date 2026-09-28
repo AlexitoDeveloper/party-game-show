@@ -55,7 +55,7 @@ export const HostMimicaControls: React.FC<HostMimicaControlsProps> = ({
           <span className="text-xs uppercase font-broadway text-amber-400">
             {currentMimicaCard.categoryEmoji} {currentMimicaCard.category}
           </span>
-          <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-broadway font-bold border border-amber-500/30">
+          <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-broadway font-bold border border-amber-500/30">
             Dificultad: {currentMimicaCard.difficulty}
           </span>
         </div>

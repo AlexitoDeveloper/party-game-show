@@ -135,7 +135,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
                 <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 animate-pulse" />
               </div>
               <div className="min-w-0 text-left">
-                <span className="text-[10px] sm:text-xs uppercase font-broadway tracking-widest block text-amber-200/80">
+                <span className="text-xs sm:text-xs uppercase font-broadway tracking-widest block text-amber-200/80">
                   {type === 'deal' ? 'Naipe Repartido a' : '¡Naipe de Poder Jugado!'}
                 </span>
                 <h3 className="text-lg sm:text-2xl lg:text-3xl font-broadway uppercase text-white truncate drop-shadow-md">
@@ -203,7 +203,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
                 {/* Título de la Carta y Timing */}
                 <div className="flex items-start justify-between border-b border-amber-500/30 pb-3 gap-2">
                   <div>
-                    <span className="text-[11px] sm:text-xs uppercase font-vintage text-amber-300/80 tracking-widest font-bold block">
+                    <span className="text-xs sm:text-xs uppercase font-vintage text-amber-300/80 tracking-widest font-bold block">
                       ★ Naipe de Poder · {card.rarity}
                     </span>
                     <h2 className="text-2xl sm:text-3xl lg:text-4xl font-broadway uppercase tracking-wider text-gold-gradient drop-shadow-md mt-0.5">
@@ -224,7 +224,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
 
                 {/* Regla y Efecto con texto amplio de gran contraste */}
                 <div className="bg-black/60 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 mt-3 shadow-inner">
-                  <span className="text-[10px] sm:text-xs uppercase font-vintage text-amber-300 font-bold block mb-1">
+                  <span className="text-xs sm:text-xs uppercase font-vintage text-amber-300 font-bold block mb-1">
                     📜 Efecto Oficial de la Carta:
                   </span>
                   <p className="text-sm sm:text-base lg:text-lg text-amber-100 font-body leading-relaxed font-semibold">
@@ -245,7 +245,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
                   {/* LIMITACIÓN SENSORIAL (SI ES EL CUARTO MONO) */}
                   {sensoryLimitation && (
                     <div className="bg-purple-950/90 border border-purple-400/70 p-3 rounded-xl shadow-md w-full">
-                      <span className="text-[10px] sm:text-xs uppercase font-vintage text-purple-300 font-bold block">
+                      <span className="text-xs sm:text-xs uppercase font-vintage text-purple-300 font-bold block">
                         🌀 Limitación Sensorial Impuesta al Rival:
                       </span>
                       <p className="text-sm sm:text-base font-broadway text-white mt-1">
@@ -257,7 +257,7 @@ export const CinematicCardPlayReveal: React.FC<CinematicCardPlayRevealProps> = (
                   {/* CARTA RECUPERADA (SI ES VIAJE EN EL TIEMPO) */}
                   {recoveredCard && (
                     <div className="bg-amber-950/90 border border-amber-400/70 p-2.5 rounded-xl w-full">
-                      <span className="text-[10px] sm:text-xs uppercase font-vintage text-amber-300 font-bold block">
+                      <span className="text-xs sm:text-xs uppercase font-vintage text-amber-300 font-bold block">
                         ⏳ Carta Rescatada del Pasado:
                       </span>
                       <span className="text-xs sm:text-sm font-broadway text-amber-100 mt-0.5 block">

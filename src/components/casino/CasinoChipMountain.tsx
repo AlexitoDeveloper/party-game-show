@@ -318,7 +318,7 @@ export const CasinoChipMountain: React.FC<CasinoChipMountainProps> = ({
           /* Tapete vacío unificado para tarjetas con 0 puntos */
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
             <div className="absolute inset-0 bg-radial from-[#d4af37]/5 to-transparent" />
-            <span className="text-[10px] uppercase font-vintage tracking-wider text-amber-200/40 flex items-center gap-1.5 font-bold">
+            <span className="text-xs uppercase font-vintage tracking-wider text-amber-200/40 flex items-center gap-1.5 font-bold">
               <span>🪙</span>
               <span>Tapete de Fichas (0 pts)</span>
             </span>
@@ -344,13 +344,13 @@ export const CasinoChipMountain: React.FC<CasinoChipMountainProps> = ({
       {/* Resumen total uniforme y desglose de fichas */}
       <div className="mt-1.5 flex flex-col items-center justify-center gap-1 z-10 px-1 text-center w-full min-h-[34px]">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-vintage uppercase tracking-wider text-[#f3e5ab] font-bold drop-shadow-sm flex items-center gap-1">
+          <span className="text-xs font-vintage uppercase tracking-wider text-[#f3e5ab] font-bold drop-shadow-sm flex items-center gap-1">
             <span>🪙</span>
             <span>
               {score} {score === 1 ? 'punto' : 'puntos'}
             </span>
             {score > 0 && (
-              <span className="text-[#f3e5ab]/60 font-normal text-[9.5px]">
+              <span className="text-[#f3e5ab]/60 font-normal text-xs">
                 ({totalChips} {totalChips === 1 ? 'ficha' : 'fichas'})
               </span>
             )}
@@ -363,7 +363,7 @@ export const CasinoChipMountain: React.FC<CasinoChipMountainProps> = ({
             {denominationBreakdown.map((item) => (
               <span
                 key={item.chipDef.id}
-                className="px-1.5 py-0.2 rounded text-[8.5px] font-vintage font-bold border tracking-tight"
+                className="px-1.5 py-0.2 rounded text-xs font-vintage font-bold border tracking-tight"
                 style={{
                   backgroundColor: `${item.chipDef.accentColor}30`,
                   borderColor: `${item.chipDef.goldColor}60`,
@@ -376,7 +376,7 @@ export const CasinoChipMountain: React.FC<CasinoChipMountainProps> = ({
             ))}
           </div>
         ) : (
-          <div className="text-[9px] font-vintage text-amber-200/30 italic">
+          <div className="text-xs font-vintage text-amber-200/30 italic">
             Esperando primera ronda
           </div>
         )}
