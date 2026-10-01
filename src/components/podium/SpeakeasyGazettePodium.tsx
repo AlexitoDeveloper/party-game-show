@@ -49,6 +49,33 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
       (p.team_index !== undefined && p.team_index === winner.team_index)
   );
 
+  // Cuadrilla ordenada con el capitán primero, asegurando que todos los miembros tengan avatar
+  const sortedWinnerMembers = React.useMemo(() => {
+    const members = [...winnerMembers].sort((a, b) => {
+      if (a.is_captain && !b.is_captain) return -1;
+      if (!a.is_captain && b.is_captain) return 1;
+      return a.nickname.localeCompare(b.nickname);
+    });
+
+    if (members.length > 0) return members;
+
+    return [
+      {
+        id: 'fallback_captain',
+        room_id: winner.room_id || '',
+        team_id: winner.id,
+        team_index: winner.team_index,
+        nickname: winnerCaptain?.nickname || winner.name,
+        avatar_seed: winnerCaptain?.avatar_seed || winner.name,
+        avatar_style: winnerCaptain?.avatar_style,
+        session_token: '',
+        is_connected: true,
+        is_captain: true,
+        joined_at: new Date().toISOString(),
+      } as Player,
+    ];
+  }, [winnerMembers, winnerCaptain, winner]);
+
   // Fecha conmemorativa de época
   const currentDateFormatted = new Intl.DateTimeFormat('es-ES', {
     weekday: 'long',
@@ -217,11 +244,11 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                   </div>
                 </div>
 
-                {/* CUERPO DEL PERIÓDICO: DOS COLUMNAS EDITORIALES */}
+                {/* CUERPO DEL PERIÓDICO: DOS COLUMNAS EDITORIALES BALANCEADAS (50% / 50%) */}
                 <div className="w-full flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch min-h-0">
-                  {/* COLUMNA IZQUIERDA (5 COLUMNAS): CARTEL EDITORIAL DE "SE BUSCA / WANTED" CON MEDALLA 3D */}
-                  <div className="md:col-span-5 flex flex-col justify-between wanted-border p-3 rounded-2xl shadow text-center relative overflow-hidden bg-[#e8dbc2]/40">
-                    <div className="w-full border-b-2 border-[#3b2c1a] pb-1 mb-1">
+                  {/* COLUMNA IZQUIERDA (6 COLUMNAS): CARTEL EDITORIAL DE "SE BUSCA / WANTED" CON LA BANDA AL COMPLETO */}
+                  <div className="md:col-span-6 flex flex-col justify-between wanted-border p-3 rounded-2xl shadow text-center relative overflow-hidden bg-[#e8dbc2]/40">
+                    <div className="w-full border-b-2 border-[#3b2c1a] pb-1 mb-1 shrink-0">
                       <span className="text-lg sm:text-xl font-broadway uppercase tracking-widest text-[#8a1c2a] block leading-none">
                         ★ SE BUSCA ★
                       </span>
@@ -230,31 +257,184 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                       </span>
                     </div>
 
-                    {/* AVATAR DE ÉPOCA CON MEDALLA 3D THREE.JS EN LA ESQUINA */}
-                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-2xl bg-[#2a1e12] border-3 border-[#3b2c1a] shadow-inner flex items-center justify-center">
-                      <img
-                        src={generateAvatarDataUri(
-                          winnerCaptain?.avatar_seed || winner.name,
-                          (winnerCaptain?.avatar_style as any) || 'avataaars'
-                        )}
-                        alt={winner.name}
-                        className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-xl"
-                      />
-                      {/* SELLO DE CERA ROJA DE ÉPOCA DEL CAPITÁN */}
-                      <div className="absolute -bottom-2 -right-2 bg-[#8a1c2a] text-[#f5eedb] text-xs sm:text-xs font-broadway uppercase px-2.5 py-0.5 rounded-full border-2 border-[#f5eedb] shadow-lg rotate-[-8deg] tracking-wider">
-                        👑 GRAN CAPITÁN
-                      </div>
+                    {/* AVATARES DE LA CUADRILLA GANADORA (HASTA 5 JUGADORES) */}
+                    <div className="w-full flex-1 flex flex-col justify-center items-center my-auto min-h-0 py-1">
+                      {sortedWinnerMembers.length === 1 ? (
+                        /* CASO 1: UN SOLO INTEGRANTE / CAPITÁN */
+                        <div className="flex flex-col items-center">
+                          <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-2xl bg-[#2a1e12] border-3 border-[#d4af37] ring-2 ring-amber-400/40 shadow-xl flex items-center justify-center p-0.5">
+                            <img
+                              src={generateAvatarDataUri(
+                                sortedWinnerMembers[0].avatar_seed || sortedWinnerMembers[0].nickname,
+                                (sortedWinnerMembers[0].avatar_style as any) || 'avataaars'
+                              )}
+                              alt={sortedWinnerMembers[0].nickname}
+                              className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-xl"
+                            />
+                            <div className="absolute -bottom-2 -right-2 bg-[#8a1c2a] text-[#f5eedb] text-xs font-broadway uppercase px-2.5 py-0.5 rounded-full border-2 border-[#f5eedb] shadow-lg rotate-[-8deg] tracking-wider">
+                              👑 GRAN CAPITÁN
+                            </div>
+                          </div>
+                          <span className="text-xs sm:text-sm font-vintage font-black text-stone-900 mt-1.5 truncate max-w-[160px]">
+                            {sortedWinnerMembers[0].nickname}
+                          </span>
+                        </div>
+                      ) : sortedWinnerMembers.length <= 3 ? (
+                        /* CASO 2: 2 O 3 INTEGRANTES (FILA HORIZONTAL AMPLIA) */
+                        <div className="w-full flex flex-col items-center">
+                          <div className="flex justify-center items-center gap-3 sm:gap-4 w-full">
+                            {sortedWinnerMembers.map((member) => (
+                              <div key={member.id} className="flex flex-col items-center">
+                                <div
+                                  className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden ${
+                                    sortedWinnerMembers.length === 2
+                                      ? 'w-20 h-20 sm:w-24 sm:h-24'
+                                      : 'w-18 h-18 sm:w-20 sm:h-20'
+                                  } ${
+                                    member.is_captain
+                                      ? 'border-2 border-[#d4af37] ring-2 ring-amber-400/40 shadow-[0_0_12px_rgba(217,119,6,0.35)]'
+                                      : 'border-2 border-[#3b2c1a]'
+                                  }`}
+                                >
+                                  <img
+                                    src={generateAvatarDataUri(
+                                      member.avatar_seed || member.nickname,
+                                      (member.avatar_style as any) || 'avataaars'
+                                    )}
+                                    alt={member.nickname}
+                                    className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-lg"
+                                  />
+                                  {member.is_captain && (
+                                    <div
+                                      className="absolute -top-1 -right-1 bg-[#8a1c2a] text-[#f5eedb] text-[11px] w-5 h-5 rounded-full border border-[#f5eedb] flex items-center justify-center shadow-md font-black"
+                                      title="Capitán de la Cuadrilla"
+                                    >
+                                      👑
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="font-vintage font-bold text-stone-900 text-xs mt-1 truncate max-w-[90px] text-center leading-tight">
+                                  {member.nickname}
+                                </span>
+                                {member.is_captain ? (
+                                  <span className="text-[9px] font-broadway uppercase text-[#8a1c2a] font-black leading-none mt-0.5">
+                                    👑 Capitán
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-vintage text-stone-600 font-bold uppercase leading-none mt-0.5">
+                                    Cómplice
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-vintage uppercase tracking-wider text-stone-600 font-bold mt-2">
+                            Banda Completa • {sortedWinnerMembers.length} Miembros
+                          </span>
+                        </div>
+                      ) : (
+                        /* CASO 3: 4 O 5 INTEGRANTES (DISTRIBUCIÓN 2 FILAS OPTIMIZADA SIN SCROLL) */
+                        <div className="w-full flex flex-col items-center">
+                          <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-full">
+                            {/* Fila 1: Primeros 2 o 3 miembros (con Capitán al frente) */}
+                            <div className="flex justify-center items-center gap-2.5 sm:gap-3">
+                              {sortedWinnerMembers.slice(0, sortedWinnerMembers.length === 4 ? 2 : 3).map((member) => (
+                                <div key={member.id} className="flex flex-col items-center">
+                                  <div
+                                    className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden w-15 h-15 sm:w-16 sm:h-16 md:w-17 md:h-17 ${
+                                      member.is_captain
+                                        ? 'border-2 border-[#d4af37] ring-2 ring-amber-400/40 shadow-[0_0_10px_rgba(217,119,6,0.35)]'
+                                        : 'border-2 border-[#3b2c1a]'
+                                    }`}
+                                  >
+                                    <img
+                                      src={generateAvatarDataUri(
+                                        member.avatar_seed || member.nickname,
+                                        (member.avatar_style as any) || 'avataaars'
+                                      )}
+                                      alt={member.nickname}
+                                      className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-lg"
+                                    />
+                                    {member.is_captain && (
+                                      <div
+                                        className="absolute -top-1 -right-1 bg-[#8a1c2a] text-[#f5eedb] text-[10px] w-4.5 h-4.5 rounded-full border border-[#f5eedb] flex items-center justify-center shadow-md font-black"
+                                        title="Capitán de la Cuadrilla"
+                                      >
+                                        👑
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className="font-vintage font-bold text-stone-900 text-[11px] sm:text-xs mt-0.5 truncate max-w-[80px] text-center leading-tight">
+                                    {member.nickname}
+                                  </span>
+                                  {member.is_captain ? (
+                                    <span className="text-[9px] font-broadway uppercase text-[#8a1c2a] font-black leading-none">
+                                      Capitán
+                                    </span>
+                                  ) : (
+                                    <span className="text-[8px] font-vintage text-stone-600 font-bold uppercase leading-none">
+                                      Cómplice
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Fila 2: Los restantes 2 miembros centrados */}
+                            <div className="flex justify-center items-center gap-2.5 sm:gap-3">
+                              {sortedWinnerMembers.slice(sortedWinnerMembers.length === 4 ? 2 : 3).map((member) => (
+                                <div key={member.id} className="flex flex-col items-center">
+                                  <div
+                                    className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden w-15 h-15 sm:w-16 sm:h-16 md:w-17 md:h-17 ${
+                                      member.is_captain
+                                        ? 'border-2 border-[#d4af37] ring-2 ring-amber-400/40 shadow-[0_0_10px_rgba(217,119,6,0.35)]'
+                                        : 'border-2 border-[#3b2c1a]'
+                                    }`}
+                                  >
+                                    <img
+                                      src={generateAvatarDataUri(
+                                        member.avatar_seed || member.nickname,
+                                        (member.avatar_style as any) || 'avataaars'
+                                      )}
+                                      alt={member.nickname}
+                                      className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-lg"
+                                    />
+                                    {member.is_captain && (
+                                      <div
+                                        className="absolute -top-1 -right-1 bg-[#8a1c2a] text-[#f5eedb] text-[10px] w-4.5 h-4.5 rounded-full border border-[#f5eedb] flex items-center justify-center shadow-md font-black"
+                                        title="Capitán de la Cuadrilla"
+                                      >
+                                        👑
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className="font-vintage font-bold text-stone-900 text-[11px] sm:text-xs mt-0.5 truncate max-w-[80px] text-center leading-tight">
+                                    {member.nickname}
+                                  </span>
+                                  <span className="text-[8px] font-vintage text-stone-600 font-bold uppercase leading-none">
+                                    Cómplice
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <span className="text-[10px] font-vintage uppercase tracking-wider text-stone-600 font-bold mt-1">
+                            Banda Completa • {sortedWinnerMembers.length} Miembros
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* NOMBRE Y LIDERAZGO */}
-                    <div className="mt-1">
+                    <div className="mt-1 shrink-0">
                       <h3
                         className="text-lg sm:text-xl font-broadway uppercase tracking-wider leading-none truncate"
                         style={{ color: winner.color_hex }}
                       >
                         {winner.name}
                       </h3>
-                      {winnerCaptain && (
+                      {winnerCaptain && sortedWinnerMembers.length > 1 && (
                         <span className="text-xs font-editorial text-stone-700 italic block mt-0.5 truncate">
                           Liderados por "{winnerCaptain.nickname}"
                         </span>
@@ -262,7 +442,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                     </div>
 
                     {/* PLACA DE RECOMPENSA EN DÓLARES */}
-                    <div className="w-full mt-1 pt-1 border-t-2 border-dashed border-[#3b2c1a]/60 bg-[#e4d6be]/70 rounded-xl p-1.5">
+                    <div className="w-full mt-1 pt-1 border-t-2 border-dashed border-[#3b2c1a]/60 bg-[#e4d6be]/70 rounded-xl p-1.5 shrink-0">
                       <span className="text-xs font-vintage uppercase tracking-widest text-stone-700 block font-bold">
                         RECOMPENSA OFICIAL DE LA NOCHE
                       </span>
@@ -273,27 +453,10 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                         ({winner.score} Puntos de Botín Acumulados)
                       </span>
                     </div>
-
-                    {/* INTEGRANTES DE LA CUADRILLA */}
-                    <div className="w-full mt-1 pt-1 border-t border-[#3b2c1a]/30">
-                      <span className="text-xs font-vintage uppercase tracking-wider text-stone-700 font-bold block mb-1">
-                        Cómplices de la Cuadrilla:
-                      </span>
-                      <div className="flex flex-wrap justify-center gap-1 max-h-10 overflow-y-auto">
-                        {winnerMembers.map((m) => (
-                          <span
-                            key={m.id}
-                            className="text-xs font-vintage font-bold px-1.5 py-0.5 rounded bg-black/10 text-stone-900 border border-stone-400 truncate max-w-[90px]"
-                          >
-                            {m.nickname}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
                   </div>
 
-                  {/* COLUMNA DERECHA (7 COLUMNAS): TABLA CLASIFICATORIA DE BOTÍN */}
-                  <div className="md:col-span-7 flex flex-col justify-between bg-[#f0e7d3] border-2 border-[#3b2c1a] p-3 rounded-2xl shadow">
+                  {/* COLUMNA DERECHA (6 COLUMNAS): TABLA CLASIFICATORIA DE BOTÍN */}
+                  <div className="md:col-span-6 flex flex-col justify-between bg-[#f0e7d3] border-2 border-[#3b2c1a] p-3 rounded-2xl shadow">
                     <div>
                       <div className="border-b-2 border-[#1a130e] pb-1 mb-1.5 flex items-center justify-between">
                         <h3 className="text-sm sm:text-base font-broadway uppercase newsprint-ink tracking-wider flex items-center gap-1.5">
