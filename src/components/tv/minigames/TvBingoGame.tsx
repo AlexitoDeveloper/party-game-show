@@ -46,7 +46,7 @@ export const TvBingoGame: React.FC<TvBingoGameProps> = ({
                   (bingoCelebration.avatarStyle as any) || 'avataaars'
                 )}
                 alt="Avatar"
-                className="w-16 h-16 rounded-full border-2 border-[#d4af37] bg-slate-900 shadow-md"
+                className="w-16 h-16 rounded-full border-2 border-[#d4af37] bg-slate-900 shadow-md object-cover"
               />
             )}
             <div className="text-left">

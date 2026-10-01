@@ -60,7 +60,7 @@ export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
             <img
               src={avatarDataUri}
               alt={nickname}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover rounded-lg"
             />
           </div>
 

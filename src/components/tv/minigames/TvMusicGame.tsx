@@ -184,7 +184,7 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                         <img
                           src={generateAvatarDataUri(winnerSeed, winnerStyle)}
                           alt={buzzerWinner.playerName}
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       {winnerEmoji && (

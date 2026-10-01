@@ -16,6 +16,7 @@ interface PlayerHeaderProps {
   selectedTeam: TeamCatalogItem | null;
   activeTeams: Team[];
   onLogout: () => void;
+  onEditAvatar?: () => void;
 }
 
 /**
@@ -33,6 +34,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   selectedTeam,
   activeTeams,
   onLogout,
+  onEditAvatar,
 }) => {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -73,15 +75,19 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
         {isJoined ? (
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Medallón de Avatar con Corona si es Capitán */}
-            <div className="relative">
-              <div className="w-10 h-10 rounded-2xl bg-[#0c0c14] border-2 border-[#d4af37] p-0.5 overflow-hidden flex items-center justify-center shadow-deco-gold">
+            <div
+              className={`relative ${onEditAvatar ? 'cursor-pointer group' : ''}`}
+              onClick={onEditAvatar}
+              title={onEditAvatar ? 'Toca para cambiar foto o avatar' : undefined}
+            >
+              <div className="w-10 h-10 rounded-2xl bg-[#0c0c14] border-2 border-[#d4af37] p-0.5 overflow-hidden flex items-center justify-center shadow-deco-gold transition-transform group-hover:scale-105 active:scale-95">
                 <img
                   src={generateAvatarDataUri(
                     player?.avatar_seed || avatarSeed || nickname,
                     (player?.avatar_style as any) || avatarStyle
                   )}
                   alt="Avatar"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover rounded-xl"
                 />
               </div>
 

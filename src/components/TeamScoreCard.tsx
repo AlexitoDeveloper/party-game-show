@@ -287,7 +287,7 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                     <img
                       src={generateAvatarDataUri(m.avatar_seed || m.nickname, (m.avatar_style as any) || 'avataaars')}
                       alt={m.nickname}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                   {m.badge_emoji && (

@@ -91,6 +91,28 @@ export default function PlayerView() {
   });
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
   const [bannedShake, setBannedShake] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+
+  const handleUpdateAvatar = (newSeed: string, newStyle?: DiceBearStyle) => {
+    setAvatarSeed(newSeed);
+    if (newStyle) setAvatarStyle(newStyle);
+    sessionStorage.setItem(`party_avatar_seed_${roomCode}`, newSeed);
+    localStorage.setItem(`party_avatar_seed_${roomCode}`, newSeed);
+    if (newStyle) {
+      sessionStorage.setItem(`party_avatar_style_${roomCode}`, newStyle);
+      localStorage.setItem(`party_avatar_style_${roomCode}`, newStyle);
+    }
+
+    if (player) {
+      const updated: Player = {
+        ...player,
+        avatar_seed: newSeed,
+        avatar_style: newStyle || player.avatar_style,
+      };
+      setPlayer(updated);
+      roomSync.broadcast({ type: 'PLAYER_UPDATED', payload: updated });
+    }
+  };
 
   const handleBannedClick = () => {
     soundFX.playFail();
@@ -837,6 +859,7 @@ export default function PlayerView() {
         selectedTeam={selectedTeam}
         activeTeams={activeTeams}
         onLogout={handleLogout}
+        onEditAvatar={isJoined ? () => setShowAvatarModal(true) : undefined}
       />
 
       {/* CONTENIDO PRINCIPAL */}
@@ -928,6 +951,13 @@ export default function PlayerView() {
             Esperando al Gran Anfitrión
           </div>
           <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={() => setShowAvatarModal(true)}
+              className="text-xs font-vintage text-amber-300/70 underline hover:text-white"
+            >
+              Foto / Avatar
+            </button>
+            <span className="text-amber-500/40">•</span>
             <button
               onClick={() => setSelectedTeam(null)}
               className="text-xs font-vintage text-amber-300/70 underline hover:text-white"
@@ -1434,6 +1464,40 @@ export default function PlayerView() {
         gameEmoji={activeGame.emoji}
         onConfirm={handleDesignateRepresentatives}
       />
+
+      {/* MODAL PARA EDITAR FOTO O AVATAR */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="bg-[#12121e] border-2 border-[#d4af37] rounded-3xl p-5 max-w-sm w-full shadow-2xl relative">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-broadway uppercase tracking-wide text-gold-gradient">
+                Tu Foto o Avatar
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAvatarModal(false)}
+                className="text-xs text-amber-200/60 hover:text-white font-bold px-2 py-1"
+              >
+                ✕ Cerrar
+              </button>
+            </div>
+            <LobbyProfilePicker
+              nickname={nickname}
+              avatarSeed={avatarSeed}
+              onAvatarSeedChange={(seed) => handleUpdateAvatar(seed)}
+              avatarStyle={avatarStyle}
+              onAvatarStyleChange={(style) => handleUpdateAvatar(avatarSeed, style)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowAvatarModal(false)}
+              className="w-full mt-4 bg-gold-gradient text-slate-950 font-broadway font-black text-sm py-3.5 rounded-2xl uppercase tracking-wider shadow-deco-gold active:scale-95 transition-all"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       <footer className="text-center text-xs text-slate-600 uppercase tracking-widest z-10 shrink-0 select-none">

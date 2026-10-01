@@ -125,7 +125,7 @@ export const TvLobby: React.FC<TvLobbyProps> = ({
                         <img
                           src={generateAvatarDataUri(p.avatar_seed || p.nickname, (p.avatar_style as any) || 'avataaars')}
                           alt={p.nickname}
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       {p.badge_emoji && <TwemojiText className="text-xs">{p.badge_emoji}</TwemojiText>}

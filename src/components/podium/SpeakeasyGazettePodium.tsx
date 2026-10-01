@@ -238,7 +238,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                           (winnerCaptain?.avatar_style as any) || 'avataaars'
                         )}
                         alt={winner.name}
-                        className="w-full h-full object-contain filter sepia-[0.3] contrast-125"
+                        className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-xl"
                       />
                       {/* SELLO DE CERA ROJA DE ÉPOCA DEL CAPITÁN */}
                       <div className="absolute -bottom-2 -right-2 bg-[#8a1c2a] text-[#f5eedb] text-xs sm:text-xs font-broadway uppercase px-2.5 py-0.5 rounded-full border-2 border-[#f5eedb] shadow-lg rotate-[-8deg] tracking-wider">
