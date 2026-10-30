@@ -11,6 +11,7 @@ export interface TvQrModalProps {
   roomCode?: string;
   title?: string;
   subtitle?: string;
+  closeButtonLabel?: string;
 }
 
 /**
@@ -22,8 +23,9 @@ export const TvQrModal: React.FC<TvQrModalProps> = ({
   onClose,
   joinUrl,
   roomCode,
-  title = 'Pase de Espectador • Speakeasy',
+  title = 'Conectar a la Sala',
   subtitle = 'Escanea con tu cámara móvil para ingresar o reconectar',
+  closeButtonLabel = 'Cerrar Pase (Esc)',
 }) => {
   // Manejo de tecla Escape para cerrar
   useEffect(() => {
@@ -139,7 +141,7 @@ export const TvQrModal: React.FC<TvQrModalProps> = ({
                 onClick={onClose}
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-[#d4af37] via-[#f3e5ab] to-[#b38f2a] text-black font-broadway uppercase tracking-wider rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all shadow-md"
               >
-                Volver a la Pantalla de Espera
+                {closeButtonLabel}
               </button>
             </div>
           </motion.div>

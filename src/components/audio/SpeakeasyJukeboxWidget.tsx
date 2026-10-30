@@ -58,49 +58,48 @@ export const SpeakeasyJukeboxWidget: React.FC<SpeakeasyJukeboxWidgetProps> = ({
   if (variant === 'tv') {
     const isSilenced = state.contextFactor === 0;
 
+    if (isSilenced || !isPlaying) {
+      return null;
+    }
+
     return (
       <div
-        className="flex items-center gap-2.5 bg-[#0c0c14]/90 px-3.5 py-1.5 rounded-full backdrop-blur-md shadow-deco-gold select-none pointer-events-none border border-[#d4af37]/45 text-left"
+        className="flex items-center gap-2 bg-[#0c0c14]/90 px-2.5 py-1 rounded-full backdrop-blur-md shadow-deco-gold select-none pointer-events-none border border-[#d4af37]/45 text-left shrink-0"
         aria-hidden="true"
       >
         {/* DISCO DE VINILO GIRATORIO VINTAGE 1920s */}
         <div
-          className={`w-6 h-6 rounded-full bg-slate-950 border border-[#d4af37]/60 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden ${
-            isPlaying && !isSilenced ? 'animate-spin' : 'opacity-70'
-          }`}
+          className="w-4 h-4 rounded-full bg-slate-950 border border-[#d4af37]/60 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden animate-spin"
           style={{ animationDuration: '4s' }}
         >
           {/* Surcos del disco */}
           <div className="absolute inset-0.5 rounded-full border border-slate-700/50" />
-          <div className="w-2 h-2 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 shadow-sm z-10" />
+          <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 shadow-sm z-10" />
         </div>
 
-        <div className="flex flex-col text-left min-w-0">
-          <span className="text-xs uppercase font-vintage tracking-wider text-amber-300/80 flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0 text-xs">
+          <span className="text-[11px] uppercase font-vintage tracking-wider text-amber-300/80 flex items-center gap-1 shrink-0">
             <Radio className="w-2.5 h-2.5 text-amber-400 shrink-0" />
-            <span>Speakeasy Jukebox</span>
-            {isSilenced ? (
-              <span className="text-xs bg-amber-500/20 text-amber-300/90 border border-amber-400/30 px-1 rounded font-bold">
-                (Pausa en prueba)
-              </span>
-            ) : isDucked ? (
-              <span className="text-xs text-amber-400 font-bold animate-pulse">
-                (Atenuado)
-              </span>
-            ) : isPlaying ? (
-              <span className="inline-flex items-end gap-0.5 h-2">
-                <span className="w-0.5 h-2 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.6s' }} />
-                <span className="w-0.5 h-1 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.9s' }} />
-                <span className="w-0.5 h-1.5 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.7s' }} />
-              </span>
-            ) : null}
+            <span>Jukebox</span>
           </span>
 
-          <span className="text-xs font-broadway text-amber-100 max-w-[180px] truncate leading-tight">
-            {isSilenced
-              ? 'Silencio para prueba'
-              : currentTrack.title || 'Hilo Musical 1920s'}
+          <span className="text-amber-400/40 text-[10px] shrink-0">•</span>
+
+          <span className="text-xs font-broadway text-amber-100 max-w-[130px] truncate leading-tight">
+            {currentTrack.title || 'Hilo Musical 1920s'}
           </span>
+
+          {isDucked ? (
+            <span className="text-[10px] text-amber-400 font-bold animate-pulse shrink-0">
+              (Atenuado)
+            </span>
+          ) : (
+            <span className="inline-flex items-end gap-0.5 h-2 shrink-0">
+              <span className="w-0.5 h-2 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.6s' }} />
+              <span className="w-0.5 h-1 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.9s' }} />
+              <span className="w-0.5 h-1.5 bg-amber-400 rounded-full animate-pulse" style={{ animationDuration: '0.7s' }} />
+            </span>
+          )}
         </div>
       </div>
     );

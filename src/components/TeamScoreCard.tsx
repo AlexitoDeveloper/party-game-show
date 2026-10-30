@@ -71,16 +71,18 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
 
   // MODO MARCADOR COMPACTO PARA EL FOOTER DURANTE LAS PRUEBAS
   if (variant === 'scoreboard') {
+    const cleanSuffix = scoreSuffix !== undefined ? scoreSuffix.trim() : 'PTS';
+
     return (
       <div
-        className={`bg-[#0d0d14]/90 border border-[#d4af37]/40 rounded-xl px-3.5 py-2 flex items-center justify-between gap-2 shadow-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-md ${
+        className={`bg-[#0d0d14]/90 border border-[#d4af37]/40 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1.5 shadow-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-md ${
           isLeader ? 'ring-2 ring-[#d4af37] shadow-gold-glow' : ''
         } ${className}`}
       >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#d4af37]/60 to-transparent" />
 
         <div className="flex flex-col truncate min-w-0">
-          <div className="flex items-center gap-2 truncate">
+          <div className="flex items-center gap-1.5 truncate">
             <GameIcon
               name={
                 theme.index === 1
@@ -99,13 +101,13 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                   ? 'Target'
                   : 'Sun'
               }
-              size={20}
+              size={16}
               color={theme.accentHex}
               weight="fill"
               glow={theme.accentHex}
               className="shrink-0"
             />
-            <span className={`text-sm sm:text-base font-black font-broadway uppercase tracking-wide truncate ${theme.twText}`}>
+            <span className={`text-xs sm:text-sm font-black font-broadway uppercase tracking-wide truncate ${theme.twText}`}>
               {team.name}
             </span>
           </div>
@@ -121,34 +123,34 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
             activeEffects.hasCurse ||
             activeEffects.hasPhoenix ||
             subtitleScore) && (
-            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <div className="flex items-center gap-1 flex-wrap mt-0.5">
               {subtitleScore && (
-                <span className="text-xs text-amber-200/80 font-broadway uppercase tracking-wider">
+                <span className="text-[11px] text-amber-200/80 font-broadway uppercase tracking-wider whitespace-nowrap">
                   {subtitleScore}
                 </span>
               )}
               {powerCardsCount > 0 && (
-                <span className="text-xs bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1.5 py-0.2 rounded font-bold font-mono">
+                <span className="text-[10px] bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1 py-0.2 rounded font-bold font-mono">
                   🃏{powerCardsCount}
                 </span>
               )}
               {activeEffects.hasDouble && (
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 rounded font-black animate-pulse">
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded font-black animate-pulse">
                   x2
                 </span>
               )}
               {activeEffects.hasGamble && (
-                <span className="text-xs bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1.5 py-0.2 rounded font-black animate-pulse">
+                <span className="text-[10px] bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1 py-0.2 rounded font-black animate-pulse">
                   ⭐x2
                 </span>
               )}
-              {activeEffects.hasBomb && <span className="text-xs animate-pulse">💣</span>}
-              {activeEffects.hasShield && <span className="text-xs animate-pulse">🛡️</span>}
-              {activeEffects.hasSentence && <span className="text-xs animate-pulse">💀</span>}
-              {activeEffects.hasRussianRoulette && <span className="text-xs animate-pulse">🎰</span>}
-              {activeEffects.hasCurse && <span className="text-xs animate-pulse">☠️</span>}
+              {activeEffects.hasBomb && <span className="text-[10px] animate-pulse">💣</span>}
+              {activeEffects.hasShield && <span className="text-[10px] animate-pulse">🛡️</span>}
+              {activeEffects.hasSentence && <span className="text-[10px] animate-pulse">💀</span>}
+              {activeEffects.hasRussianRoulette && <span className="text-[10px] animate-pulse">🎰</span>}
+              {activeEffects.hasCurse && <span className="text-[10px] animate-pulse">☠️</span>}
               {activeEffects.hasPhoenix && (
-                <span className="text-xs bg-amber-600/40 text-amber-200 border border-amber-400/80 px-1.5 py-0.2 rounded font-black animate-pulse">
+                <span className="text-[10px] bg-amber-600/40 text-amber-200 border border-amber-400/80 px-1 py-0.2 rounded font-black animate-pulse">
                   🔥x3
                 </span>
               )}
@@ -156,13 +158,19 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
           )}
         </div>
 
-        <div className="text-right whitespace-nowrap pl-2 font-broadway text-xl sm:text-2xl font-black text-gold-gradient leading-none">
-          <CountUp
-            end={customScore !== undefined ? customScore : team.score}
-            duration={0.6}
-            preserveValue
-            suffix={scoreSuffix !== undefined ? scoreSuffix : ' PTS'}
-          />
+        <div className="text-right whitespace-nowrap pl-1.5 flex items-baseline justify-end gap-1 shrink-0">
+          <span className="font-broadway text-xl sm:text-2xl font-black text-gold-gradient leading-none">
+            <CountUp
+              end={customScore !== undefined ? customScore : team.score}
+              duration={0.6}
+              preserveValue
+            />
+          </span>
+          {cleanSuffix.length > 0 && (
+            <span className="text-[10px] font-broadway uppercase tracking-wider text-amber-200/70 shrink-0">
+              {cleanSuffix}
+            </span>
+          )}
         </div>
       </div>
     );

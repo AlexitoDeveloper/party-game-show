@@ -82,6 +82,7 @@ import { TvUnDosTresGame } from '../components/tv/minigames/TvUnDosTresGame';
 import { TvBingoGame } from '../components/tv/minigames/TvBingoGame';
 import { TvMimicaGame } from '../components/tv/minigames/TvMimicaGame';
 import { TvGameBriefingCard } from '../components/tv/TvGameBriefingCard';
+import { TvQrModal } from '../components/tv/TvQrModal';
 import { FullscreenButton } from '../components/common/FullscreenButton';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useTvRemoteReceiver } from '../hooks/useTvRemoteReceiver';
@@ -164,6 +165,7 @@ export default function TvView() {
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
   const [showTvCoinBurst, setShowTvCoinBurst] = useState(false);
+  const [showTvQrModal, setShowTvQrModal] = useState(false);
 
   const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
     const saved = localStorage.getItem(`party_representatives_${roomCode}`);
@@ -683,6 +685,10 @@ export default function TvView() {
         setPodiumPage(event.payload.page);
       } else if (event.type === 'ROUND_HITS_UPDATE') {
         setRoundHits(event.payload.roundHits || {});
+      } else if (event.type === 'SHOW_TV_QR') {
+        setShowTvQrModal(event.payload.isOpen);
+      } else if (event.type === 'TOGGLE_TV_QR') {
+        setShowTvQrModal((prev) => (event.payload?.isOpen !== undefined ? event.payload.isOpen : !prev));
       }
     });
 
@@ -817,7 +823,7 @@ export default function TvView() {
 
   return (
     <HellCasinoBackground intensity="high" showPokerSuits={true}>
-      <main className="h-screen max-h-screen w-full text-white font-sans overflow-hidden flex flex-col justify-between p-4 sm:p-6 select-none relative">
+      <main className="h-screen max-h-screen w-full text-white font-sans overflow-hidden flex flex-col justify-between p-2 sm:p-3 select-none relative">
       {/* Reproductor de Audio HTML5 persistente en la TV para todas las pantallas y fases */}
       <audio
         ref={musicAudioRef}
@@ -909,76 +915,10 @@ export default function TvView() {
         )}
       </AnimatePresence>
 
-      {/* HEADER TV / PROYECTOR ART DÉCO 1930s (ADAPTABLE Y ULTRA-COMPACTO EN PODIO) */}
-      <header className={`flex items-center justify-between border-b border-[#d4af37]/30 z-20 ${
-        room.status === 'podium' || room.status === 'ended' ? 'pb-2 mb-1' : 'pb-4 mb-2'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`bg-gradient-to-br from-[#d4af37] via-[#b38f2a] to-[#8a6a1a] rounded-2xl shadow-lg shadow-amber-900/40 border border-[#f5eedb]/30 ${
-            room.status === 'podium' || room.status === 'ended' ? 'p-2' : 'p-3'
-          }`}>
-            <GameIcon name="Tv" size={room.status === 'podium' || room.status === 'ended' ? 22 : 32} color="#FFFFFF" glow={true} weight="fill" />
-          </div>
-          <div>
-            <h1 className={`font-broadway uppercase tracking-wider text-gold-gradient drop-shadow-[0_2px_12px_rgba(212,175,55,0.4)] leading-tight ${
-              room.status === 'podium' || room.status === 'ended' ? 'text-xl sm:text-2xl' : 'text-3xl sm:text-4xl'
-            }`}>
-              {room.title || 'GAME SHOW ARENA'}
-            </h1>
-            <p className="text-amber-100/70 text-xs sm:text-sm font-vintage tracking-wider flex items-center gap-1.5 mt-0.5">
-              <GameIcon name="Sparkle" size={14} color="#d4af37" glow="#d4af37" weight="fill" />
-              {room.status === 'lobby' ? (
-                <span>LOBBY DE CONVOCATORIA • ESPERANDO JUGADORES</span>
-              ) : room.status === 'presentation' ? (
-                <span className="text-gold-gradient font-bold flex items-center gap-1.5">
-                  <span>✨</span>
-                  <span>PRESENTACIÓN OFICIAL DE LA VELADA</span>
-                </span>
-              ) : room.status === 'podium' || room.status === 'ended' ? (
-                <span className="text-gold-gradient font-bold flex items-center gap-1.5 font-broadway">
-                  <span>🏆</span>
-                  <span>CEREMONIA DE CLAUSURA • THE SPEAKEASY GAZETTE</span>
-                </span>
-              ) : (
-                <span className="text-white font-bold flex items-center gap-1.5 font-broadway">
-                  <TwemojiText className="text-base">{activeGame.emoji}</TwemojiText>
-                  <span className="uppercase tracking-wider">{activeGame.title}</span>
-                  <span className="text-xs text-amber-300/80 font-vintage font-normal">({activeGame.category})</span>
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* CABECERA DE LA TV CON JUKEBOX, MODO CINE Y PLACA DE SALA */}
-        <div className="flex items-center gap-3">
-          {/* INDICADOR VISUAL ART DÉCO DEL HILO MUSICAL SPEAKEASY (PASIVO) */}
-          <SpeakeasyJukeboxWidget
-            variant="tv"
-            externalState={jukeboxState}
-          />
-
-          {/* MINI QR EN LA ESQUINA DURANTE LAS PRUEBAS/SHOW */}
-          {room.status !== 'lobby' && joinUrl && (
-            <div className="flex items-center bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl p-1.5 shadow-xl backdrop-blur-md" title="Escanea para reconectar">
-              <div className="p-1 bg-white rounded-lg shadow-sm">
-                <QRCodeSVG value={joinUrl} size={40} level="L" />
-              </div>
-            </div>
-          )}
-
-          {/* PLACA DE LATÓN DE CÓDIGO DE SALA */}
-          <div className="flex items-center gap-3 bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-2xl px-4 py-1.5 shadow-deco-gold backdrop-blur-md relative overflow-hidden">
-            <span className="text-xs uppercase tracking-widest text-amber-200/80 font-broadway">SALA</span>
-            <div className="text-3xl sm:text-4xl font-broadway tracking-widest text-gold-gradient drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]">
-              {roomCode}
-            </div>
-          </div>
-
-          {/* BOTÓN PANTALLA COMPLETA TV */}
-          <FullscreenButton size="lg" className="h-[52px] w-[52px]" />
-        </div>
-      </header>
+      {/* BOTÓN PANTALLA COMPLETA FLOTANTE DISCRETO (NO RESTA ESPACIO VERTICAL AL CONTENIDO DE LA TV) */}
+      <div className="fixed top-2.5 right-2.5 z-40 opacity-25 hover:opacity-100 transition-opacity">
+        <FullscreenButton size="sm" className="h-8 w-8" />
+      </div>
 
       {/* CONTENIDO PRINCIPAL */}
       {room.status === 'lobby' ? (
@@ -1198,8 +1138,9 @@ export default function TvView() {
               ) : activeGame.id === 'beer_pong' ? (
                 /* ESCENARIO BEER PONG */
                 <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
-                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-6 uppercase drop-shadow-md">
-                    🍺 TORNEO DE BEER PONG
+                  <h2 className="text-3xl sm:text-5xl font-broadway mb-6 uppercase drop-shadow-md flex items-center justify-center gap-3">
+                    <span>🍺</span>
+                    <span className="text-gold-gradient">TORNEO DE BEER PONG</span>
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 my-4">
                     {activeTeams.map((team) => {
@@ -1209,7 +1150,10 @@ export default function TvView() {
                         <div key={team.id} className="p-4 sm:p-5 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 flex flex-col items-center shadow-md">
                           <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2 shadow`} />
                           <span className="text-base sm:text-lg font-broadway text-white truncate max-w-full">{team.name}</span>
-                          <span className="text-4xl sm:text-5xl font-broadway text-gold-gradient mt-2">{cups} 🥤</span>
+                          <div className="text-4xl sm:text-5xl font-broadway mt-2 flex items-center gap-1.5">
+                            <span className="text-gold-gradient">{cups}</span>
+                            <span className="text-2xl sm:text-3xl">🥤</span>
+                          </div>
                         </div>
                       );
                     })}
@@ -1218,8 +1162,9 @@ export default function TvView() {
               ) : (
                 /* TELÉFONO DIBUJADO */
                 <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-10 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
-                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-6 drop-shadow-md">
-                    🎨 TELÉFONO DIBUJADO
+                  <h2 className="text-3xl sm:text-5xl font-broadway mb-6 drop-shadow-md flex items-center justify-center gap-3">
+                    <span>🎨</span>
+                    <span className="text-gold-gradient">TELÉFONO DIBUJADO</span>
                   </h2>
                   <div className="my-4">
                     <div className={`text-8xl sm:text-9xl font-broadway drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-gold-gradient'}`}>
@@ -1234,8 +1179,9 @@ export default function TvView() {
           {/* MOTOR C: DUELOS & JUEGOS DE MESA (Blackjack, Dominó, Parchís, UNO) */}
           {activeGame.engine === 'duel' && (
             <div className="w-full max-w-4xl bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-8 backdrop-blur-xl shadow-deco-gold text-center hell-card-frame">
-              <h2 className="text-3xl md:text-5xl font-broadway uppercase text-gold-gradient mb-6 drop-shadow-md">
-                ⚔️ {activeGame.title}
+              <h2 className="text-3xl md:text-5xl font-broadway uppercase mb-6 drop-shadow-md flex items-center justify-center gap-3">
+                <span>⚔️</span>
+                <span className="text-gold-gradient">{activeGame.title}</span>
               </h2>
 
               {/* PODIO DE PUNTOS */}
@@ -1271,9 +1217,9 @@ export default function TvView() {
         );
 
         return (
-          <footer className="border-t border-[#d4af37]/35 bg-black/85 backdrop-blur-md pt-2.5 pb-2 px-4 z-10">
+          <footer className="border-t border-[#d4af37]/35 bg-black/85 backdrop-blur-md pt-1.5 pb-1 px-2 z-10">
             <div
-              className="grid gap-2.5 w-full"
+              className="grid gap-2 w-full"
               style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
             >
               {activeTeams.map((team) => {
@@ -1305,9 +1251,7 @@ export default function TvView() {
                 const members = teamCaptain ? [teamCaptain] : [];
 
                 const roundScore = roundHits[team.id] || 0;
-                const scoreSuffix = isRoundScoreGame
-                  ? (activeGame.id === 'beer_pong' ? ' 🥤' : ' 🎯')
-                  : ' PTS';
+                const scoreSuffix = isRoundScoreGame ? '' : ' pts';
 
                 return (
                   <TeamScoreCard
@@ -1463,6 +1407,20 @@ export default function TvView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* MODAL ART DÉCO DE CÓDIGO QR Y CÓDIGO DE SALA PROYECTADO A PETICIÓN DEL ANFITRIÓN */}
+      <TvQrModal
+        isOpen={showTvQrModal}
+        onClose={() => {
+          setShowTvQrModal(false);
+          roomSync.broadcast({ type: 'SHOW_TV_QR', payload: { isOpen: false } });
+        }}
+        joinUrl={joinUrl}
+        roomCode={roomCode}
+        title="Unirse a la Sala"
+        subtitle="Escanea con tu cámara móvil para entrar o reconectarte"
+        closeButtonLabel="Cerrar Pase (Esc)"
+      />
       </main>
     </HellCasinoBackground>
   );

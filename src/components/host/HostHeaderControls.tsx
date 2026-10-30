@@ -11,11 +11,13 @@ import {
   Award,
   Play,
   Cast,
+  QrCode,
 } from 'lucide-react';
 import { Room } from '../../lib/types';
 import { GameDefinition, GAMES_CATALOG } from '../../lib/games';
 import { FullscreenButton } from '../common/FullscreenButton';
 import { HostTvCastModal } from './HostTvCastModal';
+import { Button } from '../ui';
 
 interface HostHeaderControlsProps {
   room: Room;
@@ -23,6 +25,8 @@ interface HostHeaderControlsProps {
   playersCount: number;
   activeGame: GameDefinition;
   podiumPage: 'podium' | 'medals';
+  isTvQrOpen?: boolean;
+  onToggleTvQr?: () => void;
   onFinishTest: () => void;
   onFinishShowAndShowGazette: () => void;
   onReturnToLobby: () => void;
@@ -37,6 +41,8 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
   playersCount,
   activeGame,
   podiumPage,
+  isTvQrOpen = false,
+  onToggleTvQr,
   onFinishTest,
   onFinishShowAndShowGazette,
   onReturnToLobby,
@@ -93,35 +99,51 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
             <span className="font-broadway">{playersCount}</span>
           </div>
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setIsCastModalOpen(true)}
-            className="bg-[#14141e] hover:bg-[#1c1c2a] border border-[#d4af37]/40 px-2.5 py-1 rounded-xl text-xs font-broadway text-amber-200 flex items-center gap-1.5 transition-all active:scale-95"
             title="Transmitir sala a Smart TV (LG webOS / TCL / Cast)"
           >
             <Tv className="w-3.5 h-3.5 text-amber-400" />
             <span>TV</span>
-          </button>
+          </Button>
+
+          {onToggleTvQr && (
+            <Button
+              variant={isTvQrOpen ? 'gold' : 'secondary'}
+              size="sm"
+              onClick={onToggleTvQr}
+              title="Proyectar / Ocultar código QR en la pantalla de TV"
+            >
+              <QrCode className={`w-3.5 h-3.5 ${isTvQrOpen ? 'text-slate-950' : 'text-amber-400'}`} />
+              <span>{isTvQrOpen ? 'Ocultar QR' : 'QR TV'}</span>
+            </Button>
+          )}
 
           {room.status !== 'lobby' && (
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={onReturnToLobby}
-              className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 text-amber-200 font-broadway text-xs px-2 py-1 rounded-xl flex items-center gap-1 active:scale-95 transition-all"
               title="Volver al Lobby de espera"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline">Lobby</span>
-            </button>
+            </Button>
           )}
 
           <FullscreenButton size="sm" showLabel={false} />
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleExitRoom}
-            className="p-1.5 rounded-xl bg-[#14141e] hover:bg-red-950/40 border border-[#d4af37]/30 hover:border-red-500/50 text-amber-200/60 hover:text-red-300 transition-all shrink-0"
+            className="!p-1.5 hover:!bg-red-950/40 hover:!border-red-500/50 text-amber-200/60 hover:!text-red-300 shrink-0"
             title="Salir al menú principal"
           >
             <LogOut className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -129,36 +151,34 @@ export const HostHeaderControls: React.FC<HostHeaderControlsProps> = ({
       {room.status === 'presentation' && (
         <div className="p-2.5 bg-[#0c0c14]/95 border border-[#d4af37]/50 rounded-2xl flex items-center justify-between gap-2 shadow-deco-gold">
           <div className="grid grid-cols-2 gap-1.5 flex-1">
-            <button
+            <Button
+              variant={(room.presentation_slide || 0) === 0 ? 'gold' : 'secondary'}
+              size="sm"
               onClick={() => onSetPresentationSlide(0)}
-              className={`py-2 px-2.5 rounded-xl border text-xs font-broadway uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                (room.presentation_slide || 0) === 0
-                  ? 'bg-gold-gradient text-slate-950 border-[#f5eedb] font-black'
-                  : 'bg-[#14141e] text-amber-200/70 border-[#d4af37]/30'
-              }`}
+              className="py-2"
             >
               <span>🏆</span>
               <span className="truncate">1. Juegos</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={(room.presentation_slide || 0) === 1 ? 'gold' : 'secondary'}
+              size="sm"
               onClick={() => onSetPresentationSlide(1)}
-              className={`py-2 px-2.5 rounded-xl border text-xs font-broadway uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                (room.presentation_slide || 0) === 1
-                  ? 'bg-gold-gradient text-slate-950 border-[#f5eedb] font-black'
-                  : 'bg-[#14141e] text-amber-200/70 border-[#d4af37]/30'
-              }`}
+              className="py-2"
             >
               <span>🃏</span>
               <span className="truncate">2. Cartas</span>
-            </button>
+            </Button>
           </div>
-          <button
+          <Button
+            variant="gold"
+            size="sm"
             onClick={() => onSelectGame(GAMES_CATALOG[0])}
-            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black text-xs uppercase px-3 py-2 rounded-xl flex items-center gap-1 shadow active:scale-95 transition-all shrink-0"
+            className="!bg-emerald-500 hover:!bg-emerald-400 !text-slate-950 px-3 py-2 shrink-0"
           >
             <Play className="w-3.5 h-3.5 fill-slate-950" />
             <span>Juego 1</span>
-          </button>
+          </Button>
         </div>
       )}
 

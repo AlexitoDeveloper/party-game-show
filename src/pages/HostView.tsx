@@ -150,6 +150,7 @@ export default function HostView() {
     gameId: string;
     suggestedNextGame?: GameDefinition;
   } | null>(null);
+  const [isTvQrOpen, setIsTvQrOpen] = useState(false);
 
   // Instancia de sincronización multi-pantalla como anfitrión (Árbitro Maestro oficial)
   const roomSync = useMemo(() => getRoomSync(roomCode, 'host'), [roomCode]);
@@ -408,6 +409,14 @@ export default function HostView() {
     resetBuzzer();
   };
 
+  const handleToggleTvQr = () => {
+    setIsTvQrOpen((prev) => {
+      const next = !prev;
+      roomSync.broadcast({ type: 'SHOW_TV_QR', payload: { isOpen: next } });
+      return next;
+    });
+  };
+
   const handleClearCaptainGambles = (teamId?: string) => {
     if (teamId) {
       setCaptainGambles((prev) => {
@@ -600,6 +609,10 @@ export default function HostView() {
         setJukeboxState(event.payload);
       } else if (event.type === 'PODIUM_PAGE_CHANGE') {
         setPodiumPage(event.payload.page);
+      } else if (event.type === 'SHOW_TV_QR') {
+        setIsTvQrOpen(event.payload.isOpen);
+      } else if (event.type === 'TOGGLE_TV_QR') {
+        setIsTvQrOpen((prev) => (event.payload?.isOpen !== undefined ? event.payload.isOpen : !prev));
       } else if (event.type === 'SET_CAPTAIN') {
         setPlayers((prev) =>
           prev.map((p) => {
@@ -1004,6 +1017,8 @@ export default function HostView() {
           playersCount={players.length}
           activeGame={activeGame}
           podiumPage={podiumPage}
+          isTvQrOpen={isTvQrOpen}
+          onToggleTvQr={handleToggleTvQr}
           onFinishTest={handleFinishTest}
           onFinishShowAndShowGazette={handleFinishShowAndShowGazette}
           onReturnToLobby={handleReturnToLobby}

@@ -123,6 +123,8 @@ export type RoomSyncEvent =
   | { type: 'TV_PAIR_REDIRECT'; payload: { roomCode: string; tvPin?: string; liteMode?: boolean; title?: string } }
   | { type: 'TV_PAIR_ACK'; payload: { tvPin: string; roomCode: string } }
   | { type: 'TV_SET_LITE_MODE'; payload: { enabled: boolean } }
+  | { type: 'SHOW_TV_QR'; payload: { isOpen: boolean } }
+  | { type: 'TOGGLE_TV_QR'; payload?: { isOpen?: boolean } }
   | { type: 'PING' };
 
 interface RelayMessage {
