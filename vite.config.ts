@@ -17,6 +17,67 @@ function partyRelayPlugin(env: Record<string, string>): Plugin {
         }
       });
 
+      // Endpoint de relé HTTP para emparejamiento inmediato de Smart TV (últimos 60s)
+      const tvPairings: Array<{
+        roomCode: string;
+        tvPin?: string;
+        liteMode?: boolean;
+        title?: string;
+        ts: number;
+      }> = [];
+
+      server.middlewares.use('/api/tv-pair', (req, res) => {
+        const now = Date.now();
+        while (tvPairings.length > 0 && now - tvPairings[0].ts > 60000) {
+          tvPairings.shift();
+        }
+
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body || '{}');
+              if (data.roomCode) {
+                tvPairings.push({
+                  roomCode: String(data.roomCode).toUpperCase().trim(),
+                  tvPin: data.tvPin ? String(data.tvPin).trim() : undefined,
+                  liteMode: typeof data.liteMode === 'boolean' ? data.liteMode : undefined,
+                  title: data.title ? String(data.title) : undefined,
+                  ts: Number(data.ts) || Date.now(),
+                });
+                if (tvPairings.length > 50) tvPairings.shift();
+              }
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ ok: true }));
+            } catch {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'JSON inválido' }));
+            }
+          });
+          return;
+        }
+
+        if (req.method === 'GET') {
+          const url = new URL(req.url || '', 'http://localhost');
+          const pin = url.searchParams.get('pin')?.trim();
+
+          const match = [...tvPairings].reverse().find((p) => {
+            if (pin && p.tvPin) return p.tvPin === pin;
+            if (pin && !p.tvPin) return true;
+            if (!pin) return true;
+            return false;
+          });
+
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: true, pairing: match || null, ...(match || {}) }));
+          return;
+        }
+
+        res.statusCode = 405;
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+      });
+
       // Endpoint para obtener el token oficial de Spotify sin exponer el Client Secret al cliente
       server.middlewares.use('/api/spotify-token', async (req, res) => {
         const clientId = env.SPOTIFY_CLIENT_ID || env.VITE_SPOTIFY_CLIENT_ID;

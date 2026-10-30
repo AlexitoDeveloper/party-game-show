@@ -8,6 +8,7 @@ import { SongTrack } from './musicData';
 import { TriviaQuestion } from './triviaData';
 import { UnDosTresChallenge } from './unDosTresData';
 import { JukeboxState } from './audio';
+import { CloudWsRelay } from './cloudWsRelay';
 
 export type RoomRole = 'host' | 'tv' | 'player';
 
@@ -131,7 +132,7 @@ interface RelayMessage {
   event: RoomSyncEvent;
 }
 
-// Configuración de servidores STUN de Google y TURN de respaldo para atravesar NAT y redes móviles (4G/5G/Wi-Fi)
+// Configuración de servidores STUN ultrarrápidos para atravesar NAT y redes móviles
 const PEER_CONFIG = {
   debug: 1,
   config: {
@@ -139,24 +140,7 @@ const PEER_CONFIG = {
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' },
-      { urls: 'stun:openrelay.metered.ca:80' },
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
+      { urls: 'stun:stun.cloudflare.com:3478' },
     ],
   },
 };
@@ -199,6 +183,7 @@ export class RoomSync {
   private supabaseRetryTimeout: any = null;
   private connectTimeout: any = null;
   private isDestroyed = false;
+  private cloudRelay: CloudWsRelay | null = null;
 
   constructor(roomCode: string, role: RoomRole = 'player') {
     this.roomCode = (roomCode || '').toUpperCase().trim();
@@ -233,7 +218,14 @@ export class RoomSync {
       this.initSupabaseChannel();
     }
 
-    // 4. Canal WebRTC PeerJS P2P (Respaldo directo)
+    // 4. Canal WebSocket Cloud Relay (ntfy.sh WSS TCP 443 para resiliencia total)
+    if (typeof window !== 'undefined') {
+      this.cloudRelay = new CloudWsRelay(this.roomCode, this.instanceId, (msg) => {
+        this.handleIncoming(msg.eventId, msg.event);
+      });
+    }
+
+    // 5. Canal WebRTC PeerJS P2P (Respaldo directo)
     if (typeof window !== 'undefined') {
       this.initPeerRelay();
 
@@ -381,13 +373,17 @@ export class RoomSync {
 
         const hubId = this.getHubId();
 
-        // Los jugadores son clientes puros: van directos al HUB sin perder tiempo intentando crearlo
-        if (this.role === 'player') {
+        // En salas normales: SOLO 'host' intenta ser HUB. 'player' y 'tv' van directo como clientes.
+        // En canales de TV (TV_...): 'tv' es el HUB y 'host'/'player' van como clientes.
+        const isTvChannel = this.roomCode.startsWith('TV_');
+        const shouldBeHub = isTvChannel ? this.role === 'tv' : this.role === 'host';
+
+        if (!shouldBeHub) {
           this.connectAsClient(Peer, hubId);
           return;
         }
 
-        // Host o TV: Intentan registrarse como HUB central de la sala
+        // Registrarse como HUB central del canal
         const tryHub = new Peer(hubId, PEER_CONFIG);
 
         tryHub.on('open', () => {
@@ -503,7 +499,7 @@ export class RoomSync {
             console.warn('[RoomSync] Timeout esperando DataConnection con HUB, reintentando...');
             this.scheduleReconnect(PeerClass, hubId);
           }
-        }, 5000);
+        }, 12000);
 
         conn.on('open', () => {
           if (this.connectTimeout) clearTimeout(this.connectTimeout);
@@ -732,7 +728,14 @@ export class RoomSync {
         }
       });
       // Si no hay clientes todavía pero es un evento clave, guardar para emitir cuando conecten
-      if (sentCount === 0 && (event.type === 'ROOM_UPDATE' || event.type === 'TEAMS_UPDATE' || event.type === 'SWITCH_GAME')) {
+      if (
+        sentCount === 0 &&
+        (event.type === 'ROOM_UPDATE' ||
+          event.type === 'TEAMS_UPDATE' ||
+          event.type === 'SWITCH_GAME' ||
+          event.type === 'TV_PAIR_REDIRECT' ||
+          event.type === 'TV_SET_LITE_MODE')
+      ) {
         this.enqueuePending(this.pendingQueue, message);
       }
     } else if (this.hubConn && this.hubConn.open) {
@@ -746,7 +749,14 @@ export class RoomSync {
       this.enqueuePending(this.pendingQueue, message);
     }
 
-    // 5. Notificar a oyentes locales
+    // 5. Enviar por Cloud WebSocket Relay (ntfy.sh WSS TCP 443)
+    if (this.cloudRelay) {
+      try {
+        this.cloudRelay.send(message);
+      } catch {}
+    }
+
+    // 6. Notificar a oyentes locales
     this.notifyListeners(event);
   }
 
@@ -764,6 +774,10 @@ export class RoomSync {
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     if (this.supabaseRetryTimeout) clearTimeout(this.supabaseRetryTimeout);
     if (this.connectTimeout) clearTimeout(this.connectTimeout);
+    if (this.cloudRelay) {
+      this.cloudRelay.destroy();
+      this.cloudRelay = null;
+    }
 
     const key = `${this.roomCode}_${this.role}`;
     if (SHARED_INSTANCES.get(key) === this) {

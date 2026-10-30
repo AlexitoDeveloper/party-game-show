@@ -1,19 +1,17 @@
-// Service Worker: Resiliencia de red offline y microcortes para Party Game Show
-const CACHE_NAME = 'party-game-cache-v1';
+// Service Worker v2: Resiliencia de red offline y sincronización en tiempo real
+const CACHE_NAME = 'party-game-cache-v2';
 const SHELL_ASSETS = ['/', '/index.html', '/tv'];
 
-// Instalación inmediata del Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(SHELL_ASSETS).catch((err) => {
-        console.warn('[SW] Error al pre-cachear shell básica:', err);
+        console.warn('[SW] Error pre-cacheando shell básica:', err);
       });
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activación y limpieza de versiones obsoletas de caché
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -24,19 +22,31 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Intercepción de peticiones de red
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
 
-  // 1. Rutas de navegación HTML (/, /tv, /room/*): Network-First con fallback a /index.html
-  const isNavigation =
+  // Omitir explícitamente módulos de desarrollo Vite, APIs y WebSockets/relés en tiempo real
+  if (
+    url.pathname.includes('/src/') ||
+    url.pathname.includes('/node_modules/') ||
+    url.pathname.includes('/@vite/') ||
+    url.pathname.includes('/@react-refresh') ||
+    url.pathname.startsWith('/api/') ||
+    url.hostname.includes('ntfy.sh') ||
+    url.hostname.includes('supabase.co')
+  ) {
+    return;
+  }
+
+  // Rutas de navegación HTML (/, /tv, /room/*): Network-First con fallback a /index.html
+  const isNav =
     request.mode === 'navigate' ||
     (request.headers.get('accept') && request.headers.get('accept').includes('text/html'));
 
-  if (isNavigation) {
+  if (isNav) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -44,7 +54,6 @@ self.addEventListener('fetch', (event) => {
             const clone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, clone);
-              // Mantener actualizado el index de fallback
               cache.put('/index.html', networkResponse.clone());
             });
           }
@@ -53,8 +62,8 @@ self.addEventListener('fetch', (event) => {
         .catch(async () => {
           const cached = await caches.match(request);
           if (cached) return cached;
-          const indexFallback = await caches.match('/index.html');
-          if (indexFallback) return indexFallback;
+          const fallback = await caches.match('/index.html');
+          if (fallback) return fallback;
           return new Response('Sin conexión de red.', {
             status: 503,
             headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -64,7 +73,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Activos estáticos (JS, CSS, fuentes, sonidos, imágenes): Cache-First con relleno en red
+  // Activos estáticos: Cache-First con relleno en red
   const isStatic =
     url.pathname.startsWith('/assets/') ||
     url.pathname.startsWith('/sounds/') ||
@@ -80,19 +89,15 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
-
         return fetch(request)
           .then((networkResponse) => {
-            // Permitir cachear respuestas 200 y opacas (cross-origin como Google Fonts)
             if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
               const clone = networkResponse.clone();
               caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
             }
             return networkResponse;
           })
-          .catch(() => {
-            return new Response('', { status: 408, statusText: 'Recurso offline no disponible' });
-          });
+          .catch(() => new Response('', { status: 408, statusText: 'Recurso offline no disponible' }));
       })
     );
   }

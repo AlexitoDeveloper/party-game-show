@@ -3,9 +3,6 @@ import { getRoomSync } from './roomSync';
 const TV_PIN_STORAGE_KEY = 'party_tv_device_pin';
 const HOST_PAIRED_TV_PIN_KEY = 'party_host_paired_tv_pin';
 
-/**
- * Obtiene o crea un PIN numérico de 4 dígitos persistente para este receptor de TV.
- */
 export function getOrCreateTvPin(): string {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
     return '1234';
@@ -22,17 +19,11 @@ export function getOrCreateTvPin(): string {
   return pin;
 }
 
-/**
- * Obtiene el PIN de la TV vinculado guardado en el teléfono del anfitrión.
- */
 export function getSavedHostTvPin(): string {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') return '';
   return (localStorage.getItem(HOST_PAIRED_TV_PIN_KEY) || '').trim();
 }
 
-/**
- * Guarda el PIN de TV en el dispositivo del anfitrión para emparejamiento automático.
- */
 export function setSavedHostTvPin(pin: string): void {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   try {
@@ -53,103 +44,100 @@ export interface PushRoomOptions {
   title?: string;
 }
 
-/**
- * Empuja la sala activa hacia las Smart TVs que estén escuchando.
- * Emite en el canal de descubrimiento global y en el canal privado de PIN si existe.
- */
+function postJsonSafely(url: string, payload: any): void {
+  try {
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      mode: 'cors',
+    }).catch(() => {});
+  } catch {}
+}
+
 export function pushRoomToTv(roomCode: string, options?: PushRoomOptions): void {
   const cleanCode = (roomCode || '').toUpperCase().trim();
   if (!cleanCode) return;
 
   const targetPin = (options?.tvPin || getSavedHostTvPin() || '').trim();
-
   const payload = {
+    type: 'TV_PAIR_REDIRECT',
     roomCode: cleanCode,
-    tvPin: targetPin || undefined,
+    tvPin: targetPin && targetPin.length === 4 ? targetPin : undefined,
     liteMode: options?.liteMode,
     title: options?.title,
+    ts: Date.now(),
   };
 
-  // 1. Enviar al canal de auto-descubrimiento en red local
-  try {
-    const discoverySync = getRoomSync('TV_DISCOVERY', 'host');
-    discoverySync.emit({ type: 'TV_PAIR_REDIRECT', payload });
-  } catch (err) {
-    console.warn('Error al enviar redirección TV_DISCOVERY:', err);
-  }
-
-  // 2. Si se tiene un PIN específico, enviar al canal directo de esa TV
+  // 1. Enviar HTTP POST a ntfy.sh (por PIN y canal global de descubrimiento)
   if (targetPin && targetPin.length === 4) {
-    try {
-      const pinSync = getRoomSync(`TV_${targetPin}`, 'host');
-      pinSync.emit({ type: 'TV_PAIR_REDIRECT', payload });
-    } catch (err) {
-      console.warn(`Error al enviar redirección a TV_${targetPin}:`, err);
-    }
+    postJsonSafely(`https://ntfy.sh/pgs_tv_pin_${targetPin}`, payload);
   }
+  postJsonSafely('https://ntfy.sh/pgs_tv_discovery_global', payload);
+
+  // 2. Enviar POST al relé HTTP local / serverless
+  postJsonSafely('/api/tv-pair', payload);
+
+  // 3. Emitir por RoomSync (TV_${targetPin} y TV_DISCOVERY) con reintentos a 400ms y 1200ms
+  const emitRoomSync = () => {
+    try {
+      const discoverySync = getRoomSync('TV_DISCOVERY', 'host');
+      discoverySync.emit({ type: 'TV_PAIR_REDIRECT', payload });
+    } catch {}
+
+    if (targetPin && targetPin.length === 4) {
+      try {
+        const pinSync = getRoomSync(`TV_${targetPin}`, 'host');
+        pinSync.emit({ type: 'TV_PAIR_REDIRECT', payload });
+      } catch {}
+    }
+  };
+
+  emitRoomSync();
+  setTimeout(emitRoomSync, 400);
+  setTimeout(emitRoomSync, 1200);
 }
 
-/**
- * Ajusta de forma remota el modo ligero de la TV desde el teléfono del anfitrión.
- */
 export function pushLiteModeToTv(roomCode: string, enabled: boolean, tvPin?: string): void {
   const cleanCode = (roomCode || '').toUpperCase().trim();
   const cleanPin = (tvPin || getSavedHostTvPin() || '').trim();
+  const payload = {
+    type: 'TV_SET_LITE_MODE',
+    enabled,
+    roomCode: cleanCode,
+    tvPin: cleanPin || undefined,
+    ts: Date.now(),
+  };
 
+  // 1. Post a ntfy.sh
+  if (cleanPin && cleanPin.length === 4) {
+    postJsonSafely(`https://ntfy.sh/pgs_tv_pin_${cleanPin}`, payload);
+  }
+  if (cleanCode) {
+    postJsonSafely(`https://ntfy.sh/pgs_room_sync_${cleanCode}`, payload);
+  }
+
+  // 2. Emitir por RoomSync
   const event = { type: 'TV_SET_LITE_MODE' as const, payload: { enabled } };
-
   if (cleanCode) {
     try {
-      const roomSync = getRoomSync(cleanCode, 'host');
-      roomSync.emit(event);
+      getRoomSync(cleanCode, 'host').emit(event);
     } catch {}
   }
-
   if (cleanPin && cleanPin.length === 4) {
     try {
-      const pinSync = getRoomSync(`TV_${cleanPin}`, 'host');
-      pinSync.emit(event);
+      getRoomSync(`TV_${cleanPin}`, 'host').emit(event);
     } catch {}
   }
 }
 
-/**
- * Inicia la proyección nativa de Google Chrome (Presentation API) hacia Chromecast/Google Cast si está soportado.
- */
-export async function startNativePresentation(roomCode: string): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
-  const PresentationRequest = (window as any).PresentationRequest;
-  if (!PresentationRequest) {
-    console.warn('Presentation API no soportada en este navegador');
-    return false;
-  }
-
-  try {
-    const tvUrl = `${window.location.origin}/room/${roomCode}/tv`;
-    const request = new PresentationRequest([tvUrl]);
-    const connection = await request.start();
-    return !!connection;
-  } catch (err) {
-    console.info('Sesión de presentación nativa cancelada o no disponible:', err);
-    return false;
-  }
-}
-
-/**
- * Resincroniza de inmediato el Host con la Smart TV y recupera posibles microcortes Wi-Fi.
- * Emite REQUEST_ROOM_SYNC y REQUEST_PLAYERS_SYNC en el canal de la sala
- * y re-empuja la redirección de emparejamiento TV_PAIR_REDIRECT.
- */
 export function forceResyncTv(roomCode: string, tvPin?: string): void {
   const cleanCode = (roomCode || '').toUpperCase().trim();
   if (!cleanCode) return;
 
   const targetPin = (tvPin || getSavedHostTvPin() || '').trim();
-
-  // 1. Re-empujar redirección de emparejamiento TV hacia la sala activa
   pushRoomToTv(cleanCode, { tvPin: targetPin || undefined });
 
-  // 2. Solicitar sincronización completa de la sala y de los jugadores en el canal de la sala
   try {
     const roomSync = getRoomSync(cleanCode, 'host');
     roomSync.emit({ type: 'REQUEST_ROOM_SYNC' });
@@ -158,4 +146,3 @@ export function forceResyncTv(roomCode: string, tvPin?: string): void {
     console.warn('Error al forzar resincronización con la TV:', err);
   }
 }
-
