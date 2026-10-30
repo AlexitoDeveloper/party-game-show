@@ -181,6 +181,7 @@ export default defineConfig(({ mode }) => {
       port: 5173,
     },
     build: {
+      target: ['es2015', 'chrome54'],
       chunkSizeWarningLimit: 900,
       rollupOptions: {
         output: {

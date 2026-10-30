@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Music,
   Disc,
@@ -14,6 +14,8 @@ import {
   Trash2,
   Loader2,
   Volume2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { SongTrack } from '../../../lib/musicData';
 
@@ -70,185 +72,173 @@ export const HostMusicControls: React.FC<HostMusicControlsProps> = ({
   onImportPlaylistFromSpotify,
   onSelectSearchedTrack,
 }) => {
+  const [showCatalog, setShowCatalog] = useState(!currentSongTrack);
+
   return (
-    <div className="pt-4 border-t border-[#d4af37]/30 space-y-4">
-      {/* BARRA SUPERIOR SPOTIFY CON BOTÓN ALEATORIO */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-sm font-broadway uppercase tracking-wider text-gold-emboss flex items-center gap-1.5">
-            <Disc className="w-4 h-4 text-[#d4af37] animate-spin" style={{ animationDuration: '4s' }} />
-            Adivina la Canción — Gramófono 1930
+    <div className="pt-2 border-t border-[#d4af37]/30 space-y-3">
+      {/* CABECERA COMPACTA CON BOTÓN ALEATORIO Y TOGGLE DE CATÁLOGO */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Disc className="w-4 h-4 text-[#d4af37] animate-spin shrink-0" style={{ animationDuration: '4s' }} />
+          <span className="text-xs font-broadway uppercase tracking-wider text-gold-gradient truncate">
+            Gramófono ({musicBank.length} temas)
           </span>
         </div>
 
-        {musicBank.length > 0 && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowCatalog((v) => !v)}
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-vintage font-bold border flex items-center gap-1 transition-all ${
+              showCatalog
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400'
+                : 'bg-[#14141e] text-amber-200/80 border-[#d4af37]/30'
+            }`}
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>Catálogo</span>
+            {showCatalog ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+
+          {musicBank.length > 0 && (
             <button
               type="button"
               onClick={onPickRandomSong}
-              className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all font-broadway"
-              title="Elegir canción aleatoria de la lista"
+              className="px-3 py-1.5 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs flex items-center gap-1 shadow-sm active:scale-95 transition-all"
+              title="Elegir canción aleatoria"
             >
               <Shuffle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Aleatorio</span>
+              <span>Aleatoria</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN */}
+      {/* CHIVATO SECRETO + MANDOS GRANDES PARA EL ANFITRIÓN */}
       {currentSongTrack ? (
-        <div className="bg-black/90 border border-[#d4af37]/50 rounded-2xl p-3.5 sm:p-4 shadow-lg flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-start md:items-center hell-card-frame">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-black border-2 border-[#d4af37]/60 flex-shrink-0 flex items-center justify-center relative shadow-md">
-            {currentSongTrack.coverUrl || currentSongTrack.albumArt ? (
-              <img
-                src={currentSongTrack.coverUrl || currentSongTrack.albumArt}
-                alt={currentSongTrack.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Music className="w-8 h-8 text-[#d4af37]" />
-            )}
-            {musicPlaying && (
-              <div className="absolute inset-0 bg-amber-500/25 flex items-center justify-center backdrop-blur-[1px]">
-                <Volume2 className="w-6 h-6 text-white animate-bounce" />
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-1 flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-broadway">
-                Fonoteca {currentSongTrack.year ? `• ${currentSongTrack.year}` : ''}
-              </span>
-              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-black/80 text-amber-200/60 border border-[#d4af37]/30 hidden sm:inline-block font-vintage">
-                Audio 30s
-              </span>
+        <div className="bg-[#07070a]/95 border border-[#d4af37]/50 rounded-2xl p-3 space-y-3 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-xl overflow-hidden bg-black border border-[#d4af37]/60 flex-shrink-0 flex items-center justify-center relative">
+              {currentSongTrack.coverUrl || currentSongTrack.albumArt ? (
+                <img
+                  src={currentSongTrack.coverUrl || currentSongTrack.albumArt}
+                  alt={currentSongTrack.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Music className="w-6 h-6 text-[#d4af37]" />
+              )}
+              {musicPlaying && (
+                <div className="absolute inset-0 bg-amber-500/30 flex items-center justify-center">
+                  <Volume2 className="w-5 h-5 text-white animate-bounce" />
+                </div>
+              )}
             </div>
 
-            <div>
-              <span className="text-xs uppercase font-broadway font-bold text-amber-400/80 block tracking-wider">
-                SOLUCIÓN (TV):
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] uppercase font-broadway font-bold text-amber-400/80 block">
+                SOLUCIÓN SECRETA {currentSongTrack.year ? `• ${currentSongTrack.year}` : ''}
               </span>
-              <h3 className="text-base sm:text-xl font-broadway text-white flex items-center gap-1.5 truncate">
-                <span className="truncate text-gold-emboss">{currentSongTrack.title}</span>
-                <span className="text-amber-300 text-sm sm:text-base font-vintage font-bold truncate shrink-0">
-                  — {currentSongTrack.artist}
-                </span>
+              <h3 className="text-base font-broadway text-white truncate">
+                {currentSongTrack.title}
               </h3>
+              <p className="text-xs font-vintage font-bold text-amber-300 truncate">
+                {currentSongTrack.artist}
+              </p>
             </div>
-
-            <p className="text-xs text-slate-400 hidden sm:block">
-              💡 Dale a Reproducir para que suene en la TV. Al pulsar cualquier buzzer, se pausará automáticamente.
-            </p>
           </div>
 
-          {/* Botones de acción principales */}
-          <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
+          {/* 4 BOTONES GRANDES DE PULGAR */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               onClick={onTogglePlayMusic}
-              className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
+              className={`py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
                 musicPlaying
-                  ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-                  : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'bg-gold-gradient text-slate-950'
               }`}
-              title={musicPlaying ? 'Pausar audio en TV' : 'Reproducir preview en TV'}
             >
               {musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-              <span className="hidden sm:inline">{musicPlaying ? 'Pausar Audio' : 'Reproducir'}</span>
-            </button>
-
-            <button
-              onClick={onToggleRevealMusic}
-              className={`flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
-                musicRevealed
-                  ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-              }`}
-              title={musicRevealed ? 'Ocultar solución en TV' : 'Revelar solución en TV'}
-            >
-              {musicRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              <span className="hidden sm:inline">{musicRevealed ? 'Ocultar' : 'Revelar'}</span>
+              <span>{musicPlaying ? 'Pausar TV' : 'Play TV'}</span>
             </button>
 
             <button
               onClick={onValidateMusicHit}
-              className="flex-1 md:flex-none px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 bg-emerald-400 hover:bg-emerald-300 text-slate-950"
-              title="Validar acierto musical para el equipo activo"
+              className="py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 bg-emerald-500 hover:bg-emerald-400 text-slate-950"
             >
-              <Check className="w-4 h-4 text-slate-950" />
-              <span>Acierto</span>
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>Acierto (+2)</span>
             </button>
 
             <button
               onClick={onValidateMusicMiss}
-              className="px-3 py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-red-600/80 hover:bg-red-600 text-white"
-              title="Fallo tras pulsar: penaliza -1 y reanuda música"
+              className="py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-red-600/85 hover:bg-red-600 text-white"
             >
-              <X className="w-4 h-4" />
-              <span className="hidden sm:inline">Fallo</span>
+              <X className="w-4 h-4 stroke-[3]" />
+              <span>Fallo (-1)</span>
+            </button>
+
+            <button
+              onClick={onToggleRevealMusic}
+              className={`py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                musicRevealed
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-[#14141e] text-amber-200 border border-[#d4af37]/40'
+              }`}
+            >
+              {musicRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span>{musicRevealed ? 'Ocultar' : 'Revelar'}</span>
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-[#0c0c14]/90 border border-[#d4af37]/30 border-dashed rounded-2xl p-6 text-center space-y-2 shadow-inner">
-          <Music className="w-10 h-10 text-amber-400 mx-auto animate-pulse" />
-          <h3 className="text-base font-broadway font-black text-amber-300">No hay ninguna canción seleccionada</h3>
-          <p className="text-xs font-vintage text-amber-200/70 max-w-md mx-auto">
-            Busca un tema abajo en el catálogo de Spotify o introduce el enlace de una playlist pública para empezar la velada musical.
+        <div className="bg-[#0c0c14]/90 border border-[#d4af37]/30 border-dashed rounded-2xl p-4 text-center space-y-1">
+          <h3 className="text-sm font-broadway text-amber-300">Selecciona o busca una canción</h3>
+          <p className="text-xs font-vintage text-amber-200/70">
+            Elige un tema de la lista o pulsa Aleatoria para empezar.
           </p>
         </div>
       )}
 
-      {/* INTEGRACIÓN OFICIAL SPOTIFY: BUSCADOR, PLAYLISTS Y BIBLIOTECA */}
-      <div className="bg-black/90 border border-[#d4af37]/35 rounded-2xl p-3.5 sm:p-4 space-y-3 hell-card-frame">
-        <div className="flex items-center justify-between gap-2 border-b border-[#d4af37]/30 pb-2.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
-            <span className="text-xs font-broadway uppercase tracking-wider text-gold-emboss truncate">
-              Catálogo Fonográfico Speakeasy
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 bg-black p-1 rounded-xl border border-[#d4af37]/30 shrink-0">
+      {/* INTEGRACIÓN OFICIAL SPOTIFY (COLAPSABLE EN MÓVIL) */}
+      {showCatalog && (
+        <div className="bg-black/90 border border-[#d4af37]/35 rounded-2xl p-3 space-y-3">
+          <div className="grid grid-cols-3 gap-1 bg-[#07070a] p-1 rounded-xl border border-[#d4af37]/30">
+            <button
+              type="button"
+              onClick={() => onSetMusicSearchMode('bank')}
+              className={`py-1.5 rounded-lg text-xs font-broadway transition-all ${
+                musicSearchMode === 'bank'
+                  ? 'bg-gold-gradient text-slate-950 font-black'
+                  : 'text-amber-200/70'
+              }`}
+            >
+              📀 Lista ({musicBank.length})
+            </button>
             <button
               type="button"
               onClick={() => onSetMusicSearchMode('search')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`py-1.5 rounded-lg text-xs font-broadway transition-all flex items-center justify-center gap-1 ${
                 musicSearchMode === 'search'
-                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black shadow-sm'
-                  : 'text-amber-200/60 hover:text-white'
+                  ? 'bg-gold-gradient text-slate-950 font-black'
+                  : 'text-amber-200/70'
               }`}
-              title="Buscar tema en Spotify"
             >
-              <Search className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Buscar</span>
+              <Search className="w-3 h-3" />
+              <span>Buscar</span>
             </button>
             <button
               type="button"
               onClick={() => onSetMusicSearchMode('playlist')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`py-1.5 rounded-lg text-xs font-broadway transition-all ${
                 musicSearchMode === 'playlist'
-                  ? 'bg-gold-gradient text-slate-950 font-black shadow-sm'
-                  : 'text-amber-200/70 hover:text-white'
+                  ? 'bg-gold-gradient text-slate-950 font-black'
+                  : 'text-amber-200/70'
               }`}
             >
-              📜 Importar Playlist
-            </button>
-            <button
-              type="button"
-              onClick={() => onSetMusicSearchMode('bank')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-vintage font-bold transition-all ${
-                musicSearchMode === 'bank'
-                  ? 'bg-gold-gradient text-slate-950 font-black shadow-sm'
-                  : 'text-amber-200/70 hover:text-white'
-              }`}
-            >
-              📀 Biblioteca ({musicBank.length})
+              📜 Playlist
             </button>
           </div>
-        </div>
 
         {/* CONTENIDO SEGÚN SUB-PESTAÑA */}
         {musicSearchMode === 'search' ? (
@@ -453,7 +443,8 @@ export const HostMusicControls: React.FC<HostMusicControlsProps> = ({
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

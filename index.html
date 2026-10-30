@@ -5,10 +5,52 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Party Game Show Arena</title>
-    <!-- Google Fonts: 1930s Broadway & Art Deco Collection -->
+    <!-- Google Fonts: 1930s Broadway & Art Deco Collection (Non-blocking for legacy TVs & offline boot) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Josefin+Sans:wght@400;600;700&family=Limelight&family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Righteous&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Josefin+Sans:wght@400;600;700&family=Limelight&family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Righteous&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Josefin+Sans:wght@400;600;700&family=Limelight&family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Righteous&display=swap"
+      />
+    </noscript>
+    <script>
+      (function() {
+        if (typeof globalThis === 'undefined') { window.globalThis = window; }
+        if (!Object.hasOwn) {
+          Object.hasOwn = function(obj, prop) {
+            return Object.prototype.hasOwnProperty.call(obj, prop);
+          };
+        }
+        if (!Array.prototype.at) {
+          Array.prototype.at = function(n) {
+            var k = Math.trunc(n) || 0;
+            if (k < 0) k += this.length;
+            if (k < 0 || k >= this.length) return undefined;
+            return this[k];
+          };
+        }
+        if (!String.prototype.replaceAll) {
+          String.prototype.replaceAll = function(search, replacement) {
+            if (search instanceof RegExp) {
+              return this.replace(new RegExp(search.source, search.flags.indexOf('g') !== -1 ? search.flags : search.flags + 'g'), replacement);
+            }
+            return this.split(search).join(replacement);
+          };
+        }
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').catch(function() {});
+          });
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[#0a0a0e] text-amber-50 selection:bg-[#d4af37] selection:text-[#0a0a0e] overflow-x-hidden antialiased">
     <!-- SVG Filters for authentic 1930s vintage grain, embossed foil & speakeasy textures -->

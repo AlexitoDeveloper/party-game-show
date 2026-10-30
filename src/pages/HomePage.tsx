@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tv, Smartphone, Crown, Sparkles, ArrowRight } from 'lucide-react';
+import { Tv, Smartphone, Crown, Sparkles, ArrowRight, Monitor } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { pushRoomToTv } from '../lib/tvPairing';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -55,6 +56,10 @@ export default function HomePage() {
         title: finalTitle,
       })
     );
+
+    // Emparejar automáticamente a cualquier TV que esté a la espera en /tv
+    pushRoomToTv(code, { title: finalTitle });
+
     navigate(`/room/${code}/host`);
   };
 
@@ -146,6 +151,25 @@ export default function HomePage() {
           >
             <Crown className="w-4 h-4" />
             <span>{isCreating ? 'Iniciando Sala...' : 'Crear Sala para la TV'}</span>
+          </button>
+        </div>
+
+        {/* MODO PANTALLA TV (RECEPTOR SMART TV) */}
+        <div className="bg-slate-900/40 border border-[#d4af37]/30 hover:border-[#d4af37]/60 rounded-3xl p-4 backdrop-blur-sm flex items-center justify-between gap-3 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl shrink-0 border border-[#d4af37]/30">
+              <Monitor className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 text-left">
+              <h3 className="text-xs sm:text-sm font-bold text-amber-200 truncate">Modo Pantalla TV</h3>
+              <p className="text-[11px] text-slate-400 truncate">Para navegadores de Smart TV o Proyector (/tv)</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/tv')}
+            className="shrink-0 bg-[#14141e] hover:bg-[#1f1f2e] text-amber-300 border border-[#d4af37]/50 font-bold text-xs uppercase px-3 py-2 rounded-xl shadow active:scale-95 transition-all"
+          >
+            Abrir TV
           </button>
         </div>
       </div>

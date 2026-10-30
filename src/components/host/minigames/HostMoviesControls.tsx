@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Film,
   Eye,
   EyeOff,
   ChevronRight,
   ChevronLeft,
-  PackageCheck,
   Sparkle,
   Check,
   X,
   Shuffle,
+  Settings,
 } from 'lucide-react';
 import { MovieItem, MovieCategory } from '../../../lib/moviesData';
 
@@ -53,265 +53,173 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
   onPrevMovie,
   onNextMovie,
 }) => {
+  const [showPackSettings, setShowPackSettings] = useState(false);
+
   return (
-    <div className="pt-4 border-t border-[#d4af37]/30 space-y-4">
-      {/* BARRA DE GESTIÓN DE PACK / PROTECCIÓN ANTI-SPOILERS */}
-      <div className="bg-[#0c0c14]/95 border border-[#d4af37]/40 rounded-2xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-deco-gold">
-        <div className="flex items-center gap-2">
-          <PackageCheck className="w-4 h-4 text-[#d4af37] shrink-0" />
-          <div>
-            <span className="text-amber-200/70 font-vintage font-medium">Pack Activo: </span>
-            <strong className="text-white font-broadway">{activePackName}</strong>
-            {activePackName.includes('Demo') && (
-              <span className="ml-2 text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-vintage">
-                🛡️ Modo Anti-Spoiler Activo
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <button
-            onClick={onLoadOfficialPack}
-            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black flex items-center gap-1.5 transition-all shadow-sm border border-[#f5eedb]/40 text-xs uppercase"
-            title="Cargar las 30 películas y series oficiales para la fiesta"
-          >
-            <Sparkle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Pack Oficial Fiesta</span>
-            <span className="sm:hidden">Oficial</span>
-          </button>
-
-          {!activePackName.includes('Demo') && (
-            <button
-              onClick={onResetToDemo}
-              className="px-2.5 py-1.5 rounded-xl bg-[#14141e] hover:bg-[#1a1a28] text-amber-200/60 hover:text-white border border-[#d4af37]/30 text-xs font-vintage"
-              title="Volver a las películas de prueba para seguir desarrollando sin spoilers"
-            >
-              <span className="hidden sm:inline">Modo Demo</span>
-              <span className="sm:hidden">Demo</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Film className="w-5 h-5 text-[#d4af37]" />
-          <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-            Enigma en Pantalla ({movieIndex + 1}/{filteredMovies.length})
+    <div className="pt-2 border-t border-[#d4af37]/30 space-y-3">
+      {/* CABECERA COMPACTA: NAVEGACIÓN + AJUSTES DE PACK */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Film className="w-4 h-4 text-[#d4af37] shrink-0" />
+          <span className="text-xs font-broadway uppercase tracking-wider text-gold-gradient truncate">
+            Enigma {movieIndex + 1}/{filteredMovies.length}
           </span>
-        </div>
-
-        {/* Control de Orden Aleatorio / Mezcla */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30 font-vintage flex items-center gap-1.5 shadow-sm">
-            <span>🎲</span> Todas Mezcladas (Aleatorio)
-          </span>
-
-          {onShuffleMovies && (
-            <button
-              onClick={onShuffleMovies}
-              className="px-3 py-1 rounded-xl text-xs font-vintage font-bold bg-[#14141e] hover:bg-[#1a1a28] text-amber-200 border border-[#d4af37]/30 flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
-              title="Volver a mezclar aleatoriamente el orden de todas las películas"
-            >
-              <Shuffle className="w-3.5 h-3.5 text-[#d4af37]" />
-              <span className="hidden sm:inline">Mezclar Orden</span>
-              <span className="sm:hidden">Mezclar</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN */}
-      <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        <div className="space-y-2 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{currentMovie.genreEmoji}</span>
-            <span className="text-xs font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {currentMovie.category} • Año {currentMovie.year}
+          {activePackName.includes('Demo') && (
+            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30 font-vintage shrink-0">
+              Demo
             </span>
-          </div>
-          <h3 className="text-xl font-broadway text-gold-gradient">
-            {currentMovie.title}
-            {currentMovie.originalTitle && currentMovie.originalTitle !== currentMovie.title && (
-              <span className="text-xs text-amber-200/60 font-editorial font-normal ml-2">({currentMovie.originalTitle})</span>
-            )}
-          </h3>
-          {currentMovie.director && (
-            <p className="text-xs font-vintage text-amber-200/70">
-              Director / Creador: <span className="text-white font-broadway">{currentMovie.director}</span>
-            </p>
           )}
-
-          {/* Emojis mostrados por fases al host */}
-          <div className="flex flex-wrap items-center gap-2 py-1">
-            <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-xs text-amber-400 font-broadway uppercase">P1 (3 emojis):</span>
-              {currentMovie.emojisStage1.map((em, idx) => (
-                <span key={idx}>{em}</span>
-              ))}
-            </div>
-            <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-xs text-sky-400 font-broadway uppercase">P2 (5 + Huecos):</span>
-              {currentMovie.emojisStage2.map((em, idx) => (
-                <span key={idx}>{em}</span>
-              ))}
-            </div>
-            <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-xs text-emerald-400 font-broadway uppercase">P3 (Completo):</span>
-              {currentMovie.emojisFull.map((em, idx) => (
-                <span key={idx}>{em}</span>
-              ))}
-            </div>
-          </div>
-
-          {currentMovie.options && currentMovie.options.length > 0 && (
-            <div className="grid grid-cols-2 gap-1.5 pt-1 text-xs">
-              {currentMovie.options.map((opt, oIdx) => {
-                const isCorrect =
-                  opt.toLowerCase().trim() === currentMovie.title.toLowerCase().trim() ||
-                  currentMovie.title.toLowerCase().includes(opt.toLowerCase().trim());
-                return (
-                  <div
-                    key={oIdx}
-                    className={`px-2.5 py-1.5 rounded-xl border ${
-                      isCorrect
-                        ? 'bg-emerald-950/80 border-emerald-400 text-emerald-200 font-broadway font-black'
-                        : 'bg-[#14141e] border-[#d4af37]/25 text-amber-100/80 font-vintage'
-                    }`}
-                  >
-                    {String.fromCharCode(65 + oIdx)}) {opt.replace(/^\[DEMO\]\s*/i, '')}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <p className="text-xs text-amber-200/80 font-vintage italic bg-[#0c0c14] px-3 py-1.5 rounded-xl border border-[#d4af37]/30">
-            💡 Significado: {currentMovie.explanation}
-          </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={onToggleReveal}
-            className={`flex-1 md:flex-none px-4 py-3 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-md ${
-              movieRevealed
-                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(52,211,153,0.35)]'
-                : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold border border-[#f5eedb]/40'
+            onClick={() => setShowPackSettings((v) => !v)}
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-vintage font-bold border flex items-center gap-1 transition-all ${
+              showPackSettings
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400'
+                : 'bg-[#14141e] text-amber-200/70 border-[#d4af37]/30'
             }`}
+            title="Opciones de Pack y Mezcla"
           >
-            {movieRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            <span>{movieRevealed ? 'Ocultar' : 'Revelar'}</span>
-            <span className="hidden sm:inline">{movieRevealed ? ' Solución en TV' : ' Título en TV!'}</span>
+            <Settings className="w-3.5 h-3.5" />
+            <span>Pack</span>
           </button>
-        </div>
-      </div>
 
-      {/* VALIDACIÓN AUTOMÁTICA SEGÚN PISTA EN PANTALLA */}
-      <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-broadway text-amber-300 uppercase">
-            Puntuación Automática:
-          </span>
-          <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
-            {movieFrameLevel === 1
-              ? 'Pista 1 (3 Emojis) = +3 pts'
-              : movieFrameLevel === 2
-              ? 'Pista 2 (5 Emojis + Huecos) = +2 pts'
-              : movieFrameLevel === 3
-              ? 'Pista 3 (Iniciales + Pista) = +1 pt'
-              : 'Pista 4 (4 Opciones Test) = +1 pt'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            onClick={onValidateMovieHitAuto}
-            className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
-          >
-            <Check className="w-4 h-4" />
-            <span>Validar Acierto (+{autoMoviePoints} pts)</span>
-          </button>
-          <button
-            onClick={onValidateMovieMissAuto}
-            className="px-3 py-2.5 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1 active:scale-95 transition-all"
-          >
-            <X className="w-4 h-4" />
-            <span>Fallo (-1)</span>
-          </button>
-        </div>
-      </div>
-
-      {/* SELECTOR DE NIVEL DE PISTA / EMOJIS */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-vintage font-bold text-amber-200/80">Pista en TV:</span>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              onClick={() => onSetFrameLevel(1)}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                movieFrameLevel === 1
-                  ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                  : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-              }`}
-            >
-              <span className="sm:hidden">P1 (+3)</span>
-              <span className="hidden sm:inline">P1: 3 Emojis (+3)</span>
-            </button>
-            <button
-              onClick={() => onSetFrameLevel(2)}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                movieFrameLevel === 2
-                  ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                  : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-              }`}
-            >
-              <span className="sm:hidden">P2 (+2)</span>
-              <span className="hidden sm:inline">P2: + Huecos (+2)</span>
-            </button>
-            <button
-              onClick={() => onSetFrameLevel(3)}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                movieFrameLevel === 3
-                  ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                  : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-              }`}
-            >
-              <span className="sm:hidden">P3 (+1)</span>
-              <span className="hidden sm:inline">P3: + Iniciales y Pista (+1)</span>
-            </button>
-            <button
-              onClick={() => onSetFrameLevel(4)}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-broadway transition-all ${
-                movieFrameLevel === 4
-                  ? 'bg-gold-gradient text-slate-950 shadow-deco-gold font-black scale-105 border border-[#f5eedb]/40'
-                  : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
-              }`}
-            >
-              <span className="sm:hidden">P4 Test (+1)</span>
-              <span className="hidden sm:inline">P4: 4 Opciones Test (+1)</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
           <button
             onClick={onPrevMovie}
-            className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
-            title="Enigma anterior"
+            className="p-1.5 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95"
+            title="Anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={onNextMovie}
-            className="px-3.5 sm:px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
+            className="px-3 py-1.5 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1 shadow-sm active:scale-95"
           >
-            <span className="hidden sm:inline">Siguiente Enigma</span>
-            <span className="sm:hidden">Siguiente</span>
+            <span>Sig.</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {/* PANEL COLAPSABLE DE PACK Y MEZCLA */}
+      {showPackSettings && (
+        <div className="bg-[#0c0c14] border border-[#d4af37]/40 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="text-amber-200/80 font-vintage">
+            Activo: <strong className="text-white font-broadway">{activePackName}</strong>
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => {
+                onLoadOfficialPack();
+                setShowPackSettings(false);
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black flex items-center gap-1 text-xs uppercase"
+            >
+              <Sparkle className="w-3.5 h-3.5" />
+              <span>Cargar Pack Fiesta</span>
+            </button>
+            {onShuffleMovies && (
+              <button
+                onClick={onShuffleMovies}
+                className="px-2.5 py-1.5 rounded-xl bg-[#14141e] text-amber-200 border border-[#d4af37]/30 flex items-center gap-1 text-xs font-vintage font-bold"
+              >
+                <Shuffle className="w-3.5 h-3.5 text-[#d4af37]" />
+                <span>Mezclar</span>
+              </button>
+            )}
+            {!activePackName.includes('Demo') && (
+              <button
+                onClick={onResetToDemo}
+                className="px-2.5 py-1.5 rounded-xl bg-[#14141e] text-amber-200/60 border border-[#d4af37]/30 text-xs font-vintage"
+              >
+                Modo Demo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CHIVATO COMPACTO PARA EL ANFITRIÓN */}
+      <div className="bg-[#07070a]/95 border border-[#d4af37]/40 rounded-2xl p-3 space-y-2 shadow-md">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[11px] font-vintage font-bold uppercase text-amber-300/80 block">
+              {currentMovie.genreEmoji} {currentMovie.category} • {currentMovie.year}
+            </span>
+            <h3 className="text-base sm:text-lg font-broadway text-gold-gradient leading-tight">
+              {currentMovie.title}
+            </h3>
+          </div>
+          <div className="bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base shrink-0 tracking-widest">
+            {currentMovie.emojisFull.join('')}
+          </div>
+        </div>
+
+        <p className="text-xs text-amber-200/80 font-vintage italic bg-[#0c0c14] px-2.5 py-1.5 rounded-xl border border-[#d4af37]/25">
+          💡 {currentMovie.explanation}
+        </p>
+      </div>
+
+      {/* SELECTOR DE LAS 4 PISTAS EN PANTALLA */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-broadway uppercase text-amber-300/90 block">
+          Nivel de Pista en TV:
+        </span>
+        <div className="grid grid-cols-4 gap-1.5">
+          {[
+            { level: 1 as const, label: '1️⃣ 3 Emojis', pts: '+3 pts' },
+            { level: 2 as const, label: '2️⃣ +Huecos', pts: '+2 pts' },
+            { level: 3 as const, label: '3️⃣ +Pista', pts: '+1 pt' },
+            { level: 4 as const, label: '4️⃣ Test', pts: '+1 pt' },
+          ].map((st) => (
+            <button
+              key={st.level}
+              onClick={() => onSetFrameLevel(st.level)}
+              className={`py-2 px-1.5 rounded-xl text-center transition-all flex flex-col items-center justify-center border ${
+                movieFrameLevel === st.level
+                  ? 'bg-gold-gradient text-slate-950 font-black border-[#f5eedb] shadow-sm scale-[1.02]'
+                  : 'bg-[#14141e] text-amber-200/70 border-[#d4af37]/30'
+              }`}
+            >
+              <span className="text-xs font-broadway leading-tight">{st.label}</span>
+              <span className="text-[10px] font-mono opacity-80">{st.pts}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* BOTONES PRINCIPALES DE ACCIÓN (PULGAR) */}
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          onClick={onValidateMovieHitAuto}
+          className="py-3 px-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1 shadow-md active:scale-95 transition-all"
+        >
+          <Check className="w-4 h-4 stroke-[3]" />
+          <span>Acierto (+{autoMoviePoints})</span>
+        </button>
+
+        <button
+          onClick={onValidateMovieMissAuto}
+          className="py-3 px-2 bg-red-600/80 hover:bg-red-600 text-white border border-red-400/40 font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1 active:scale-95 transition-all"
+        >
+          <X className="w-4 h-4 stroke-[3]" />
+          <span>Fallo (-1)</span>
+        </button>
+
+        <button
+          onClick={onToggleReveal}
+          className={`py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 ${
+            movieRevealed
+              ? 'bg-purple-600 text-white'
+              : 'bg-[#14141e] text-amber-200 border border-[#d4af37]/50'
+          }`}
+        >
+          {movieRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          <span>{movieRevealed ? 'Ocultar' : 'Revelar'}</span>
+        </button>
+      </div>
     </div>
   );
 };
+

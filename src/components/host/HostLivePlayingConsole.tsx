@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Users, Star, RefreshCw, Play, BookOpen } from 'lucide-react';
+import { Users, RefreshCw, Play, BookOpen, CheckCircle2 } from 'lucide-react';
 import { TEAMS_CATALOG } from '../../lib/constants';
 import { GameDefinition } from '../../lib/games';
 import { Team, BuzzerPressPayload, GamePhase, Player, TeamRepresentative } from '../../lib/types';
@@ -41,9 +41,19 @@ export interface HostLivePlayingConsoleProps {
   gamePhase?: GamePhase | null;
   onStartActiveRound?: () => void;
   onToggleBriefing?: () => void;
+  onFinishTest?: () => void;
   teamRepresentatives?: Record<string, TeamRepresentative>;
   players?: Player[];
 }
+
+const GAMES_WITH_TEAM_SELECTOR = new Set([
+  'music',
+  'movies',
+  'fotos_proyector',
+  'trivial',
+  'mimica',
+  'torneo_juegos',
+]);
 
 export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   activeGame,
@@ -52,10 +62,6 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   selectedTeamForPoints,
   onSelectTeamForPoints,
   selectedTeamCatalog,
-  captainDuel,
-  onToggleCaptainDuel,
-  captainGambles,
-  onClearCaptainGambles,
   isLocked,
   winner,
   onResetBuzzer,
@@ -73,8 +79,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   gamePhase,
   onStartActiveRound,
   onToggleBriefing,
-  teamRepresentatives = {},
-  players = [],
+  onFinishTest,
 }) => {
   // Auto-seleccionar el equipo del ganador del pulsador para asignación inmediata de puntos sin fricción
   React.useEffect(() => {
@@ -83,242 +88,180 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
     }
   }, [winner, onSelectTeamForPoints]);
 
-  return (
-    <section className="hell-card-frame rounded-3xl p-4 sm:p-6 space-y-4">
-      {/* BANNER DE SUBFASE BRIEFING */}
-      {gamePhase === 'briefing' ? (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1f1508] via-[#2a1d0b] to-[#1a0f12] border-2 border-[#d4af37] shadow-deco-gold flex flex-col gap-3.5">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#8a6a1a] flex items-center justify-center text-slate-950 font-black shadow-md shrink-0">
-                <span className="text-2xl">🎬</span>
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950 shadow-sm">
-                    FASE DE PRESENTACIÓN / BRIEFING
-                  </span>
-                  <span className="text-xs text-amber-300 font-vintage font-bold">
-                    Portada proyectada en la TV
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-broadway text-white uppercase tracking-wide mt-1">
-                  {activeGame.title}
-                </h3>
-                <p className="text-xs text-amber-100/70 font-vintage mt-0.5">
-                  Todos los jugadores participan desde el inicio. Pulsa Iniciar cuando desees arrancar el juego en la TV y móviles.
-                </p>
-              </div>
-            </div>
+  const showTeamSelector = GAMES_WITH_TEAM_SELECTOR.has(activeGame.id);
 
-            <div className="flex flex-col items-stretch md:items-end gap-1.5 w-full md:w-auto shrink-0">
-              <button
-                onClick={onStartActiveRound}
-                className="px-6 py-3 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold border-2 border-[#f5eedb]/60 active:scale-95 transition-all animate-pulse"
-                title="Iniciar la fase activa del juego en la TV y móviles"
-              >
-                <Play className="w-4 h-4 fill-slate-950" />
-                <span>▶️ Iniciar Prueba</span>
-              </button>
-            </div>
+  return (
+    <section className="hell-card-frame rounded-3xl p-3.5 sm:p-5 space-y-3">
+      {/* CABECERA COMPACTA DEL JUEGO ACTIVO CON BOTONES REGLAS Y FINALIZAR */}
+      <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#d4af37]/30">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-2xl shrink-0">{activeGame.emoji}</span>
+          <div className="min-w-0">
+            <h2 className="text-sm sm:text-base font-broadway uppercase text-gold-gradient truncate">
+              {activeGame.title}
+            </h2>
+            <span className="text-[11px] font-vintage text-amber-200/70 block truncate">
+              {gamePhase === 'briefing' ? '📺 Portada de reglas en TV' : '🟢 Prueba en directo'}
+            </span>
           </div>
         </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="px-4 py-2 rounded-xl bg-[#0c0c14]/80 border border-[#d4af37]/30 flex items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span className="font-broadway uppercase text-emerald-300">Prueba en Directo</span>
-              <span className="text-slate-400 hidden sm:inline font-vintage">({activeGame.title})</span>
-            </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={onToggleBriefing}
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-broadway uppercase flex items-center gap-1 active:scale-95 transition-all border ${
+              gamePhase === 'briefing'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400/50'
+                : 'bg-[#14141e] text-amber-200/80 hover:text-white border-[#d4af37]/40'
+            }`}
+            title="Alternar cartel de reglas en la TV"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            <span>Reglas</span>
+          </button>
+
+          {onFinishTest && (
             <button
-              onClick={onToggleBriefing}
-              className="text-xs font-broadway uppercase text-amber-300 hover:text-white bg-[#14141e] border border-[#d4af37]/40 px-3 py-1 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
-              title="Volver a mostrar el cartel de reglas en la TV"
+              onClick={onFinishTest}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-broadway font-black text-xs uppercase flex items-center gap-1 shadow-md active:scale-95 transition-all border border-red-400/40"
+              title="Finalizar prueba y abrir veredicto de puntos"
             >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>Ver Reglas / Briefing en TV</span>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Finalizar</span>
             </button>
-          </div>
-
-          {/* HERO DESTACADO: ESTADO DEL TIMBRE Y GANADOR DE LA CARRERA */}
-          {activeGame.engine === 'buzzer' && (
-            <div className={`p-4 rounded-2xl border-2 transition-all shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3.5 ${
-              isLocked && winner
-                ? 'bg-gradient-to-r from-amber-950/80 via-[#251806] to-amber-950/80 border-[#ffd700] shadow-[0_0_25px_rgba(255,215,0,0.35)]'
-                : 'bg-[#0c0c14]/90 border-[#d4af37]/35'
-            }`}>
-              <div className="flex items-center gap-3.5">
-                <div className={`w-3.5 h-3.5 rounded-full ${isLocked && winner ? 'bg-[#ffd700] animate-bounce' : 'bg-emerald-400 animate-ping'}`} />
-                <div>
-                  <span className="text-xs text-amber-200/70 block font-vintage font-bold uppercase tracking-wider">
-                    {isLocked && winner ? '¡TIMBRE PULSADO!' : 'ESTADO DEL PULSADOR'}
-                  </span>
-                  {isLocked && winner ? (
-                    <span className="text-base sm:text-lg font-black text-amber-300 font-broadway flex items-center gap-2 flex-wrap">
-                      <span>⚡ Ha pulsado:</span>
-                      <span className="text-white underline decoration-[#d4af37]">{winner.playerName}</span>
-                      <span className="text-gold-gradient font-black">({winner.teamName})</span>
-                    </span>
-                  ) : (
-                    <span className="text-sm font-bold text-emerald-400 font-vintage">
-                      🟢 Timbre activo en móviles — Esperando pulsación...
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isLocked && winner && (
-                  <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-2.5 py-1 rounded-lg font-bold font-vintage hidden md:inline">
-                    ✓ Bando asignado automáticamente
-                  </span>
-                )}
-                <button
-                  onClick={onResetBuzzer}
-                  className="bg-[#14141e] hover:bg-[#1f1f2e] border border-[#d4af37]/50 hover:border-amber-400 text-amber-200 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all font-broadway tracking-wide shadow-md"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Desbloquear Timbre</span>
-                </button>
-              </div>
-            </div>
           )}
         </div>
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#d4af37]/30 pb-3 gap-2">
-        <div>
-          <span className="text-xs uppercase font-bold text-amber-400 tracking-widest flex items-center gap-1.5 flex-wrap">
-            <Award className="w-4 h-4" />
-            <span className="hidden sm:inline">MESA DE PUNTUACIÓN</span>
-            <span className="sm:hidden">PUNTOS</span>
-            <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full text-xs font-bold normal-case">
-              {activeGame.participantsLabel}
-            </span>
-          </span>
-          <h2 className="text-lg sm:text-xl font-black font-broadway text-gold-emboss">{activeGame.title}</h2>
-          <p className="text-xs text-amber-200/60 mt-0.5 font-medium">{activeGame.participantsDescription}</p>
-        </div>
+      </div>
 
-        {/* Selector de equipo al que asignar puntos */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
-          <span className="text-xs text-amber-300/80 font-bold whitespace-nowrap flex items-center gap-1">
-            <Users className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Asignar a:</span>
+      {/* BANNER DE SUBFASE BRIEFING */}
+      {gamePhase === 'briefing' && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#1f1508] via-[#2a1d0b] to-[#1a0f12] border-2 border-[#d4af37] shadow-deco-gold flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-center sm:text-left">
+            <span className="text-[11px] uppercase font-broadway font-black px-2.5 py-0.5 rounded-full bg-gold-gradient text-slate-950">
+              FASE DE BRIEFING EN TV
+            </span>
+            <p className="text-xs text-amber-100/80 font-vintage mt-1">
+              Explica las reglas y pulsa iniciar para activar la prueba en TV y móviles.
+            </p>
+          </div>
+
+          <button
+            onClick={onStartActiveRound}
+            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold border-2 border-[#f5eedb]/60 active:scale-95 transition-all shrink-0"
+          >
+            <Play className="w-4 h-4 fill-slate-950" />
+            <span>▶️ Empezar Prueba</span>
+          </button>
+        </div>
+      )}
+
+      {/* ESTADO DEL PULSADOR (SOLO JUEGOS CON TIMBRE) */}
+      {gamePhase !== 'briefing' && activeGame.engine === 'buzzer' && (
+        <div
+          className={`p-3 rounded-2xl border-2 transition-all flex items-center justify-between gap-2 ${
+            isLocked && winner
+              ? 'bg-gradient-to-r from-amber-950/90 via-[#251806] to-amber-950/90 border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.3)]'
+              : 'bg-[#0c0c14]/90 border-[#d4af37]/35'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`w-3 h-3 rounded-full shrink-0 ${
+                isLocked && winner ? 'bg-[#ffd700] animate-bounce' : 'bg-emerald-400 animate-ping'
+              }`}
+            />
+            <div className="min-w-0">
+              {isLocked && winner ? (
+                <div className="text-xs sm:text-sm font-broadway text-amber-300 truncate">
+                  ⚡ <span className="text-white underline">{winner.playerName}</span>{' '}
+                  <span className="text-gold-gradient">({winner.teamName})</span>
+                </div>
+              ) : (
+                <span className="text-xs font-bold text-emerald-400 font-vintage block truncate">
+                  🟢 Pulsador abierto en móviles...
+                </span>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={onResetBuzzer}
+            className="bg-[#14141e] hover:bg-[#1f1f2e] border border-[#d4af37]/50 text-amber-200 text-xs font-broadway px-3 py-1.5 rounded-xl flex items-center gap-1 active:scale-95 transition-all shrink-0"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+            <span>Desbloquear</span>
+          </button>
+        </div>
+      )}
+
+      {/* SELECTOR RÁPIDO DE EQUIPO ACTIVO (UNA SOLA LÍNEA HORIZONTAL) */}
+      {showTeamSelector && (
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
+          <span className="text-[11px] text-amber-300/80 font-vintage font-bold whitespace-nowrap flex items-center gap-1 shrink-0">
+            <Users className="w-3 h-3 text-amber-400" />
+            <span>Turno/Puntos:</span>
           </span>
           {activeTeams.map((team) => {
             const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
             const isSelected = selectedTeamForPoints === team.id;
+            const hits = roundHits?.[team.id] || 0;
             return (
               <button
                 key={team.id}
                 onClick={() => onSelectTeamForPoints(team.id)}
-                className={`px-2.5 py-1.5 sm:px-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-xl text-xs font-broadway uppercase transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   isSelected
-                    ? `${cat?.twBg} ${cat?.twContrastText || 'text-slate-950'} shadow-md scale-105 ${cat?.index === 5 ? 'border border-zinc-400' : ''}`
-                    : 'bg-black/80 text-amber-200/70 border border-[#d4af37]/30 hover:text-white hover:border-amber-400'
+                    ? `${cat?.twBg} ${cat?.twContrastText || 'text-slate-950'} font-black shadow-sm scale-105 ${
+                        cat?.index === 5 ? 'border border-zinc-400' : ''
+                      }`
+                    : 'bg-[#07070a] text-amber-200/70 border border-[#d4af37]/30'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${isSelected ? (cat?.twContrastText === 'text-white' ? 'bg-white' : 'bg-slate-950') : cat?.twBg} ${cat?.index === 5 && !isSelected ? 'border border-zinc-500' : ''}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isSelected
+                      ? cat?.twContrastText === 'text-white'
+                        ? 'bg-white'
+                        : 'bg-slate-950'
+                      : cat?.twBg
+                  }`}
+                />
                 <span>{team.name}</span>
+                {hits > 0 && (
+                  <span className="text-[10px] px-1 rounded bg-black/30 font-mono">
+                    {hits}✓
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
-      </div>
+      )}
 
-      {/* BOTONES DE PUNTUACIÓN SEGÚN LAS REGLAS EXACTAS DEL JUEGO */}
-      <div className="space-y-3">
-        <span className="text-xs uppercase font-vintage font-bold text-amber-200/70 tracking-wider block">
-          Selecciona el resultado obtenido por <strong className="text-amber-300">{selectedTeamCatalog ? selectedTeamCatalog.name : 'el equipo seleccionado'}</strong>:
-        </span>
-
-        {/* 1. PUNTUACIÓN DE LA PRUEBA (EN DIRECTO) */}
-        {activeGame.scoringOptions.filter((o) => o.type !== 'podium').length > 0 && (
-          <div>
-            <span className="text-xs uppercase font-broadway text-amber-400 font-bold block mb-1.5 flex items-center gap-1">
-              <span>🎯</span> Puntuación de la Prueba (Aciertos / Fallos):
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {activeGame.scoringOptions
-                .filter((o) => o.type !== 'podium')
-                .map((opt) => {
-                  const colorClasses =
-                    opt.color === 'emerald'
-                      ? 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/40 text-emerald-300'
-                      : opt.color === 'red'
-                      ? 'bg-red-950/40 hover:bg-red-900/50 border-red-500/40 text-red-300'
-                      : opt.color === 'blue'
-                      ? 'bg-blue-950/40 hover:bg-blue-900/50 border-blue-500/40 text-blue-300'
-                      : opt.color === 'amber'
-                      ? 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/40 text-amber-300'
-                      : opt.color === 'purple'
-                      ? 'bg-purple-950/40 hover:bg-purple-900/50 border-purple-500/40 text-purple-300'
-                      : 'bg-[#14141e] hover:bg-[#1c1c2b] border-[#d4af37]/30 text-amber-100/80';
-
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => onApplyScoreAction(opt)}
-                      className={`p-2.5 rounded-2xl border flex flex-col justify-between text-left transition-all active:scale-95 shadow-md ${colorClasses}`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="text-xs font-black">{opt.label}</span>
-                        <span className="text-xs font-black font-mono px-2 py-0.5 rounded-lg bg-black/40 border border-white/10">
-                          {opt.badge}
-                        </span>
-                      </div>
-                      {opt.description && (
-                        <span className="text-xs opacity-70 block">{opt.description}</span>
-                      )}
-                    </button>
-                  );
-                })}
-            </div>
+      {/* PUNTUACIÓN DIRECTA SOLO PARA TORNEO DE JUEGOS DE MESA (SIN CONTROLES PROPIOS) */}
+      {activeGame.id === 'torneo_juegos' && (
+        <div className="space-y-2 pt-2 border-t border-[#d4af37]/30">
+          <span className="text-xs font-vintage text-amber-200/80 block">
+            Asignar puntos a{' '}
+            <strong className="text-amber-300">
+              {selectedTeamCatalog ? selectedTeamCatalog.name : 'equipo seleccionado'}
+            </strong>
+            :
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {activeGame.scoringOptions.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => onApplyScoreAction(opt)}
+                className="p-2.5 rounded-xl border border-[#d4af37]/40 bg-[#14141e] hover:bg-[#1c1c2b] text-amber-100 flex items-center justify-between text-xs font-broadway active:scale-95 transition-all"
+              >
+                <span className="truncate">{opt.label}</span>
+                <span className="font-mono font-black text-amber-300 ml-1">{opt.badge}</span>
+              </button>
+            ))}
           </div>
-        )}
-
-        {/* 2. PUNTUACIÓN POR CLASIFICACIÓN (PODIO) */}
-        {activeGame.scoringOptions.filter((o) => o.type === 'podium').length > 0 && (
-          <div>
-            <span className="text-xs uppercase font-broadway text-amber-400 font-bold block mb-1.5 flex items-center gap-1">
-              <span>🏆</span> Puntuación por Clasificación (Podio):
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {activeGame.scoringOptions
-                .filter((o) => o.type === 'podium')
-                .map((opt) => {
-                  const colorClasses =
-                    opt.color === 'emerald'
-                      ? 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/40 text-emerald-300'
-                      : opt.color === 'blue'
-                      ? 'bg-blue-950/40 hover:bg-blue-900/50 border-blue-500/40 text-blue-300'
-                      : opt.color === 'amber'
-                      ? 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/40 text-amber-300'
-                      : 'bg-[#14141e] hover:bg-[#1c1c2b] border-[#d4af37]/30 text-amber-100/80';
-
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => onApplyScoreAction(opt)}
-                      className={`p-2.5 rounded-2xl border flex flex-col justify-between text-left transition-all active:scale-95 shadow-md ${colorClasses}`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="text-xs font-black">{opt.label}</span>
-                        <span className="text-xs font-black font-mono px-2 py-0.5 rounded-lg bg-black/40 border border-white/10">
-                          {opt.badge}
-                        </span>
-                      </div>
-                      {opt.description && (
-                        <span className="text-xs opacity-70 block">{opt.description}</span>
-                      )}
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* MINIJUEGO: ADIVINA LA CANCIÓN (SPOTIFY) */}
       {activeGame.id === 'music' && (

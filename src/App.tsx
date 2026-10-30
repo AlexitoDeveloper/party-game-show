@@ -1,10 +1,12 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazyWithRetry, prefetchAppRoutes } from './lib/offlineCache';
 
-const HomePage = lazy(() => import('./pages/HomePage'));
-const TvView = lazy(() => import('./pages/TvView'));
-const PlayerView = lazy(() => import('./pages/PlayerView'));
-const HostView = lazy(() => import('./pages/HostView'));
+const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
+const TvView = lazyWithRetry(() => import('./pages/TvView'));
+const PlayerView = lazyWithRetry(() => import('./pages/PlayerView'));
+const HostView = lazyWithRetry(() => import('./pages/HostView'));
+const TvReceiverPage = lazyWithRetry(() => import('./pages/TvReceiverPage'));
 
 function ArtDecoLoader() {
   return (
@@ -34,11 +36,16 @@ function ArtDecoLoader() {
 }
 
 export default function App() {
+  useEffect(() => {
+    prefetchAppRoutes();
+  }, []);
+
   return (
     <BrowserRouter>
       <Suspense fallback={<ArtDecoLoader />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/tv" element={<TvReceiverPage />} />
           <Route path="/room/:code/tv" element={<TvView />} />
           <Route path="/room/:code/play" element={<PlayerView />} />
           <Route path="/room/:code/host" element={<HostView />} />

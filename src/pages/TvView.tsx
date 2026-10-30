@@ -84,11 +84,13 @@ import { TvMimicaGame } from '../components/tv/minigames/TvMimicaGame';
 import { TvGameBriefingCard } from '../components/tv/TvGameBriefingCard';
 import { FullscreenButton } from '../components/common/FullscreenButton';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { useTvRemoteReceiver } from '../hooks/useTvRemoteReceiver';
 
 export default function TvView() {
   const { code } = useParams<{ code: string }>();
   const roomCode = (code || '').toUpperCase();
   useWakeLock();
+  useTvRemoteReceiver({ roomCode });
   const { playBuzzer, playCountdown, playCorrect, playWrong, playVictory } = useGameAudio();
 
   const [room, setRoom] = useState<Room>(() => {

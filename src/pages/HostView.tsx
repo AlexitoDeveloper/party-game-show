@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { CheckCircle2, Trophy, Users } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { JukeboxState, JUKEBOX_PLAYLIST } from '../lib/audio';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
@@ -13,7 +12,6 @@ import { PowerCardsState } from '../lib/powerCards';
 import { CoinBurstCelebration } from '../components/particles/CoinBurstCelebration';
 import { calculateTestVerdict, TestVerdictCalculation } from '../lib/testVerdict';
 import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
-import { HellCasinoSuitsDivider } from '../components/deco/HellCasinoSuitsDivider';
 
 // Custom Hooks para estado de minijuegos y cartas
 import { useHostMoviesState } from '../hooks/host/useHostMoviesState';
@@ -27,11 +25,9 @@ import { useHostPowerCards } from '../hooks/host/useHostPowerCards';
 
 // Componentes modulares
 import { HostHeaderControls } from '../components/host/HostHeaderControls';
-import { HostQuickSoundStrip } from '../components/host/HostQuickSoundStrip';
 import { HostLivePlayingConsole } from '../components/host/HostLivePlayingConsole';
 import { HostStandbySection } from '../components/host/HostStandbySection';
 import { HostActiveEffectsBanner } from '../components/host/HostActiveEffectsBanner';
-import { HostCompactScoreboard } from '../components/host/HostCompactScoreboard';
 import { HostPowerCardsTab } from '../components/host/HostPowerCardsTab';
 import { HostGameCatalogTab } from '../components/host/HostGameCatalogTab';
 import { HostTeamsScoreboard } from '../components/host/HostTeamsScoreboard';
@@ -999,290 +995,264 @@ export default function HostView() {
 
   return (
     <HellCasinoBackground intensity="medium">
-      <main className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 select-none relative text-white font-sans">
+      <main className="p-3 sm:p-5 max-w-3xl mx-auto space-y-3 select-none relative text-white font-sans pb-10">
         <CoinBurstCelebration active={showCoinBurst} onComplete={() => setShowCoinBurst(false)} />
 
-      <HostHeaderControls
-        room={room}
-        roomCode={roomCode}
-        playersCount={players.length}
-        activeGame={activeGame}
-        podiumPage={podiumPage}
-        onFinishTest={handleFinishTest}
-        onFinishShowAndShowGazette={handleFinishShowAndShowGazette}
-        onReturnToLobby={handleReturnToLobby}
-        onSetPodiumPage={(page) => {
-          setPodiumPage(page);
-          roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page } });
-        }}
-        onSelectGame={handleSelectGame}
-        onSetPresentationSlide={handleSetPresentationSlide}
-      />
+        <HostHeaderControls
+          room={room}
+          roomCode={roomCode}
+          playersCount={players.length}
+          activeGame={activeGame}
+          podiumPage={podiumPage}
+          onFinishTest={handleFinishTest}
+          onFinishShowAndShowGazette={handleFinishShowAndShowGazette}
+          onReturnToLobby={handleReturnToLobby}
+          onSetPodiumPage={(page) => {
+            setPodiumPage(page);
+            roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page } });
+          }}
+          onSelectGame={handleSelectGame}
+          onSetPresentationSlide={handleSetPresentationSlide}
+        />
 
-      {/* BARRA DE NAVEGACIÓN POR PESTAÑAS */}
-      <nav className="sticky top-2 z-50 grid grid-cols-5 gap-1 p-1 bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-2xl shadow-deco-gold backdrop-blur-xl">
-        <button
-          onClick={() => setActiveTab('live')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
-            activeTab === 'live'
-              ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
-              : 'bg-[#14141e]/80 hover:bg-[#1c1c2b] text-amber-200/70 hover:text-white border border-[#d4af37]/20 font-medium'
-          }`}
-          title="Consola en directo"
-        >
-          <span className="text-base sm:text-sm">🎮</span>
-          <span className="truncate">Directo</span>
-          {room.status === 'playing' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse hidden sm:inline-block" />
-          )}
-        </button>
+        {/* BARRA DE NAVEGACIÓN MÓVIL DE 4 PESTAÑAS */}
+        <nav className="sticky top-2 z-50 grid grid-cols-4 gap-1.5 p-1 bg-[#0c0c14]/95 border-2 border-[#d4af37]/45 rounded-2xl shadow-deco-gold backdrop-blur-xl">
+          <button
+            onClick={() => setActiveTab('live')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-broadway text-xs uppercase tracking-wider transition-all active:scale-95 ${
+              activeTab === 'live'
+                ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
+                : 'bg-[#14141e]/80 text-amber-200/70 border border-[#d4af37]/20'
+            }`}
+          >
+            <span>🎮</span>
+            <span className="truncate">Mando</span>
+            {room.status === 'playing' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            )}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('cards')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-broadway text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
-            activeTab === 'cards'
-              ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
-              : 'bg-[#14141e]/80 hover:bg-[#1c1c2b] text-amber-200/70 hover:text-white border border-[#d4af37]/20 font-medium'
-          }`}
-          title="Cartas de poder"
-        >
-          <span className="text-base sm:text-sm">🃏</span>
-          <span className="truncate">Cartas</span>
-          {powerCards.activeEffects.length > 0 && (
-            <span className="text-xs bg-slate-950 text-amber-300 border border-amber-400 px-1 rounded-full font-black">
-              {powerCards.activeEffects.length}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setActiveTab('catalog')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-broadway text-xs uppercase tracking-wider transition-all active:scale-95 ${
+              activeTab === 'catalog'
+                ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
+                : 'bg-[#14141e]/80 text-amber-200/70 border border-[#d4af37]/20'
+            }`}
+          >
+            <span>🎲</span>
+            <span className="truncate">Juegos</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('teams')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
-            activeTab === 'teams'
-              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
-              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
-          }`}
-          title="Equipos y jugadores"
-        >
-          <span className="text-base sm:text-sm">👥</span>
-          <span className="truncate">Equipos</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('teams')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-broadway text-xs uppercase tracking-wider transition-all active:scale-95 ${
+              activeTab === 'teams'
+                ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
+                : 'bg-[#14141e]/80 text-amber-200/70 border border-[#d4af37]/20'
+            }`}
+          >
+            <span>🏆</span>
+            <span className="truncate">Equipos</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('catalog')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
-            activeTab === 'catalog'
-              ? 'bg-purple-500 text-white shadow-md shadow-purple-500/25'
-              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
-          }`}
-          title="Catálogo de juegos"
-        >
-          <span className="text-base sm:text-sm">🎲</span>
-          <span className="truncate">Juegos</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('cards')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-broadway text-xs uppercase tracking-wider transition-all active:scale-95 relative ${
+              activeTab === 'cards' || activeTab === 'soundboard'
+                ? 'bg-gold-gradient text-slate-950 shadow-md font-black'
+                : 'bg-[#14141e]/80 text-amber-200/70 border border-[#d4af37]/20'
+            }`}
+          >
+            <span>🃏</span>
+            <span className="truncate">Cartas/FX</span>
+            {powerCards.activeEffects.length > 0 && (
+              <span className="text-[10px] bg-slate-950 text-amber-300 border border-amber-400 px-1 rounded-full font-black">
+                {powerCards.activeEffects.length}
+              </span>
+            )}
+          </button>
+        </nav>
 
-        <button
-          onClick={() => setActiveTab('soundboard')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl font-black text-xs sm:text-xs uppercase tracking-wider transition-all active:scale-95 ${
-            activeTab === 'soundboard'
-              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25'
-              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50'
-          }`}
-          title="Sonidos"
-        >
-          <span className="text-base sm:text-sm">🔊</span>
-          <span className="truncate">Sonidos</span>
-        </button>
-      </nav>
+        {/* PESTAÑA 1: MANDO EN DIRECTO */}
+        {activeTab === 'live' && (
+          <div className="space-y-3">
+            {/* TIRA COMPACTA DE PUNTUACIONES EN UNA LÍNEA */}
+            <div className="bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-2xl px-3 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                {activeTeams.map((t) => {
+                  const cat = TEAMS_CATALOG.find((c) => c.index === t.team_index);
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setActiveTab('teams')}
+                      className="px-2 py-1 rounded-xl bg-[#14141e] border border-[#d4af37]/30 flex items-center gap-1.5 text-xs whitespace-nowrap shrink-0 active:scale-95"
+                      title="Toca para ajustar puntos en Equipos"
+                    >
+                      <span className={`w-2 h-2 rounded-full ${cat?.twBg}`} />
+                      <span className="font-vintage text-amber-100/90">{t.name}:</span>
+                      <span className="font-broadway text-gold-gradient font-black">{t.score}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-      {/* PESTAÑA: EN DIRECTO */}
-      {activeTab === 'live' && (
-        <div className="space-y-6">
-          <HostQuickSoundStrip
-            onPlaySoundEffect={handlePlaySoundEffect}
-            onOpenSoundboardTab={() => setActiveTab('soundboard')}
-          />
+              <div className="flex items-center gap-1 shrink-0 pl-1 border-l border-[#d4af37]/25">
+                <button
+                  onClick={() => handlePlaySoundEffect('fail')}
+                  className="p-1.5 rounded-lg bg-red-950/60 border border-red-500/40 text-xs active:scale-95"
+                  title="Sonido Fallo"
+                >
+                  ❌
+                </button>
+                <button
+                  onClick={() => handlePlaySoundEffect('success')}
+                  className="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-xs active:scale-95"
+                  title="Sonido Acierto"
+                >
+                  🎯
+                </button>
+                <button
+                  onClick={() => handlePlaySoundEffect('drumroll')}
+                  className="p-1.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-xs active:scale-95"
+                  title="Redoble"
+                >
+                  🥁
+                </button>
+              </div>
+            </div>
 
-          {room.status === 'playing' ? (
-            <HostLivePlayingConsole
-              activeGame={activeGame}
+            {/* EFECTOS DE CARTAS ACTIVOS EN ESTA PRUEBA (SI HAY ALGUNO) */}
+            <HostActiveEffectsBanner
+              powerCards={powerCards}
               activeTeams={activeTeams}
               teams={teams}
-              selectedTeamForPoints={selectedTeamForPoints}
-              onSelectTeamForPoints={setSelectedTeamForPoints}
-              selectedTeamCatalog={selectedTeamCatalog || undefined}
-              captainDuel={captainDuel}
-              onToggleCaptainDuel={handleToggleCaptainDuel}
-              captainGambles={captainGambles}
-              onClearCaptainGambles={() => handleClearCaptainGambles()}
-              isLocked={isLocked}
-              winner={winner}
-              onResetBuzzer={resetBuzzer}
-              onApplyScoreAction={handleApplyScoreAction}
+              onClearAllActiveEffects={powerCardsHook.handleClearAllActiveEffects}
               onScoreChange={handleScoreChange}
-              roundHits={roundHits}
-              setRoundHits={setRoundHits}
-              musicState={musicState}
-              moviesState={moviesState}
-              babyPhotosState={babyPhotosState}
-              triviaState={triviaState}
-              unDosTresState={unDosTresState}
-              bingoState={bingoState}
-              mimicaState={mimicaState}
-              gamePhase={room.game_phase || 'briefing'}
-              onStartActiveRound={handleStartActiveRound}
-              onToggleBriefing={handleToggleBriefing}
-              teamRepresentatives={teamRepresentatives}
-              players={players}
-            />
-          ) : (
-            <HostStandbySection
-              room={room}
-              podiumPage={podiumPage}
-              onSetPodiumPage={(page) => {
-                setPodiumPage(page);
-                roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page } });
+              onRemoveActiveEffect={powerCardsHook.handleRemoveActiveEffect}
+              onReturnCardToTeam={powerCardsHook.handleReturnCardToTeam}
+              onTeamsUpdate={(updated) => {
+                setTeams(updated);
+                roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
               }}
-              onReturnToLobby={handleReturnToLobby}
-              onStartPresentation={handleStartPresentation}
-              onSelectFirstGame={() => handleSelectGame(GAMES_CATALOG[0])}
-              onOpenCatalog={() => setActiveTab('catalog')}
             />
-          )}
 
-          {/* FINALIZAR PRUEBA EN CURSO */}
-          {room.status === 'playing' && (
-            <div className="flex items-center justify-between hell-card-frame-crimson p-3 sm:p-4 rounded-2xl sm:rounded-3xl gap-2.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="text-2xl p-1.5 bg-red-950/60 rounded-xl border border-red-500/30 shrink-0">🏁</span>
-                <div className="min-w-0">
-                  <span className="text-xs font-black uppercase text-white block truncate">
-                    {activeGame.title} en curso
-                  </span>
-                  <span className="text-xs text-slate-400 block truncate">
-                    Concluye la prueba, caduca las cartas y asigna puntuaciones finales
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => handleFinishTest()}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs uppercase flex items-center gap-1.5 shadow-md shadow-red-600/30 active:scale-95 transition-all border border-red-400/40 shrink-0"
-                title="Finalizar esta prueba"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Finalizar Prueba</span>
-                <span className="sm:hidden">Finalizar</span>
-              </button>
-            </div>
-          )}
+            {room.status === 'playing' ? (
+              <HostLivePlayingConsole
+                activeGame={activeGame}
+                activeTeams={activeTeams}
+                teams={teams}
+                selectedTeamForPoints={selectedTeamForPoints}
+                onSelectTeamForPoints={setSelectedTeamForPoints}
+                selectedTeamCatalog={selectedTeamCatalog || undefined}
+                captainDuel={captainDuel}
+                onToggleCaptainDuel={handleToggleCaptainDuel}
+                captainGambles={captainGambles}
+                onClearCaptainGambles={() => handleClearCaptainGambles()}
+                isLocked={isLocked}
+                winner={winner}
+                onResetBuzzer={resetBuzzer}
+                onApplyScoreAction={handleApplyScoreAction}
+                onScoreChange={handleScoreChange}
+                roundHits={roundHits}
+                setRoundHits={setRoundHits}
+                musicState={musicState}
+                moviesState={moviesState}
+                babyPhotosState={babyPhotosState}
+                triviaState={triviaState}
+                unDosTresState={unDosTresState}
+                bingoState={bingoState}
+                mimicaState={mimicaState}
+                gamePhase={room.game_phase || 'briefing'}
+                onStartActiveRound={handleStartActiveRound}
+                onToggleBriefing={handleToggleBriefing}
+                onFinishTest={() => handleFinishTest()}
+                teamRepresentatives={teamRepresentatives}
+                players={players}
+              />
+            ) : (
+              <HostStandbySection
+                room={room}
+                podiumPage={podiumPage}
+                onSetPodiumPage={(page) => {
+                  setPodiumPage(page);
+                  roomSync.broadcast({ type: 'PODIUM_PAGE_CHANGE', payload: { page } });
+                }}
+                onReturnToLobby={handleReturnToLobby}
+                onStartPresentation={handleStartPresentation}
+                onSelectFirstGame={() => handleSelectGame(GAMES_CATALOG[0])}
+                onOpenCatalog={() => setActiveTab('catalog')}
+              />
+            )}
+          </div>
+        )}
 
-          {/* EFECTOS DE CARTAS ACTIVOS EN ESTA PRUEBA */}
-          <HostActiveEffectsBanner
-            powerCards={powerCards}
+        {/* PESTAÑA 2: CATÁLOGO DE JUEGOS */}
+        {activeTab === 'catalog' && (
+          <HostGameCatalogTab
+            room={room}
+            onSelectGame={handleSelectGame}
+            onStartPresentation={handleStartPresentation}
+            onFinishShowAndShowGazette={handleFinishShowAndShowGazette}
+          />
+        )}
+
+        {/* PESTAÑA 3: EQUIPOS & JUGADORES */}
+        {activeTab === 'teams' && (
+          <HostTeamsScoreboard
+            room={room}
             activeTeams={activeTeams}
             teams={teams}
-            onClearAllActiveEffects={powerCardsHook.handleClearAllActiveEffects}
+            players={players}
+            onTeamCountChange={handleTeamCountChange}
             onScoreChange={handleScoreChange}
-            onRemoveActiveEffect={powerCardsHook.handleRemoveActiveEffect}
-            onReturnCardToTeam={powerCardsHook.handleReturnCardToTeam}
-            onTeamsUpdate={(updated) => {
-              setTeams(updated);
-              roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updated });
+            onSetCaptain={handleSetCaptain}
+            onClearPlayers={() => {
+              setPlayers([]);
+              localStorage.removeItem(`party_players_${roomCode}`);
+              roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
             }}
+            onRescanPlayers={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}
           />
+        )}
 
-          {/* MARCADOR EN VIVO Y PUNTUACIÓN RÁPIDA */}
-          <section className="hell-card-frame rounded-3xl p-3.5 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between border-b border-[#d4af37]/30 pb-2.5 gap-2">
-              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-gold-emboss truncate">
-                  Marcador <span className="hidden sm:inline">en Vivo (+5, +2, +1, -1)</span>
-                </h3>
-              </div>
-              <button
-                onClick={() => setActiveTab('teams')}
-                className="text-xs text-amber-300 hover:text-amber-200 font-bold transition-colors flex items-center gap-1 shrink-0"
-              >
-                <Users className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Gestionar Equipos</span>
-                <span>→</span>
-              </button>
-            </div>
-            <HostCompactScoreboard
+        {/* PESTAÑA 4: CARTAS DE PODER Y FONOTECA / SONIDOS */}
+        {(activeTab === 'cards' || activeTab === 'soundboard') && (
+          <div className="space-y-4">
+            <HostPowerCardsTab
+              powerCards={powerCards}
               activeTeams={activeTeams}
-              players={players}
-              onSetCaptain={handleSetCaptain}
+              selectedBonusTeam={powerCardsHook.selectedBonusTeam}
+              onSetSelectedBonusTeam={powerCardsHook.setSelectedBonusTeam}
+              onDealInitialCards={powerCardsHook.handleDealInitialCards}
+              onDealBonusCard={powerCardsHook.handleDealBonusCard}
+              onResetPowerCards={powerCardsHook.handleResetPowerCards}
+              onOpenDiscardModal={() => powerCardsHook.setIsDiscardModalOpen(true)}
+              onClearAllActiveEffects={powerCardsHook.handleClearAllActiveEffects}
+              onRemoveActiveEffect={powerCardsHook.handleRemoveActiveEffect}
               onScoreChange={handleScoreChange}
+              onInitiatePlayCard={powerCardsHook.handleInitiatePlayCard}
+              onPlayCardDirectly={powerCardsHook.handlePlayCardDirectly}
+              onRevokeCardFromTeam={powerCardsHook.handleRevokeCardFromTeam}
             />
-          </section>
-        </div>
-      )}
 
-      {/* PESTAÑA: CARTAS DE PODER */}
-      {activeTab === 'cards' && (
-        <HostPowerCardsTab
-          powerCards={powerCards}
-          activeTeams={activeTeams}
-          selectedBonusTeam={powerCardsHook.selectedBonusTeam}
-          onSetSelectedBonusTeam={powerCardsHook.setSelectedBonusTeam}
-          onDealInitialCards={powerCardsHook.handleDealInitialCards}
-          onDealBonusCard={powerCardsHook.handleDealBonusCard}
-          onResetPowerCards={powerCardsHook.handleResetPowerCards}
-          onOpenDiscardModal={() => powerCardsHook.setIsDiscardModalOpen(true)}
-          onClearAllActiveEffects={powerCardsHook.handleClearAllActiveEffects}
-          onRemoveActiveEffect={powerCardsHook.handleRemoveActiveEffect}
-          onScoreChange={handleScoreChange}
-          onInitiatePlayCard={powerCardsHook.handleInitiatePlayCard}
-          onPlayCardDirectly={powerCardsHook.handlePlayCardDirectly}
-          onRevokeCardFromTeam={powerCardsHook.handleRevokeCardFromTeam}
-        />
-      )}
-
-      {/* PESTAÑA: CATÁLOGO DE JUEGOS */}
-      {activeTab === 'catalog' && (
-        <HostGameCatalogTab room={room} onSelectGame={handleSelectGame} />
-      )}
-
-      {/* PESTAÑA: EQUIPOS & JUGADORES */}
-      {activeTab === 'teams' && (
-        <HostTeamsScoreboard
-          room={room}
-          activeTeams={activeTeams}
-          teams={teams}
-          players={players}
-          onTeamCountChange={handleTeamCountChange}
-          onScoreChange={handleScoreChange}
-          onSetCaptain={handleSetCaptain}
-          onClearPlayers={() => {
-            setPlayers([]);
-            localStorage.removeItem(`party_players_${roomCode}`);
-            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
-          }}
-          onRescanPlayers={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}
-        />
-      )}
-
-      {/* PESTAÑA: MESA DE SONIDOS */}
-      {activeTab === 'soundboard' && (
-        <div className="space-y-6">
-          <ErrorBoundary
-            fallbackTitle="Fonoteca no disponible temporalmente"
-            fallbackMessage="Se ha aislado un error al cargar los mandos de sonido. Puedes reintentar la carga de la mesa de efectos."
-          >
-            <HostSoundboardTab
-              jukeboxState={jukeboxState}
-              onJukeboxCommand={(cmd) => {
-                roomSync.broadcast({
-                  type: 'JUKEBOX_COMMAND',
-                  payload: cmd,
-                });
-              }}
-              onPlaySoundEffect={handlePlaySoundEffect}
-            />
-          </ErrorBoundary>
-        </div>
-      )}
+            <ErrorBoundary
+              fallbackTitle="Fonoteca no disponible temporalmente"
+              fallbackMessage="Se ha aislado un error al cargar los mandos de sonido."
+            >
+              <HostSoundboardTab
+                jukeboxState={jukeboxState}
+                onJukeboxCommand={(cmd) => {
+                  roomSync.broadcast({
+                    type: 'JUKEBOX_COMMAND',
+                    payload: cmd,
+                  });
+                }}
+                onPlaySoundEffect={handlePlaySoundEffect}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
 
       {/* MODALES DE CARTAS DE PODER */}
       <HostPowerCardModals

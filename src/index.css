@@ -538,3 +538,23 @@ body {
   background-size: 3px 3px;
 }
 
+/* ==========================================================================
+   SMART TV & OLED LITE MODE OPTIMIZATIONS
+   Desactiva filtros GPU costosos (backdrop-filter) y orbes de desenfoque
+   para garantizar 60 FPS estables en navegadores de Smart TV (LG webOS, Tizen)
+   ========================================================================== */
+.tv-lite-mode,
+.tv-lite-mode * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.tv-lite-mode .blur-\[100px\],
+.tv-lite-mode .blur-\[120px\],
+.tv-lite-mode .blur-\[128px\],
+.tv-lite-mode .blur-\[150px\],
+.tv-lite-mode .blur-3xl,
+.tv-lite-mode .blur-2xl {
+  display: none !important;
+}
+

@@ -119,6 +119,9 @@ export type RoomSyncEvent =
       payload: JukeboxState;
     }
   | { type: 'PODIUM_PAGE_CHANGE'; payload: { page: 'podium' | 'medals' } }
+  | { type: 'TV_PAIR_REDIRECT'; payload: { roomCode: string; tvPin?: string; liteMode?: boolean; title?: string } }
+  | { type: 'TV_PAIR_ACK'; payload: { tvPin: string; roomCode: string } }
+  | { type: 'TV_SET_LITE_MODE'; payload: { enabled: boolean } }
   | { type: 'PING' };
 
 interface RelayMessage {
@@ -647,6 +650,10 @@ export class RoomSync {
     };
   }
 
+  subscribe(callback: (event: RoomSyncEvent) => void) {
+    return this.onEvent(callback);
+  }
+
   private handleIncoming(eventId: string, event: RoomSyncEvent) {
     if (event.type === 'PING') return; // Ignorar pings de latido
 
@@ -741,6 +748,10 @@ export class RoomSync {
 
     // 5. Notificar a oyentes locales
     this.notifyListeners(event);
+  }
+
+  emit(event: RoomSyncEvent) {
+    this.broadcast(event);
   }
 
   getIsDestroyed(): boolean {
