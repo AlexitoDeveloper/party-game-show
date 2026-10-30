@@ -1,15 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Lock, ShieldAlert } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { ArcadeBuzzer } from '../ArcadeBuzzer';
-import { CaptainDuelState, BuzzerPressPayload, Player } from '../../lib/types';
+import { BuzzerPressPayload, Player } from '../../lib/types';
 import { getTeamTheme } from '../../lib/teamThemes';
 
 interface PlayerBuzzerSectionProps {
   isBanned: boolean;
   bannedShake: boolean;
   onBannedClick: () => void;
-  captainDuel?: CaptainDuelState | null;
+  captainDuel?: any;
   player: Player | null;
   selectedTeamIndex: number;
   isLocked: boolean;
@@ -24,15 +24,11 @@ export const PlayerBuzzerSection: React.FC<PlayerBuzzerSectionProps> = ({
   isBanned,
   bannedShake,
   onBannedClick,
-  captainDuel,
-  player,
   selectedTeamIndex,
   isLocked,
   onBuzzerClick,
   isMeWinner,
   winner,
-  isBenchMode = false,
-  representativeNames = [],
 }) => {
   return (
     <div className="my-auto flex flex-col items-center w-full relative z-20 touch-manipulation">
@@ -74,38 +70,11 @@ export const PlayerBuzzerSection: React.FC<PlayerBuzzerSectionProps> = ({
             </span>
           </div>
         </motion.div>
-      ) : isBenchMode ? (
-        <div className="w-[min(65vw,256px)] h-[min(65vw,256px)] sm:w-72 sm:h-72 rounded-full bg-[#0c0c14]/95 border-8 border-amber-600/40 flex flex-col items-center justify-center p-5 text-center shadow-deco-gold opacity-90 deco-card-frame">
-          <span className="text-3xl mb-1">🍿</span>
-          <span className="text-sm font-broadway uppercase text-gold-gradient tracking-wide">
-            EN EL BANQUILLO
-          </span>
-          <span className="text-xs font-vintage text-amber-200/80 font-bold mt-1 max-w-[190px] leading-tight">
-            Asesora a tu equipo en la mesa
-          </span>
-          {representativeNames && representativeNames.length > 0 && (
-            <div className="mt-2 px-2.5 py-1 rounded-full bg-[#161622] border border-[#d4af37]/30 max-w-[200px]">
-              <span className="text-xs font-broadway text-amber-300 block truncate">
-                ⭐ {representativeNames.join(', ')}
-              </span>
-            </div>
-          )}
-        </div>
-      ) : captainDuel?.isActive && !player?.is_captain ? (
-        <div className="w-[min(65vw,256px)] h-[min(65vw,256px)] sm:w-72 sm:h-72 rounded-full bg-[#0c0c14]/95 border-8 border-[#d4af37]/50 flex flex-col items-center justify-center p-6 text-center shadow-deco-gold opacity-85 deco-card-frame">
-          <ShieldAlert className="w-12 h-12 text-[#d4af37] mb-2" />
-          <span className="text-sm font-broadway uppercase text-gold-gradient">
-            DUELO DE CAPITANES
-          </span>
-          <span className="text-xs font-vintage text-amber-200/80 font-bold mt-1 max-w-[170px]">
-            Solo tu Capitán 👑 puede presionar en este reto
-          </span>
-        </div>
       ) : (
         <ArcadeBuzzer
           theme={getTeamTheme(selectedTeamIndex)}
           isLocked={isLocked}
-          isDuelActive={captainDuel?.isActive}
+          isDuelActive={false}
           onPress={onBuzzerClick}
           isMeWinner={isMeWinner}
         />
@@ -113,11 +82,7 @@ export const PlayerBuzzerSection: React.FC<PlayerBuzzerSectionProps> = ({
 
       {/* ESTADO EN TIEMPO REAL CON ALTURA FIJA PARA EVITAR DESPLAZAMIENTOS */}
       <div className="mt-4 h-14 flex items-center justify-center text-center px-2">
-        {isBenchMode ? (
-          <span className="text-xs font-vintage font-bold text-amber-300/70 uppercase tracking-wider block">
-            Tus compañeros tienen el pulsador en el ruedo
-          </span>
-        ) : isLocked ? (
+        {isLocked ? (
           isMeWinner ? (
             <span className="text-sm font-broadway text-gold-gradient uppercase tracking-wider block drop-shadow-md">
               🎉 ¡HAS SIDO EL MÁS RÁPIDO! RESPONDE AHORA
@@ -136,3 +101,4 @@ export const PlayerBuzzerSection: React.FC<PlayerBuzzerSectionProps> = ({
     </div>
   );
 };
+

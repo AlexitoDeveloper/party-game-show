@@ -91,21 +91,21 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
           exit={{ opacity: 0 }}
           className="w-full flex flex-col gap-4 flex-1"
         >
-          {/* TRES REGLAS CLAVE EN TIRA ELEGANTE Y COMPACTA */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-xl px-5 py-2 text-xs font-vintage text-amber-100/90 shadow-md">
+          {/* TRES REGLAS CLAVE EN TIRA VISUAL COMPACTA */}
+          <div className="w-full flex flex-wrap items-center justify-around gap-3 bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-xl px-5 py-2 text-sm font-broadway uppercase tracking-wider text-amber-200 shadow-md">
             <div className="flex items-center gap-2">
-              <span className="text-base">🃏</span>
-              <span><strong className="text-gold-gradient font-broadway uppercase">1. Obtención:</strong> Mazo inicial y bonus por triunfos</span>
+              <span className="text-lg">🃏</span>
+              <span>Mazo inicial + Premios</span>
             </div>
             <div className="text-[#d4af37]/40 font-bold hidden sm:inline">•</div>
             <div className="flex items-center gap-2">
-              <span className="text-base">📲</span>
-              <span><strong className="text-gold-gradient font-broadway uppercase">2. Uso:</strong> Desde el móvil, proyectadas en vivo en TV</span>
+              <span className="text-lg">📲</span>
+              <span>Lánzalas desde tu móvil</span>
             </div>
             <div className="text-[#d4af37]/40 font-bold hidden sm:inline">•</div>
             <div className="flex items-center gap-2">
-              <span className="text-base">⏱️</span>
-              <span><strong className="text-gold-gradient font-broadway uppercase">3. Expiración:</strong> Activas durante la prueba en curso</span>
+              <span className="text-lg">⏱️</span>
+              <span>Efecto en la prueba actual</span>
             </div>
           </div>
 
@@ -121,7 +121,6 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
                 icon: '🟢',
                 sampleCardId: 'bomba',
                 badge: 'Efectos Básicos',
-                desc: 'Baneos de turno, bombas trampa, pérdidas rápidas y marcas de objetivo.',
               },
               {
                 rarity: 'Rara',
@@ -132,7 +131,6 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
                 icon: '🔵',
                 sampleCardId: 'banco_cartas',
                 badge: 'Impacto Táctico',
-                desc: 'Banco de cartas del mazo, intercambio de manos, escudo e inmunidad.',
               },
               {
                 rarity: 'Épica',
@@ -143,7 +141,6 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
                 icon: '🟣',
                 sampleCardId: 'el_cuarto_mono',
                 badge: 'Poder Avanzado',
-                desc: 'Limitaciones sensoriales (El Cuarto Mono), caza al líder y ruleta rusa.',
               },
               {
                 rarity: 'Legendaria',
@@ -154,7 +151,6 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
                 icon: '🟡',
                 sampleCardId: 'impuesto_padrino',
                 badge: 'Giro Legendario',
-                desc: 'Impuesto del Padrino (50% comisión), Robo del Siglo, Ave Fénix y Golpe Maestro.',
               },
             ].map((r) => {
               const sampleCard =
@@ -168,17 +164,18 @@ export const TvPresentationView: React.FC<TvPresentationViewProps> = ({
                     className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
                     style={{ backgroundColor: r.glow }}
                   />
-                  <div className="w-full">
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="w-full flex items-center justify-between px-1 mb-1">
+                    <div className="flex items-center gap-1.5">
                       <span className="text-base">{r.icon}</span>
-                      <span
-                        className={`text-xs font-vintage uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/90 border border-current ${r.colorText}`}
-                      >
-                        {r.badge}
-                      </span>
+                      <h4 className={`text-lg sm:text-xl font-broadway uppercase tracking-wider ${r.colorText}`}>
+                        {r.rarity}
+                      </h4>
                     </div>
-                    <h4 className={`text-lg font-broadway uppercase tracking-wider ${r.colorText}`}>{r.rarity}</h4>
-                    <p className="text-xs font-vintage text-amber-100/80 mt-0.5 mb-1.5 leading-tight">{r.desc}</p>
+                    <span
+                      className={`text-xs font-vintage uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-black/90 border border-current ${r.colorText}`}
+                    >
+                      {r.badge}
+                    </span>
                   </div>
 
                   <div className="my-auto flex flex-col items-center select-none pointer-events-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)]">

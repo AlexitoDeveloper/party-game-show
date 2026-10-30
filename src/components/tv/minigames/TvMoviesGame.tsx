@@ -23,15 +23,15 @@ export const TvMoviesGame: React.FC<TvMoviesGameProps> = ({
 
         {/* Cabecera del misterio: Género, Año y Nivel de Pista */}
         <div className="flex items-center justify-between mb-8 z-20 relative">
-          <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-300 shadow-lg">
-            <Clapperboard className="w-4 h-4 text-amber-400" />
+          <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/60 px-5 py-2.5 rounded-2xl flex items-center gap-2.5 text-sm sm:text-base font-vintage font-bold text-amber-300 shadow-lg">
+            <Clapperboard className="w-5 h-5 text-amber-400" />
             <span>{currentMovie.genreEmoji} {currentMovie.category}</span>
-            <span className="text-[#d4af37]/40">•</span>
+            <span className="text-[#d4af37]/50">•</span>
             <span className="text-white font-broadway">Año {currentMovie.year}</span>
           </div>
 
-          <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/40 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-200 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <div className="bg-[#0c0c14]/90 backdrop-blur-md border border-[#d4af37]/50 px-5 py-2.5 rounded-2xl flex items-center gap-2.5 text-sm sm:text-base font-vintage font-bold text-amber-200 shadow-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
             <span className="font-vintage">
               {movieFrameLevel === 1 && '🎯 Pista 1: 2 Emojis (+3 pts)'}
               {movieFrameLevel === 2 && '🔍 Pista 2: 4 Emojis (+2 pts)'}
@@ -66,54 +66,46 @@ export const TvMoviesGame: React.FC<TvMoviesGameProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-5 bg-amber-500/10 border border-[#d4af37]/40 rounded-2xl px-5 py-3 text-amber-200 text-xs md:text-sm font-vintage max-w-2xl mx-auto shadow-md"
+            className="mt-6 bg-amber-500/10 border-2 border-[#d4af37]/50 rounded-2xl px-6 py-4 text-amber-100 text-base md:text-lg font-vintage max-w-3xl mx-auto shadow-lg"
           >
-            <span className="font-broadway uppercase tracking-wider text-gold-gradient mr-2">Pista Secreta:</span>
+            <span className="font-broadway uppercase tracking-wider text-gold-gradient text-lg mr-2">Pista Secreta:</span>
             "{currentMovie.textHint}"
           </motion.div>
         )}
 
-        {/* OVERLAY: REVELADO FINAL DEL TÍTULO DE LA PELÍCULA CON EXPLICACIÓN */}
+        {/* OVERLAY: REVELADO FINAL DEL TÍTULO DE LA PELÍCULA */}
         <AnimatePresence>
           {movieRevealed && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center hell-card-frame-crimson"
+              className="absolute inset-0 bg-[#07070a]/95 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-8 text-center hell-card-frame-crimson"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-widest mb-3 border border-[#f5eedb]/50 shadow-deco-gold">
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gold-gradient text-slate-950 text-sm sm:text-base font-broadway font-black uppercase tracking-widest mb-3 border border-[#f5eedb]/60 shadow-deco-gold">
                 🎉 ¡PELÍCULA RESUELTA!
               </div>
               <h2 className="text-4xl md:text-6xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
                 {currentMovie.title}
               </h2>
               {currentMovie.originalTitle && currentMovie.originalTitle !== currentMovie.title && (
-                <p className="text-base text-amber-200/70 mt-1 italic font-editorial">
+                <p className="text-xl text-amber-200/80 mt-1 italic font-editorial">
                   "{currentMovie.originalTitle}"
                 </p>
               )}
 
-              <div className="flex items-center gap-3 mt-4 text-xs md:text-sm text-amber-100 font-vintage">
-                <span className="bg-[#14141e] px-3 py-1 rounded-xl border border-[#d4af37]/30 font-bold">
+              <div className="flex items-center gap-3 mt-5 text-sm md:text-base text-amber-100 font-vintage flex-wrap justify-center">
+                <span className="bg-[#14141e] px-4 py-1.5 rounded-xl border border-[#d4af37]/40 font-bold">
                   Año {currentMovie.year}
                 </span>
                 {currentMovie.director && (
-                  <span className="bg-[#14141e] px-3 py-1 rounded-xl border border-[#d4af37]/30 font-medium">
+                  <span className="bg-[#14141e] px-4 py-1.5 rounded-xl border border-[#d4af37]/40 font-medium">
                     Dir: <strong className="text-white font-broadway">{currentMovie.director}</strong>
                   </span>
                 )}
-                <span className="bg-gold-gradient text-slate-950 px-3 py-1 rounded-xl border border-[#f5eedb]/30 font-broadway font-black">
+                <span className="bg-gold-gradient text-slate-950 px-4 py-1.5 rounded-xl border border-[#f5eedb]/40 font-broadway font-black">
                   {currentMovie.category}
                 </span>
-              </div>
-
-              {/* Explicación de los emojis */}
-              <div className="mt-6 bg-[#0c0c14]/90 border border-[#d4af37]/40 px-5 py-3 rounded-2xl max-w-xl text-xs md:text-sm text-amber-100/90 text-left font-vintage">
-                <span className="text-xs uppercase font-broadway text-gold-gradient block mb-1">
-                  Descifrado del Acertijo:
-                </span>
-                {currentMovie.explanation}
               </div>
             </motion.div>
           )}

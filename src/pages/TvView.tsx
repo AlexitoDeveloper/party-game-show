@@ -451,6 +451,14 @@ export default function TvView() {
             current_game: roomRef.current.current_game,
             active_game_id: roomRef.current.active_game_id,
             active_teams_count: roomRef.current.active_teams_count,
+            game_phase: roomRef.current.game_phase || 'briefing',
+          },
+        });
+        roomSync.broadcast({
+          type: 'GAME_PHASE_UPDATE',
+          payload: {
+            phase: roomRef.current.game_phase || 'briefing',
+            game_id: roomRef.current.active_game_id || undefined,
           },
         });
         roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
@@ -957,30 +965,17 @@ export default function TvView() {
 
           {/* MINI QR EN LA ESQUINA DURANTE LAS PRUEBAS/SHOW */}
           {room.status !== 'lobby' && joinUrl && (
-            <div className="flex items-center gap-2.5 bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl px-3 py-1.5 shadow-xl backdrop-blur-md">
+            <div className="flex items-center bg-[#0c0c14]/95 border-2 border-[#d4af37]/40 rounded-2xl p-1.5 shadow-xl backdrop-blur-md" title="Escanea para reconectar">
               <div className="p-1 bg-white rounded-lg shadow-sm">
-                <QRCodeSVG value={joinUrl} size={42} level="L" />
-              </div>
-              <div className="text-left leading-tight">
-                <span className="text-xs uppercase font-broadway text-amber-300 tracking-wider block">
-                  ¿Reconectar?
-                </span>
-                <span className="text-xs font-vintage text-slate-200 block">
-                  Escanea el QR
-                </span>
+                <QRCodeSVG value={joinUrl} size={40} level="L" />
               </div>
             </div>
           )}
 
           {/* PLACA DE LATÓN DE CÓDIGO DE SALA */}
-          <div className="flex items-center gap-4 bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-2xl px-5 py-2 shadow-deco-gold backdrop-blur-md relative overflow-hidden">
-            <div className="text-right">
-              <span className="text-xs uppercase tracking-widest text-amber-200/70 block font-vintage font-bold">SALA</span>
-              <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 justify-end font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> EN VIVO
-              </span>
-            </div>
-            <div className="text-4xl font-broadway tracking-widest text-gold-gradient drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]">
+          <div className="flex items-center gap-3 bg-[#0c0c14]/95 border-2 border-[#d4af37]/50 rounded-2xl px-4 py-1.5 shadow-deco-gold backdrop-blur-md relative overflow-hidden">
+            <span className="text-xs uppercase tracking-widest text-amber-200/80 font-broadway">SALA</span>
+            <div className="text-3xl sm:text-4xl font-broadway tracking-widest text-gold-gradient drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]">
               {roomCode}
             </div>
           </div>
@@ -1032,102 +1027,17 @@ export default function TvView() {
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ACTIVO ================= */
         <section className="flex-1 flex flex-col justify-center items-center my-2 z-10 w-full max-w-6xl mx-auto min-h-0">
-          {/* MARQUESINA DE TEATRO SUPERIOR CON REGLAS Y PUNTUACIONES */}
-          <div className="mb-3.5 flex flex-col md:flex-row items-center justify-between bg-[#0c0c14]/90 border-2 border-[#d4af37]/45 px-5 py-2.5 rounded-2xl w-full max-w-4xl gap-2.5 shadow-deco-gold backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">{activeGame.emoji}</span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs uppercase font-vintage tracking-widest text-amber-300 block">
-                    {activeGame.category}
-                  </span>
-                  <span className="text-xs bg-amber-500/20 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-bold font-vintage shadow-sm">
-                    {activeGame.participantsLabel}
-                  </span>
-                </div>
-                <h3 className="text-xl font-broadway uppercase tracking-wide text-gold-gradient">{activeGame.title}</h3>
-                <p className="text-xs text-slate-300 font-vintage italic mt-0.5">{activeGame.participantsDescription}</p>
-              </div>
-            </div>
-
-            {/* Puntuaciones de este juego proyectadas en TV (separadas por prueba y clasificación) */}
-            <div className="flex flex-wrap items-center gap-2 justify-center md:justify-end">
-              {activeGame.scoringOptions.filter((o) => o.type !== 'podium').length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
-                    🎯 Prueba:
-                  </span>
-                  {activeGame.scoringOptions
-                    .filter((o) => o.type !== 'podium')
-                    .map((opt) => (
-                      <span
-                        key={opt.id}
-                        className="bg-[#14141e]/90 text-amber-100 text-xs font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
-                      >
-                        <span>{opt.label.replace(/\s*\([+-]?\d+.*?\)$/i, '')}</span>
-                        <span className="text-emerald-400 font-broadway font-black">{opt.badge}</span>
-                      </span>
-                    ))}
-                </div>
-              )}
-
-              {activeGame.scoringOptions.filter((o) => o.type === 'podium').length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs uppercase font-broadway text-amber-400 font-bold bg-[#14141e] border border-[#d4af37]/40 px-2 py-0.5 rounded-lg">
-                    🏆 Clasificación:
-                  </span>
-                  {activeGame.scoringOptions
-                    .filter((o) => o.type === 'podium')
-                    .map((opt) => (
-                      <span
-                        key={opt.id}
-                        className="bg-[#14141e]/90 text-amber-100 text-xs font-vintage font-bold px-2 py-0.5 rounded-lg border border-[#d4af37]/30 flex items-center gap-1 shadow-sm"
-                      >
-                        <span>{opt.label.replace(/\s*\([+-]?\d+.*?\)$/i, '')}</span>
-                        <span className="text-amber-300 font-broadway font-black">{opt.badge}</span>
-                      </span>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* BANNER MINIDUELO DE CAPITANES (SI ESTÁ ACTIVO) */}
-          {captainDuel?.isActive && (
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="mb-4 w-full max-w-4xl bg-gradient-to-r from-[#4a0e17] via-[#8a1c2a] to-[#4a0e17] border-2 border-[#d4af37] rounded-2xl px-6 py-3.5 text-center shadow-deco-gold flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <Crown className="w-8 h-8 text-amber-300 animate-bounce shrink-0 drop-shadow-md" />
-                <div className="text-left">
-                  <span className="text-xs uppercase font-vintage tracking-widest text-amber-200 block">
-                    ⚔️ DESAFÍO DIRECTO ENTRE LÍDERES
-                  </span>
-                  <h4 className="text-xl font-broadway text-gold-gradient uppercase tracking-wider drop-shadow-sm">
-                    {captainDuel.title || 'MINIDUELO DE CAPITANES'}
-                  </h4>
-                </div>
-              </div>
-              <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-xl px-4 py-2 text-right">
-                <span className="text-xs text-amber-300 uppercase font-vintage tracking-wider font-black block">REGLA EXCLUSIVA</span>
-                <span className="text-xs text-white font-vintage font-bold">Solo pueden pulsar los Capitanes 👑</span>
-              </div>
-            </motion.div>
-          )}
-
           {/* BANNER APUESTAS DOBLE O NADA DE CAPITANES */}
           {Object.values(captainGambles).length > 0 && (
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
+            <div className="mb-3 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
               {Object.values(captainGambles).map((gamble) => (
                 <div
                   key={gamble.teamId}
-                  className="bg-[#14141e]/90 border-2 border-[#d4af37] text-amber-200 px-4 py-1.5 rounded-2xl text-xs font-vintage font-black flex items-center gap-2 shadow-deco-gold backdrop-blur-md animate-pulse"
+                  className="bg-[#14141e]/90 border-2 border-[#d4af37] text-amber-200 px-4 py-1.5 rounded-2xl text-sm font-broadway flex items-center gap-2 shadow-deco-gold backdrop-blur-md animate-pulse"
                 >
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                   <span>
-                    ¡Capitán de <strong className="text-white uppercase font-broadway">{gamble.teamName}</strong> arriesga: DOBLE O NADA (x2 PUNTOS)!
+                    <strong className="text-white uppercase">{gamble.teamName}</strong>: DOBLE O NADA (x2)
                   </span>
                 </div>
               ))}
@@ -1136,9 +1046,9 @@ export default function TvView() {
 
           {/* TIRA DE EFECTOS DE CARTAS DE PODER ACTIVOS */}
           {powerCards && powerCards.activeEffects.length > 0 && (
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
-              <span className="text-xs uppercase font-vintage tracking-wider text-slate-950 bg-gold-gradient px-3 py-1 rounded-full border border-[#f5eedb]/40 flex items-center gap-1 shadow-sm font-black">
-                <Zap className="w-3 h-3" /> Poderes en Juego:
+            <div className="mb-3 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
+              <span className="text-xs uppercase font-broadway tracking-wider text-slate-950 bg-gold-gradient px-3 py-1 rounded-full border border-[#f5eedb]/40 flex items-center gap-1 shadow-sm font-black">
+                <Zap className="w-3.5 h-3.5" /> Poderes:
               </span>
               {powerCards.activeEffects.map((eff) => {
                 const team = activeTeams.find((t) => t.id === eff.sourceTeamId);
@@ -1146,7 +1056,7 @@ export default function TvView() {
                 return (
                   <span
                     key={eff.id}
-                    className="bg-[#0c0c14]/95 border border-[#d4af37]/45 text-xs px-3 py-1 rounded-xl text-amber-100 font-vintage font-bold flex items-center gap-1.5 shadow-md backdrop-blur-md"
+                    className="bg-[#0c0c14]/95 border border-[#d4af37]/45 text-xs sm:text-sm px-3 py-1 rounded-xl text-amber-100 font-vintage font-bold flex items-center gap-1.5 shadow-md backdrop-blur-md"
                   >
                     <span>{eff.cardEmoji}</span>
                     <strong className="text-white font-broadway">{eff.cardName}</strong>
@@ -1253,12 +1163,6 @@ export default function TvView() {
                         >
                           {buzzerWinner.teamName}
                         </p>
-
-                        {/* Indicador pasivo en TV */}
-                        <div className="mt-6 pt-5 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-sm font-vintage font-bold text-amber-300">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                          <span>Esperando veredicto del Anfitrión en su consola de sala...</span>
-                        </div>
                       </motion.div>
                     );
                   })() : activeGame.id === 'trivial' ? (
@@ -1280,12 +1184,9 @@ export default function TvView() {
                       <div className="w-28 h-28 mx-auto rounded-full bg-amber-500/10 border-2 border-[#d4af37] flex items-center justify-center animate-pulse mb-5 shadow-deco-gold">
                         <Flame className="w-14 h-14 text-[#d4af37]" />
                       </div>
-                      <h2 className="text-4xl md:text-5xl font-broadway tracking-wider uppercase text-gold-gradient drop-shadow-md">
+                      <h2 className="text-4xl md:text-6xl font-broadway tracking-wider uppercase text-gold-gradient drop-shadow-md">
                         ¡ATENTOS AL TIMBRE!
                       </h2>
-                      <p className="text-amber-200/80 font-vintage text-base sm:text-lg mt-2">
-                        El primer equipo en presionar el timbre de bronce en su móvil responderá.
-                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1324,27 +1225,18 @@ export default function TvView() {
               ) : activeGame.id === 'beer_pong' ? (
                 /* ESCENARIO BEER PONG */
                 <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-4 border border-[#f5eedb]/40 shadow-sm">
-                    <span>🍺</span> TABERNA CLANDESTINA & TORNEO DE VASOS
-                  </div>
-                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-2 uppercase drop-shadow-md">
-                    TORNEO DE TIROS Y VASOS
+                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-6 uppercase drop-shadow-md">
+                    🍺 TORNEO DE BEER PONG
                   </h2>
-                  <p className="text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-6">
-                    Prueba presencial con vasos y pelotas de ping pong. ¡Cada vaso encestado suma +1 acierto al marcador!
-                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 my-4">
                     {activeTeams.map((team) => {
                       const catalog = TEAMS_CATALOG.find((c) => c.index === team.team_index) || TEAMS_CATALOG[0];
                       const cups = roundHits[team.id] ?? roundHits[`team_${team.team_index}`] ?? roundHits[String(team.team_index)] ?? 0;
                       return (
-                        <div key={team.id} className="p-4 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 flex flex-col items-center shadow-md">
+                        <div key={team.id} className="p-4 sm:p-5 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 flex flex-col items-center shadow-md">
                           <span className={`w-4 h-4 rounded-full ${catalog.twBg} mb-2 shadow`} />
-                          <span className="text-sm font-broadway text-white">{team.name}</span>
-                          <span className="text-3xl font-broadway text-gold-gradient mt-1">{cups} 🥤</span>
-                          <span className="text-xs font-vintage text-amber-300/80 uppercase tracking-wide">
-                            {cups === 1 ? 'Vaso encestado' : 'Vasos encestados'}
-                          </span>
+                          <span className="text-base sm:text-lg font-broadway text-white truncate max-w-full">{team.name}</span>
+                          <span className="text-4xl sm:text-5xl font-broadway text-gold-gradient mt-2">{cups} 🥤</span>
                         </div>
                       );
                     })}
@@ -1352,32 +1244,12 @@ export default function TvView() {
                 </div>
               ) : (
                 /* TELÉFONO DIBUJADO */
-                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
-                    <Palette className="w-4 h-4" /> Teléfono Dibujado en Papel Real
-                  </div>
-                  <h2 className="text-3xl sm:text-4xl font-broadway text-gold-gradient mb-2 drop-shadow-md">
-                    CADENA CÓSMICA DE ARTE & CARICATURAS
+                <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-10 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
+                  <h2 className="text-3xl sm:text-5xl font-broadway text-gold-gradient mb-6 drop-shadow-md">
+                    🎨 TELÉFONO DIBUJADO
                   </h2>
-                  <div className="inline-block px-4 py-1.5 bg-[#14141e] border border-[#d4af37]/40 rounded-full text-xs font-vintage font-bold text-amber-300 mb-3 shadow-sm">
-                    💡 El Jugador 1 decide qué dibujar para iniciar la cadena
-                  </div>
-                  <p className="text-xs sm:text-sm font-vintage text-amber-100/80 max-w-lg mx-auto mb-4">
-                    J1 piensa y dibuja en su folio ➔ J2 adivina y escribe ➔ J3 dibuja lo escrito ➔ J4 adivina ➔ J5 dibuja la obra final. ¡Al terminar, se revelan los folios!
-                  </p>
-                  <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto mb-4">
-                    <span className="text-xs bg-[#14141e] border border-amber-500/40 text-amber-200 px-3 py-1.5 rounded-xl font-vintage font-bold shadow-sm">
-                      🎯 Cadena intacta J1 ➔ J5: <strong className="text-amber-400 font-broadway">+5 aciertos</strong>
-                    </span>
-                    <span className="text-xs bg-[#14141e] border border-emerald-500/40 text-emerald-200 px-3 py-1.5 rounded-xl font-vintage font-bold shadow-sm">
-                      🎨 Mejor dibujo: <strong className="text-emerald-400 font-broadway">+2 aciertos</strong>
-                    </span>
-                    <span className="text-xs bg-[#14141e] border border-purple-500/40 text-purple-200 px-3 py-1.5 rounded-xl font-vintage font-bold shadow-sm">
-                      🤪 Peor dibujo: <strong className="text-purple-400 font-broadway">+1 acierto</strong>
-                    </span>
-                  </div>
                   <div className="my-4">
-                    <div className={`text-7xl font-broadway drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-gold-gradient'}`}>
+                    <div className={`text-8xl sm:text-9xl font-broadway drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] ${timerSeconds !== null && timerSeconds <= 5 ? 'text-red-500 animate-ping' : 'text-gold-gradient'}`}>
                       {timerSeconds !== null ? `${timerSeconds}s` : '--'}
                     </div>
                   </div>
@@ -1389,19 +1261,13 @@ export default function TvView() {
           {/* MOTOR C: DUELOS & JUEGOS DE MESA (Blackjack, Dominó, Parchís, UNO) */}
           {activeGame.engine === 'duel' && (
             <div className="w-full max-w-4xl bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-8 backdrop-blur-xl shadow-deco-gold text-center hell-card-frame">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider mb-3 border border-[#f5eedb]/40 shadow-sm">
-                <Swords className="w-4 h-4" /> Gran Salón de Juegos Clandestinos: {activeGame.title}
-              </div>
-              <h2 className="text-3xl md:text-5xl font-broadway uppercase text-gold-gradient mb-2 drop-shadow-md">
-                CLASIFICACIÓN DEL TORNEO
+              <h2 className="text-3xl md:text-5xl font-broadway uppercase text-gold-gradient mb-6 drop-shadow-md">
+                ⚔️ {activeGame.title}
               </h2>
-              <p className="text-amber-200/80 font-vintage text-xs md:text-sm mb-6 max-w-xl mx-auto">
-                {activeGame.description}
-              </p>
 
               {/* PODIO DE PUNTOS */}
               <div
-                className="grid gap-3 mb-6"
+                className="grid gap-3 my-2"
                 style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
               >
                 {activeTeams.map((team) => {
@@ -1409,19 +1275,15 @@ export default function TvView() {
                   return (
                     <div
                       key={team.id}
-                      className={`p-4 rounded-2xl border-2 ${catalog.twBorder} bg-[#07070a]/90 flex flex-col justify-between shadow-deco-gold`}
+                      className={`p-5 rounded-2xl border-2 ${catalog.twBorder} bg-[#07070a]/90 flex flex-col justify-between shadow-deco-gold`}
                     >
-                      <span className={`w-3.5 h-3.5 rounded-full ${catalog.twBg} mx-auto mb-2 shadow`} />
-                      <span className={`text-base font-broadway uppercase ${catalog.twText}`}>{team.name}</span>
-                      <span className="text-3xl font-broadway text-gold-gradient mt-2">{team.score}</span>
-                      <span className="text-xs text-amber-300/70 uppercase font-vintage font-bold">puntos</span>
+                      <span className={`w-4 h-4 rounded-full ${catalog.twBg} mx-auto mb-2 shadow`} />
+                      <span className={`text-base sm:text-lg font-broadway uppercase ${catalog.twText} truncate`}>{team.name}</span>
+                      <span className="text-4xl sm:text-5xl font-broadway text-gold-gradient mt-2">{team.score}</span>
+                      <span className="text-xs text-amber-300/70 uppercase font-vintage font-bold">PTS</span>
                     </div>
                   );
                 })}
-              </div>
-
-              <div className="text-xs font-vintage font-bold uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5">
-                <Trophy className="w-4 h-4 text-[#d4af37]" /> Clasificación y puntos gestionados en directo por el Anfitrión
               </div>
             </div>
           )}
@@ -1436,90 +1298,69 @@ export default function TvView() {
         );
 
         return (
-          <footer className="border-t border-[#d4af37]/35 bg-black/85 backdrop-blur-md pt-3 pb-2 px-4 z-10">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs uppercase font-bold tracking-wider text-amber-200 flex items-center gap-1.5">
-                  {isRoundScoreGame ? (
-                    <>
-                      <span className="text-amber-400 text-sm">🎯</span>
-                      <span>Puntuación de la Partida:</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-amber-400 text-sm">🏆</span>
-                      <span>Marcador General:</span>
-                    </>
-                  )}
-                </span>
-              </div>
-              <div
-                className="flex-1 grid gap-2.5 w-full"
-                style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
-              >
-                {activeTeams.map((team) => {
-                  const theme = getTeamTheme(team.team_index);
-                  const teamHand = powerCards?.teamHands[team.id] || [];
-                  const hasDouble = powerCards?.activeEffects.some(
-                    (e) => e.sourceTeamId === team.id && e.cardId === 'doble'
-                  );
-                  const hasBomb = powerCards?.activeEffects.some(
-                    (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
-                  );
-                  const hasShield = powerCards?.activeEffects.some(
-                    (e) => e.sourceTeamId === team.id && e.cardId === 'escudo'
-                  );
-                  const hasSentence = powerCards?.activeEffects.some(
-                    (e) => e.targetTeamId === team.id && e.cardId === 'la_sentencia'
-                  );
-                  const hasRussianRoulette = powerCards?.activeEffects.some(
-                    (e) => e.sourceTeamId === team.id && e.cardId === 'ruleta_rusa'
-                  );
-                  const hasPhoenix = powerCards?.activeEffects.some(
-                    (e) => e.sourceTeamId === team.id && e.cardId === 'ave_fenix'
-                  );
-                  const hasCurse = teamHand.includes('la_maldicion');
-                  const hasCaptainGamble = !!captainGambles[team.id];
-                  const teamCaptain = players.find(
-                    (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
-                  );
-                  const members = teamCaptain ? [teamCaptain] : [];
+          <footer className="border-t border-[#d4af37]/35 bg-black/85 backdrop-blur-md pt-2.5 pb-2 px-4 z-10">
+            <div
+              className="grid gap-2.5 w-full"
+              style={{ gridTemplateColumns: `repeat(${activeTeams.length}, minmax(0, 1fr))` }}
+            >
+              {activeTeams.map((team) => {
+                const theme = getTeamTheme(team.team_index);
+                const teamHand = powerCards?.teamHands[team.id] || [];
+                const hasDouble = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'doble'
+                );
+                const hasBomb = powerCards?.activeEffects.some(
+                  (e) => e.targetTeamId === team.id && e.cardId === 'bomba'
+                );
+                const hasShield = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'escudo'
+                );
+                const hasSentence = powerCards?.activeEffects.some(
+                  (e) => e.targetTeamId === team.id && e.cardId === 'la_sentencia'
+                );
+                const hasRussianRoulette = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'ruleta_rusa'
+                );
+                const hasPhoenix = powerCards?.activeEffects.some(
+                  (e) => e.sourceTeamId === team.id && e.cardId === 'ave_fenix'
+                );
+                const hasCurse = teamHand.includes('la_maldicion');
+                const hasCaptainGamble = !!captainGambles[team.id];
+                const teamCaptain = players.find(
+                  (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
+                );
+                const members = teamCaptain ? [teamCaptain] : [];
 
-                  const roundScore = roundHits[team.id] || 0;
-                  const scoreSuffix = isRoundScoreGame
-                    ? (activeGame.id === 'music' || activeGame.id === 'trivial' || activeGame.id === 'mimica' || activeGame.id === 'drawing'
-                        ? (roundScore === 1 ? ' ACIERTO' : ' ACIERTOS')
-                        : activeGame.id === 'beer_pong'
-                        ? (roundScore === 1 ? ' VASO' : ' VASOS')
-                        : ' PTS')
-                    : ' PTS';
+                const roundScore = roundHits[team.id] || 0;
+                const scoreSuffix = isRoundScoreGame
+                  ? (activeGame.id === 'beer_pong' ? ' 🥤' : ' 🎯')
+                  : ' PTS';
 
-                  return (
-                    <TeamScoreCard
-                      key={team.id}
-                      team={team}
-                      theme={theme}
-                      members={members}
-                      powerCardsCount={teamHand.length}
-                      variant="scoreboard"
-                      customScore={isRoundScoreGame ? roundScore : team.score}
-                      scoreSuffix={scoreSuffix}
-                      subtitleScore={isRoundScoreGame ? `General: ${team.score} pts` : undefined}
-                      maxRoomScore={Math.max(...activeTeams.map((t) => (isRoundScoreGame ? (roundHits[t.id] || 0) : t.score || 0)), 0)}
-                      activeEffects={{
-                        hasDouble,
-                        hasBomb,
-                        hasShield,
-                        hasSentence,
-                        hasRussianRoulette,
-                        hasPhoenix,
-                        hasCurse,
-                        hasGamble: hasCaptainGamble,
-                      }}
-                    />
-                  );
-                })}
-              </div>
+                return (
+                  <TeamScoreCard
+                    key={team.id}
+                    team={team}
+                    theme={theme}
+                    members={members}
+                    powerCardsCount={teamHand.length}
+                    variant="scoreboard"
+                    customScore={isRoundScoreGame ? roundScore : team.score}
+                    scoreSuffix={scoreSuffix}
+                    subtitleScore={isRoundScoreGame ? `Total: ${team.score} pts` : undefined}
+                    maxRoomScore={Math.max(...activeTeams.map((t) => (isRoundScoreGame ? (roundHits[t.id] || 0) : t.score || 0)), 0)}
+                    activeEffects={{
+                      hasDouble,
+                      hasBomb,
+                      hasShield,
+                      hasSentence,
+                      hasRussianRoulette,
+                      hasPhoenix,
+                      hasCurse,
+                      hasGamble: hasCaptainGamble,
+                    }}
+                  />
+                );
+              })}
             </div>
           </footer>
         );

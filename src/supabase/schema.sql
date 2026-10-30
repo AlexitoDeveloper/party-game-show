@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     status VARCHAR(20) NOT NULL DEFAULT 'lobby' CHECK (status IN ('lobby', 'playing', 'paused', 'podium', 'ended')),
     active_teams_count INT NOT NULL DEFAULT 5 CHECK (active_teams_count BETWEEN 2 AND 8),
     current_game VARCHAR(50) DEFAULT 'buzzer',
+    active_game_id VARCHAR(50) DEFAULT 'music',
+    game_phase VARCHAR(20) NOT NULL DEFAULT 'briefing' CHECK (game_phase IN ('briefing', 'active')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

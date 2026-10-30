@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Users, Crown, Swords, Star, RefreshCw, Play, BookOpen, Lock } from 'lucide-react';
+import { Award, Users, Star, RefreshCw, Play, BookOpen } from 'lucide-react';
 import { TEAMS_CATALOG } from '../../lib/constants';
 import { GameDefinition } from '../../lib/games';
 import { Team, BuzzerPressPayload, GamePhase, Player, TeamRepresentative } from '../../lib/types';
@@ -20,8 +20,8 @@ export interface HostLivePlayingConsoleProps {
   selectedTeamForPoints: string;
   onSelectTeamForPoints: (teamId: string) => void;
   selectedTeamCatalog: (typeof TEAMS_CATALOG)[0] | undefined;
-  captainDuel: { isActive: boolean } | null;
-  onToggleCaptainDuel: () => void;
+  captainDuel?: { isActive: boolean } | null;
+  onToggleCaptainDuel?: () => void;
   captainGambles: Record<string, { teamId: string; teamName: string; playerName: string }>;
   onClearCaptainGambles: () => void;
   isLocked: boolean;
@@ -76,27 +76,15 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   teamRepresentatives = {},
   players = [],
 }) => {
-  const isRepGame = ['solo', 'duo', 'delegates'].includes(activeGame.participantsMode);
-
-  // Equipos activos con al menos un jugador conectado que aún no han designado representantes
-  const teamsWithMembers = activeTeams.filter((t) =>
-    (players || []).some((p) => p.team_id === t.id || p.team_index === t.team_index)
-  );
-
-  const missingRepTeams = isRepGame
-    ? teamsWithMembers.filter((t) => {
-        const rep = teamRepresentatives?.[t.id];
-        const has =
-          (rep?.representativePlayerIds && rep.representativePlayerIds.length > 0) ||
-          !!rep?.representativePlayerId;
-        return !has;
-      })
-    : [];
-
-  const canStartRound = !isRepGame || missingRepTeams.length === 0;
+  // Auto-seleccionar el equipo del ganador del pulsador para asignación inmediata de puntos sin fricción
+  React.useEffect(() => {
+    if (winner && winner.teamId) {
+      onSelectTeamForPoints(winner.teamId);
+    }
+  }, [winner, onSelectTeamForPoints]);
 
   return (
-    <section className="hell-card-frame rounded-3xl p-6 space-y-4">
+    <section className="hell-card-frame rounded-3xl p-4 sm:p-6 space-y-4">
       {/* BANNER DE SUBFASE BRIEFING */}
       {gamePhase === 'briefing' ? (
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1f1508] via-[#2a1d0b] to-[#1a0f12] border-2 border-[#d4af37] shadow-deco-gold flex flex-col gap-3.5">
@@ -118,72 +106,84 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
                   {activeGame.title}
                 </h3>
                 <p className="text-xs text-amber-100/70 font-vintage mt-0.5">
-                  {isRepGame
-                    ? 'Los capitanes deben designar a sus representantes en sus móviles antes de que puedas arrancar la prueba.'
-                    : 'La sala está atendiendo a las normas. Pulsa Iniciar cuando desees arrancar el juego en la TV.'}
+                  Todos los jugadores participan desde el inicio. Pulsa Iniciar cuando desees arrancar el juego en la TV y móviles.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col items-stretch md:items-end gap-1.5 w-full md:w-auto shrink-0">
-              {canStartRound ? (
-                <button
-                  onClick={onStartActiveRound}
-                  className="px-6 py-3 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold border-2 border-[#f5eedb]/60 active:scale-95 transition-all animate-pulse"
-                  title="Iniciar la fase activa del juego en la TV y móviles"
-                >
-                  <Play className="w-4 h-4 fill-slate-950" />
-                  <span>▶️ Iniciar Prueba</span>
-                </button>
-              ) : (
-                <div className="flex flex-col items-stretch md:items-end gap-1 w-full md:w-auto">
-                  <button
-                    disabled
-                    className="px-5 py-3 rounded-2xl bg-[#14141e] border-2 border-amber-600/50 text-amber-200/50 font-broadway font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed shadow-inner"
-                    title={`Faltan representantes de: ${missingRepTeams.map((t) => t.name).join(', ')}`}
-                  >
-                    <Lock className="w-4 h-4 text-amber-500" />
-                    <span>Faltan Representantes ({missingRepTeams.length})</span>
-                  </button>
-                  <button
-                    onClick={onStartActiveRound}
-                    className="text-xs uppercase font-vintage text-amber-400/80 hover:text-amber-200 underline text-center md:text-right"
-                    title="Forzar inicio de prueba sin esperar a los capitanes"
-                  >
-                    ⚡ Forzar inicio de todos modos
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={onStartActiveRound}
+                className="px-6 py-3 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold border-2 border-[#f5eedb]/60 active:scale-95 transition-all animate-pulse"
+                title="Iniciar la fase activa del juego en la TV y móviles"
+              >
+                <Play className="w-4 h-4 fill-slate-950" />
+                <span>▶️ Iniciar Prueba</span>
+              </button>
             </div>
           </div>
-
-          {/* Alerta de equipos pendientes de asignar representantes */}
-          {isRepGame && !canStartRound && (
-            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between text-xs font-vintage gap-2">
-              <span className="text-amber-200/90">
-                ⏳ Esperando a que los capitanes elijan a sus combatientes. Faltan:{' '}
-                <strong className="text-amber-300 font-broadway uppercase">
-                  {missingRepTeams.map((t) => t.name).join(', ')}
-                </strong>
-              </span>
-            </div>
-          )}
         </div>
       ) : (
-        <div className="px-4 py-2 rounded-xl bg-[#0c0c14]/80 border border-[#d4af37]/30 flex items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-broadway uppercase text-emerald-300">Prueba en Directo</span>
-            <span className="text-slate-400 hidden sm:inline font-vintage">({activeGame.title})</span>
+        <div className="space-y-3">
+          <div className="px-4 py-2 rounded-xl bg-[#0c0c14]/80 border border-[#d4af37]/30 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="font-broadway uppercase text-emerald-300">Prueba en Directo</span>
+              <span className="text-slate-400 hidden sm:inline font-vintage">({activeGame.title})</span>
+            </div>
+            <button
+              onClick={onToggleBriefing}
+              className="text-xs font-broadway uppercase text-amber-300 hover:text-white bg-[#14141e] border border-[#d4af37]/40 px-3 py-1 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
+              title="Volver a mostrar el cartel de reglas en la TV"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span>Ver Reglas / Briefing en TV</span>
+            </button>
           </div>
-          <button
-            onClick={onToggleBriefing}
-            className="text-xs font-broadway uppercase text-amber-300 hover:text-white bg-[#14141e] border border-[#d4af37]/40 px-3 py-1 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
-            title="Volver a mostrar el cartel de reglas en la TV"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>Ver Reglas / Briefing en TV</span>
-          </button>
+
+          {/* HERO DESTACADO: ESTADO DEL TIMBRE Y GANADOR DE LA CARRERA */}
+          {activeGame.engine === 'buzzer' && (
+            <div className={`p-4 rounded-2xl border-2 transition-all shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3.5 ${
+              isLocked && winner
+                ? 'bg-gradient-to-r from-amber-950/80 via-[#251806] to-amber-950/80 border-[#ffd700] shadow-[0_0_25px_rgba(255,215,0,0.35)]'
+                : 'bg-[#0c0c14]/90 border-[#d4af37]/35'
+            }`}>
+              <div className="flex items-center gap-3.5">
+                <div className={`w-3.5 h-3.5 rounded-full ${isLocked && winner ? 'bg-[#ffd700] animate-bounce' : 'bg-emerald-400 animate-ping'}`} />
+                <div>
+                  <span className="text-xs text-amber-200/70 block font-vintage font-bold uppercase tracking-wider">
+                    {isLocked && winner ? '¡TIMBRE PULSADO!' : 'ESTADO DEL PULSADOR'}
+                  </span>
+                  {isLocked && winner ? (
+                    <span className="text-base sm:text-lg font-black text-amber-300 font-broadway flex items-center gap-2 flex-wrap">
+                      <span>⚡ Ha pulsado:</span>
+                      <span className="text-white underline decoration-[#d4af37]">{winner.playerName}</span>
+                      <span className="text-gold-gradient font-black">({winner.teamName})</span>
+                    </span>
+                  ) : (
+                    <span className="text-sm font-bold text-emerald-400 font-vintage">
+                      🟢 Timbre activo en móviles — Esperando pulsación...
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {isLocked && winner && (
+                  <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-2.5 py-1 rounded-lg font-bold font-vintage hidden md:inline">
+                    ✓ Bando asignado automáticamente
+                  </span>
+                )}
+                <button
+                  onClick={onResetBuzzer}
+                  className="bg-[#14141e] hover:bg-[#1f1f2e] border border-[#d4af37]/50 hover:border-amber-400 text-amber-200 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all font-broadway tracking-wide shadow-md"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Desbloquear Timbre</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#d4af37]/30 pb-3 gap-2">
@@ -227,98 +227,6 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
         </div>
       </div>
 
-      {/* PANEL DE REPRESENTANTES DESIGNADOS POR BANDO */}
-      {['solo', 'duo', 'delegates'].includes(activeGame.participantsMode) && (
-        <div className="p-3 sm:p-3.5 bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-broadway uppercase text-gold-gradient tracking-wide">
-                Representantes en el Ruedo ({activeGame.participantsLabel})
-              </span>
-            </div>
-            <span className="text-xs font-vintage text-amber-200/60">
-              {activeGame.participantsMode === 'solo' ? '1 por bando' : activeGame.participantsMode === 'duo' ? '2 por bando' : 'Hasta 3 por bando'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
-            {activeTeams.map((team) => {
-              const cat = TEAMS_CATALOG.find((c) => c.index === team.team_index);
-              const rep = teamRepresentatives[team.id];
-              const names = rep?.representativeNames?.length
-                ? rep.representativeNames
-                : rep?.representativeName
-                ? [rep.representativeName]
-                : [];
-
-              return (
-                <div
-                  key={team.id}
-                  className="bg-[#12121c] border border-[#d4af37]/30 rounded-xl p-2.5 flex flex-col justify-between shadow-sm"
-                >
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className={`text-xs font-broadway uppercase ${cat?.twText || 'text-amber-200'}`}>
-                      {team.name}
-                    </span>
-                    <span className={`w-2 h-2 rounded-full ${cat?.twBg}`} />
-                  </div>
-                  <div className="text-xs font-vintage">
-                    {names.length > 0 ? (
-                      <span className="text-amber-100 font-bold block truncate">
-                        ⭐ {names.join(', ')}
-                      </span>
-                    ) : (
-                      <span className="text-amber-200/40 italic block">Eligiendo...</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* CONTROL DEL SISTEMA DE CAPITANES: MINIDUELO Y APUESTAS */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-3.5 hell-card-frame-crimson rounded-2xl">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="p-2 bg-amber-500/20 border border-amber-500/30 rounded-xl text-amber-400 shrink-0">
-            <Crown className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black text-white uppercase tracking-wider font-broadway">
-                Miniduelo <span className="hidden sm:inline">de Capitanes</span>
-              </span>
-              {captainDuel?.isActive && (
-                <span className="bg-red-500/25 border border-red-500/50 text-red-300 text-xs font-black uppercase px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1">
-                  <Swords className="w-3 h-3" />
-                  <span className="hidden sm:inline">DUELO ACTIVO EN TV & MÓVILES</span>
-                  <span className="sm:hidden">ACTIVO</span>
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
-              {captainDuel?.isActive
-                ? '¡Atención! Solo los capitanes 👑 tienen el pulsador habilitado. El resto de jugadores tienen el buzzer bloqueado.'
-                : 'Activa un desempate o duelo rápido donde solo pueden pulsar los capitanes de cada equipo.'}
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onToggleCaptainDuel}
-          className={`w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md whitespace-nowrap ${
-            captainDuel?.isActive
-              ? 'bg-red-600 hover:bg-red-500 text-white'
-              : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/20'
-          }`}
-        >
-          <Swords className="w-4 h-4" />
-          <span>{captainDuel?.isActive ? 'Terminar Duelo' : 'Iniciar Duelo'}</span>
-        </button>
-      </div>
-
       {/* APUESTAS DOBLE O NADA ACTIVAS DE LOS CAPITANES */}
       {Object.values(captainGambles).length > 0 && (
         <div className="p-3.5 bg-amber-500/15 border border-amber-400/40 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -351,35 +259,6 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
         </div>
       )}
 
-      {/* ESTADO DEL BUZZER */}
-      {activeGame.engine === 'buzzer' && (
-        <div className="bg-[#0c0c14]/90 border border-[#d4af37]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
-            <div>
-              <span className="text-xs text-amber-200/60 block font-vintage font-bold uppercase tracking-wider">Estado del Pulsador</span>
-              {isLocked && winner ? (
-                <span className="text-base font-black text-amber-400 font-broadway">
-                  ¡Ha pulsado <span className="text-white">{winner.playerName}</span> ({winner.teamName})!
-                </span>
-              ) : (
-                <span className="text-sm font-bold text-emerald-400 font-vintage">
-                  Esperando que algún equipo pulse el botón...
-                </span>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={onResetBuzzer}
-            className="bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/40 hover:border-amber-400 text-amber-200 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all font-broadway tracking-wide shadow-sm"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Desbloquear Pulsador</span>
-            <span className="sm:hidden">Desbloquear</span>
-          </button>
-        </div>
-      )}
 
       {/* BOTONES DE PUNTUACIÓN SEGÚN LAS REGLAS EXACTAS DEL JUEGO */}
       <div className="space-y-3">

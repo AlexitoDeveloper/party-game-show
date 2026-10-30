@@ -15,24 +15,20 @@ interface TvUnDosTresGameProps {
 export const TvUnDosTresGame: React.FC<TvUnDosTresGameProps> = ({
   currentUdtChallenge,
   udtCountdown,
-  udtIsTimerRunning,
   activeTeams,
   udtEliminatedTeamIds,
   udtActiveTeamId,
 }) => {
   return (
     <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/50 shadow-md">
-          <span>⚡</span> 1, 2, 3 ¿YA? — {currentUdtChallenge.level} (Nivel {currentUdtChallenge.levelNumber})
-        </div>
-        <div className="text-xs font-vintage font-bold text-amber-300 uppercase tracking-wider">
-          Turnos por equipo • 5 Segundos • Eliminación directa
+      <div className="flex items-center justify-center mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs sm:text-sm font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/50 shadow-md">
+          <span>⚡</span> {currentUdtChallenge.level} (Nivel {currentUdtChallenge.levelNumber})
         </div>
       </div>
 
       {/* TEMPORIZADOR GIGANTE DE 5 SEGUNDOS (CRONÓMETRO DE BRONCE) */}
-      <div className="my-6">
+      <div className="my-4">
         <div
           className={`text-8xl sm:text-9xl font-broadway transition-all drop-shadow-[0_0_35px_rgba(212,175,55,0.4)] ${
             udtCountdown !== null && udtCountdown <= 2
@@ -44,19 +40,14 @@ export const TvUnDosTresGame: React.FC<TvUnDosTresGameProps> = ({
         >
           {udtCountdown !== null ? `${udtCountdown}s` : '5s'}
         </div>
-        <p className="text-sm font-vintage font-bold uppercase tracking-wider text-amber-200/80 mt-2">
-          {udtIsTimerRunning
-            ? '¡Cuenta atrás en marcha! ¡Di 3 respuestas en voz alta!'
-            : 'Esperando que el Anfitrión lance el tiempo'}
-        </p>
       </div>
 
       {/* RETO ACTIVO */}
       <div className="p-6 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 my-4 shadow-inner">
-        <span className="text-xs uppercase font-broadway font-black text-gold-gradient block mb-1">
+        <span className="text-xs sm:text-sm uppercase font-broadway font-black text-gold-gradient block mb-1">
           {currentUdtChallenge.category}
         </span>
-        <h2 className="text-2xl sm:text-4xl font-broadway text-amber-50 drop-shadow-sm">
+        <h2 className="text-3xl sm:text-5xl font-broadway text-amber-50 drop-shadow-sm">
           {currentUdtChallenge.prompt}
         </h2>
       </div>

@@ -39,16 +39,10 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
 
   const lastPressTimeRef = useRef(0);
 
-  const handlePressAction = (e: React.SyntheticEvent) => {
-    // Detener propagación a elementos padres y evitar clicks sintéticos indeseados
-    e.stopPropagation();
-    if (e.cancelable && e.type !== 'click') {
-      e.preventDefault();
-    }
-
-    // Evitar disparos dobles en Safari iOS (pointerdown + touchstart + click consecutivamente)
+  const triggerPress = (clientX: number, clientY: number, target: HTMLElement) => {
+    // Evitar disparos dobles (pointerdown + click consecutivamente)
     const now = Date.now();
-    if (now - lastPressTimeRef.current < 250) {
+    if (now - lastPressTimeRef.current < 220) {
       return;
     }
     lastPressTimeRef.current = now;
@@ -62,26 +56,22 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
     playerHaptics.press();
 
     // Posición del toque para la onda ripple dorada
-    const currentTarget = e.currentTarget as HTMLElement;
-    const rect = currentTarget.getBoundingClientRect();
-    let clientX = rect.left + rect.width / 2;
-    let clientY = rect.top + rect.height / 2;
-
-    if ('clientX' in e && typeof (e as any).clientX === 'number') {
-      clientX = (e as any).clientX;
-      clientY = (e as any).clientY;
-    } else if ('touches' in e && (e as any).touches?.[0]) {
-      clientX = (e as any).touches[0].clientX;
-      clientY = (e as any).touches[0].clientY;
-    }
-
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    const newRipple = { id: Date.now(), x, y };
+    const rect = target.getBoundingClientRect();
+    const x = (clientX || rect.left + rect.width / 2) - rect.left;
+    const y = (clientY || rect.top + rect.height / 2) - rect.top;
+    const newRipple = { id: now, x, y };
 
     setRipples((prev) => [...prev.slice(-3), newRipple]);
 
     onPress();
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    triggerPress(e.clientX, e.clientY, e.currentTarget);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    triggerPress(e.clientX, e.clientY, e.currentTarget);
   };
 
   const isDisabledState = isLocked || disabled;
@@ -138,12 +128,10 @@ export const ArcadeBuzzer: React.FC<ArcadeBuzzerProps> = ({
 
           {/* 3. Botón Físico Pulsable 3D estilo Campana de Latón & Ficha */}
           <motion.button
-            key={isLocked ? 'buzzer-locked' : 'buzzer-ready'}
             type="button"
             aria-disabled={isDisabledState}
-            onPointerDown={handlePressAction}
-            onTouchStart={handlePressAction}
-            onClick={handlePressAction}
+            onPointerDown={handlePointerDown}
+            onClick={handleClick}
             animate={{ y: 0, scale: 1 }}
             whileTap={!isDisabledState ? { y: 7, scale: 0.95 } : undefined}
             transition={{ type: 'spring', stiffness: 550, damping: 28 }}

@@ -13,7 +13,6 @@ import { PowerCardsState, PowerCard, getPowerCardById } from '../lib/powerCards'
 import PowerCardView from '../components/PowerCardView';
 import { FannedHandDeck } from '../components/cards/FannedHandDeck';
 import { PlayerBuzzerSection } from '../components/player/PlayerBuzzerSection';
-import { CaptainRepSelectorModal } from '../components/player/CaptainRepSelectorModal';
 import { PlayerBingoSection } from '../components/player/PlayerBingoSection';
 import { PlayerMimicaSection } from '../components/player/PlayerMimicaSection';
 import { PlayerDoubleOrNothingModal } from '../components/player/PlayerDoubleOrNothingModal';
@@ -136,7 +135,6 @@ export default function PlayerView() {
   const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
   const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>({});
   const [isDoubleModalOpen, setIsDoubleModalOpen] = useState(false);
-  const [isRepModalOpen, setIsRepModalOpen] = useState(false);
 
   // Estados de Bingo sincronizados en móvil
   const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>(() => {
@@ -271,11 +269,13 @@ export default function PlayerView() {
     window.addEventListener('visibilitychange', handleReactivation);
     window.addEventListener('focus', handleReactivation);
     window.addEventListener('online', handleReactivation);
+    window.addEventListener('pageshow', handleReactivation);
 
     return () => {
       window.removeEventListener('visibilitychange', handleReactivation);
       window.removeEventListener('focus', handleReactivation);
       window.removeEventListener('online', handleReactivation);
+      window.removeEventListener('pageshow', handleReactivation);
     };
   }, [roomCode, roomSync]);
 
@@ -327,7 +327,13 @@ export default function PlayerView() {
         });
       } else if (event.type === 'ROOM_UPDATE') {
         setRoom((prev) => {
-          const next = { ...prev, ...event.payload };
+          const next = {
+            ...prev,
+            ...event.payload,
+            game_phase: event.payload.game_phase !== undefined && event.payload.game_phase !== null
+              ? event.payload.game_phase
+              : prev.game_phase,
+          };
           localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(next));
           return next;
         });
@@ -444,7 +450,11 @@ export default function PlayerView() {
     async function fetchTeams() {
       const { data: roomData } = await supabase.from('rooms').select('*').eq('code', roomCode).single();
       if (roomData) {
-        setRoom(roomData);
+        setRoom((prev) => ({
+          ...prev,
+          ...roomData,
+          game_phase: roomData.game_phase || prev.game_phase || 'briefing',
+        }));
         const { data: teamsData } = await supabase
           .from('teams')
           .select('*')
@@ -747,52 +757,6 @@ export default function PlayerView() {
     setTimeout(() => setFeedbackToast(null), 4000);
   };
 
-  const handleDesignateRepresentatives = (tPlayerIds: string[], tPlayerNames: string[]) => {
-    if (!myTeamId || !player?.is_captain) return;
-    const rep: TeamRepresentative = {
-      teamId: myTeamId,
-      representativePlayerIds: tPlayerIds,
-      representativeNames: tPlayerNames,
-      representativePlayerId: tPlayerIds[0] || '',
-      representativeName: tPlayerNames[0] || '',
-    };
-    setTeamRepresentatives((prev) => ({ ...prev, [myTeamId]: rep }));
-    roomSync.broadcast({
-      type: 'CAPTAIN_REPRESENTATIVE',
-      payload: rep,
-    });
-    setIsRepModalOpen(false);
-    const namesStr = tPlayerNames.join(', ');
-    setFeedbackToast(`👤 ${namesStr} en el ruedo.`);
-    setTimeout(() => setFeedbackToast(null), 4000);
-  };
-
-  // Miembros de mi bando para el selector de representantes del capitán
-  const myTeamMembers = useMemo(() => {
-    if (!myTeamId && !selectedTeam) return [];
-    return allPlayers.filter(
-      (p) => p.team_id === myTeamId || p.team_index === selectedTeam?.index
-    );
-  }, [allPlayers, myTeamId, selectedTeam?.index]);
-
-  // Modo y representantes del minijuego en curso
-  const isRepGame = ['solo', 'duo', 'delegates'].includes(activeGame.participantsMode);
-  const maxRepresentatives = activeGame.participantsMode === 'solo' ? 1 : activeGame.participantsMode === 'duo' ? 2 : 3;
-  const currentTeamRep = myTeamId ? teamRepresentatives[myTeamId] : null;
-  const repIds = currentTeamRep?.representativePlayerIds && currentTeamRep.representativePlayerIds.length > 0
-    ? currentTeamRep.representativePlayerIds
-    : currentTeamRep?.representativePlayerId
-    ? [currentTeamRep.representativePlayerId]
-    : [];
-  const repNames = currentTeamRep?.representativeNames && currentTeamRep.representativeNames.length > 0
-    ? currentTeamRep.representativeNames
-    : currentTeamRep?.representativeName
-    ? [currentTeamRep.representativeName]
-    : [];
-  const hasDesignatedReps = repIds.length > 0;
-  // Solo se envía al banquillo si el juego requiere representantes, ya se eligieron, y este jugador no está entre ellos
-  const isMeRepresentative = !isRepGame || !hasDesignatedReps || repIds.includes(player?.id || sessionToken);
-
   const executeCardAction = (card: PowerCard, tTeamId?: string, tPlayerName?: string, tCardId?: string) => {
     if (!myTeamId || !selectedTeam) return;
 
@@ -1057,34 +1021,6 @@ export default function PlayerView() {
                   </button>
                 )}
               </div>
-
-              {/* Botón de Selección de Representantes exclusivo para el Capitán en juegos que lo requieran */}
-              {player?.is_captain && isRepGame && (
-                <button
-                  onClick={() => setIsRepModalOpen(true)}
-                  className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/30 via-yellow-500/20 to-amber-700/30 border border-[#d4af37]/60 text-amber-200 hover:text-white flex items-center justify-between gap-2 text-xs font-vintage font-bold transition-all shadow-sm active:scale-98"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Designar Representantes</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-broadway font-black ${
-                    repIds.length > 0 ? 'bg-gold-gradient text-slate-950' : 'bg-stone-800 text-amber-300'
-                  }`}>
-                    {repIds.length > 0 ? `${repIds.length}/${maxRepresentatives} Elegidos` : `Elegir (${maxRepresentatives})`}
-                  </span>
-                </button>
-              )}
-
-              {/* Indicador para los compañeros cuando ya hay representantes */}
-              {!player?.is_captain && isRepGame && hasDesignatedReps && (
-                <div className="w-full py-1 px-3 rounded-xl bg-[#14141e]/90 border border-[#d4af37]/25 flex items-center justify-between text-xs font-vintage">
-                  <span className="text-amber-200/70">Tu posición en esta prueba:</span>
-                  <span className={`font-broadway uppercase ${isMeRepresentative ? 'text-gold-gradient font-black' : 'text-amber-300/80'}`}>
-                    {isMeRepresentative ? '⭐ ¡En el Ruedo!' : '🍿 En el Banquillo'}
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Pastilla identificativa del juego actual */}
@@ -1234,55 +1170,6 @@ export default function PlayerView() {
                   </p>
                 </div>
 
-                {/* Selección interactiva de representantes durante la presentación */}
-                {isRepGame && (
-                  <div className="pt-2 border-t border-[#d4af37]/30 space-y-2">
-                    {player?.is_captain ? (
-                      <div className="space-y-1.5">
-                        <button
-                          onClick={() => setIsRepModalOpen(true)}
-                          className="w-full py-2.5 px-3 rounded-2xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 transition-all hover:brightness-110 animate-pulse"
-                        >
-                          <Users className="w-4 h-4" />
-                          <span>
-                            {repIds.length > 0
-                              ? `✅ Representantes: ${repNames.join(', ')} (Cambiar)`
-                              : `⚡ ¡Designar ${maxRepresentatives} Representantes!`}
-                          </span>
-                        </button>
-                        <p className="text-xs font-vintage text-amber-200/70">
-                          {repIds.length > 0
-                            ? 'Has asignado a los combatientes. El juego comenzará cuando el anfitrión dé la señal.'
-                            : 'Como Capitán 👑, debes elegir quiénes salen al ruedo para que el anfitrión pueda iniciar la prueba.'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="p-2.5 rounded-xl bg-black/60 border border-[#d4af37]/30 text-center">
-                        {hasDesignatedReps ? (
-                          <div>
-                            <span className="text-xs font-vintage text-amber-300 block uppercase font-bold">
-                              Representantes designados por tu Capitán:
-                            </span>
-                            <span className="text-xs font-broadway text-gold-gradient block mt-0.5">
-                              ⭐ {repNames.join(', ')}
-                            </span>
-                            <span className="text-xs font-vintage text-amber-100/70 block mt-1">
-                              {isMeRepresentative
-                                ? '¡Prepárate! Vas a competir en el ruedo.'
-                                : 'Estarás en el banquillo asesorando a tu equipo.'}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2 text-xs font-vintage text-amber-300">
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                            <span>Tu Capitán 👑 está eligiendo a los representantes...</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div className="pt-2 border-t border-[#d4af37]/20 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-300 animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                   <span>Mira a la gran pantalla para seguir las instrucciones</span>
@@ -1294,15 +1181,12 @@ export default function PlayerView() {
               isBanned={isBanned}
               bannedShake={bannedShake}
               onBannedClick={handleBannedClick}
-              captainDuel={captainDuel}
               player={player}
               selectedTeamIndex={selectedTeam.index}
               isLocked={isLocked}
               onBuzzerClick={handleBuzzerClick}
               isMeWinner={isMeWinner}
               winner={winner}
-              isBenchMode={!isMeRepresentative}
-              representativeNames={repNames}
             />
           ) : activeGame.id === 'bingo' ? (
             <PlayerBingoSection
@@ -1451,18 +1335,6 @@ export default function PlayerView() {
         isOpen={isDoubleModalOpen}
         onClose={() => setIsDoubleModalOpen(false)}
         onConfirm={handleTriggerDoubleOrNothing}
-      />
-
-      {/* MODAL DEL CAPITÁN: SELECTOR DE REPRESENTANTES */}
-      <CaptainRepSelectorModal
-        isOpen={isRepModalOpen}
-        onClose={() => setIsRepModalOpen(false)}
-        teamMembers={myTeamMembers}
-        currentRep={currentTeamRep}
-        maxRepresentatives={maxRepresentatives}
-        gameTitle={activeGame.title}
-        gameEmoji={activeGame.emoji}
-        onConfirm={handleDesignateRepresentatives}
       />
 
       {/* MODAL PARA EDITAR FOTO O AVATAR */}

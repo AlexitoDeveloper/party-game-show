@@ -75,29 +75,33 @@ export function useFullscreen(): FullscreenState {
   const [isSupported] = useState<boolean>(isFullscreenSupported);
   const [isStandalone] = useState<boolean>(isRunningStandalone);
 
-  const checkState = useCallback(() => {
+  const handleFullscreenChange = useCallback(() => {
     recordFullscreenTransition();
+    setIsFullscreen(getIsFullscreen());
+  }, []);
+
+  const handleResize = useCallback(() => {
     setIsFullscreen(getIsFullscreen());
   }, []);
 
   useEffect(() => {
     // Eventos estándar y con prefijos de vendor para detectar cambios de pantalla completa
-    document.addEventListener('fullscreenchange', checkState);
-    document.addEventListener('webkitfullscreenchange', checkState);
-    document.addEventListener('mozfullscreenchange', checkState);
-    document.addEventListener('MSFullscreenChange', checkState);
-    window.addEventListener('resize', checkState);
-    window.addEventListener('orientationchange', checkState);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     return () => {
-      document.removeEventListener('fullscreenchange', checkState);
-      document.removeEventListener('webkitfullscreenchange', checkState);
-      document.removeEventListener('mozfullscreenchange', checkState);
-      document.removeEventListener('MSFullscreenChange', checkState);
-      window.removeEventListener('resize', checkState);
-      window.removeEventListener('orientationchange', checkState);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
     };
-  }, [checkState]);
+  }, [handleFullscreenChange, handleResize]);
 
   const enterFullscreen = useCallback(async (): Promise<boolean> => {
     try {

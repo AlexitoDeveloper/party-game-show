@@ -71,19 +71,16 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
 
   // MODO MARCADOR COMPACTO PARA EL FOOTER DURANTE LAS PRUEBAS
   if (variant === 'scoreboard') {
-    const teamCaptain = members.find((m) => m.is_captain);
-
     return (
       <div
-        className={`bg-[#0d0d14]/90 border border-[#d4af37]/40 rounded-xl px-3 py-2 flex items-center justify-between gap-2 shadow-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-md ${
+        className={`bg-[#0d0d14]/90 border border-[#d4af37]/40 rounded-xl px-3.5 py-2 flex items-center justify-between gap-2 shadow-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-md ${
           isLeader ? 'ring-2 ring-[#d4af37] shadow-gold-glow' : ''
         } ${className}`}
       >
-        {/* Adorno biselado Art Deco */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#d4af37]/60 to-transparent" />
 
         <div className="flex flex-col truncate min-w-0">
-          <div className="flex items-center gap-1.5 truncate">
+          <div className="flex items-center gap-2 truncate">
             <GameIcon
               name={
                 theme.index === 1
@@ -102,76 +99,64 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                   ? 'Target'
                   : 'Sun'
               }
-              size={16}
+              size={20}
               color={theme.accentHex}
               weight="fill"
               glow={theme.accentHex}
               className="shrink-0"
             />
-            <span className={`text-xs font-black font-broadway uppercase tracking-wide truncate ${theme.twText}`}>
+            <span className={`text-sm sm:text-base font-black font-broadway uppercase tracking-wide truncate ${theme.twText}`}>
               {team.name}
             </span>
-            {powerCardsCount > 0 && (
-              <span className="text-xs bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1.5 py-0.5 rounded-md font-bold font-mono shadow-sm">
-                🃏{powerCardsCount}
-              </span>
-            )}
-            {activeEffects.hasDouble && (
-              <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-md font-black animate-pulse">
-                x2
-              </span>
-            )}
-            {activeEffects.hasGamble && (
-              <span className="text-xs bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse flex items-center gap-0.5 shadow-sm shadow-amber-500/30">
-                ⭐x2
-              </span>
-            )}
-            {activeEffects.hasBomb && (
-              <span className="text-xs bg-orange-500/30 text-orange-300 border border-orange-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-orange-500/30" title="Bomba activa">
-                💣
-              </span>
-            )}
-            {activeEffects.hasShield && (
-              <span className="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-blue-500/30" title="Escudo protector">
-                🛡️
-              </span>
-            )}
-            {activeEffects.hasSentence && (
-              <span className="text-xs bg-red-700/40 text-red-300 border border-red-500/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="La Sentencia activa">
-                💀
-              </span>
-            )}
-            {activeEffects.hasRussianRoulette && (
-              <span className="text-xs bg-purple-500/30 text-purple-300 border border-purple-400/60 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Ruleta Rusa">
-                🎰
-              </span>
-            )}
-            {activeEffects.hasCurse && (
-              <span className="text-xs bg-red-950/80 text-red-400 border border-red-600/70 px-1.5 py-0.5 rounded-md font-black animate-pulse" title="Mano con Maldición (Fallos restan el DOBLE)">
-                ☠️
-              </span>
-            )}
-            {activeEffects.hasPhoenix && (
-              <span className="text-xs bg-gradient-to-r from-amber-600/50 to-red-600/50 text-amber-200 border border-amber-400/80 px-1.5 py-0.5 rounded-md font-black animate-pulse shadow-sm shadow-amber-500/40 flex items-center gap-0.5" title="Ave Fénix (x3 puntos conseguidos en esta prueba)">
-                🔥x3
-              </span>
-            )}
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-            {teamCaptain && (
-              <span className="text-xs text-[#f3e5ab]/80 font-vintage font-bold truncate flex items-center gap-1">
-                <Crown className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37] shrink-0" />
-                {teamCaptain.nickname}
-              </span>
-            )}
-            {subtitleScore && (
-              <span className="text-xs text-[#d4af37]/70 font-vintage font-bold truncate">
-                • {subtitleScore}
-              </span>
-            )}
-          </div>
+
+          {/* Iconos de cartas y efectos activos sin texto redundante */}
+          {(powerCardsCount > 0 ||
+            activeEffects.hasDouble ||
+            activeEffects.hasGamble ||
+            activeEffects.hasBomb ||
+            activeEffects.hasShield ||
+            activeEffects.hasSentence ||
+            activeEffects.hasRussianRoulette ||
+            activeEffects.hasCurse ||
+            activeEffects.hasPhoenix ||
+            subtitleScore) && (
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              {subtitleScore && (
+                <span className="text-xs text-amber-200/80 font-broadway uppercase tracking-wider">
+                  {subtitleScore}
+                </span>
+              )}
+              {powerCardsCount > 0 && (
+                <span className="text-xs bg-[#d4af37]/15 text-[#f3e5ab] border border-[#d4af37]/40 px-1.5 py-0.2 rounded font-bold font-mono">
+                  🃏{powerCardsCount}
+                </span>
+              )}
+              {activeEffects.hasDouble && (
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 rounded font-black animate-pulse">
+                  x2
+                </span>
+              )}
+              {activeEffects.hasGamble && (
+                <span className="text-xs bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1.5 py-0.2 rounded font-black animate-pulse">
+                  ⭐x2
+                </span>
+              )}
+              {activeEffects.hasBomb && <span className="text-xs animate-pulse">💣</span>}
+              {activeEffects.hasShield && <span className="text-xs animate-pulse">🛡️</span>}
+              {activeEffects.hasSentence && <span className="text-xs animate-pulse">💀</span>}
+              {activeEffects.hasRussianRoulette && <span className="text-xs animate-pulse">🎰</span>}
+              {activeEffects.hasCurse && <span className="text-xs animate-pulse">☠️</span>}
+              {activeEffects.hasPhoenix && (
+                <span className="text-xs bg-amber-600/40 text-amber-200 border border-amber-400/80 px-1.5 py-0.2 rounded font-black animate-pulse">
+                  🔥x3
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <div className="text-right whitespace-nowrap pl-2 font-broadway text-base text-gold-gradient">
+
+        <div className="text-right whitespace-nowrap pl-2 font-broadway text-xl sm:text-2xl font-black text-gold-gradient leading-none">
           <CountUp
             end={customScore !== undefined ? customScore : team.score}
             duration={0.6}
@@ -183,28 +168,24 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
     );
   }
 
-  // MODO LOBBY: TARJETA DE ALTO IMPACTO CINEMATOGRÁFICO
+  // MODO LOBBY: TARJETA LIMPIA CENTRADA EN JUGADORES Y PUNTOS
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.92 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className={`rounded-3xl p-[3px] shadow-2xl relative overflow-hidden flex flex-col justify-between transition-all duration-300 ${theme.lobbyBorderClass} ${className}`}
     >
-      {/* Luz perimetral dinámica tipo BorderBeam */}
       <BorderBeam colorFrom={theme.primaryHex} colorTo={theme.accentHex} duration={7} />
 
-      {/* Contenedor interior con desenfoque de cristal oscuro */}
       <div className="bg-slate-950/90 rounded-[21px] p-4 flex flex-col justify-between h-full backdrop-blur-xl relative z-10">
-        <div>
-          {/* CABECERA: ICONO, NÚMERO Y NOMBRE COMPLETO */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* CABECERA UNIFICADA: NOMBRE DEL EQUIPO + PUNTOS + CARTAS */}
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-800/80 shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
               <div
-                className="w-10 h-10 rounded-2xl bg-slate-900/95 border border-slate-700/60 flex items-center justify-center shadow-md shrink-0"
-                style={{
-                  boxShadow: `0 0 12px ${theme.glowColor}`,
-                }}
+                className="w-11 h-11 rounded-2xl bg-slate-900/95 border border-slate-700/60 flex items-center justify-center shadow-md shrink-0"
+                style={{ boxShadow: `0 0 12px ${theme.glowColor}` }}
               >
                 <GameIcon
                   name={
@@ -224,36 +205,25 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                       ? 'Target'
                       : 'Sun'
                   }
-                  size={22}
+                  size={24}
                   color={theme.accentHex}
                   weight="fill"
                   glow={theme.glowColor}
                 />
               </div>
-              <div className="min-w-0">
-                <span className="text-xs uppercase font-vintage font-bold text-[#c5a059] tracking-widest block">
-                  Equipo {team.team_index}
-                </span>
-                <h3 className={`text-xl font-black font-broadway uppercase tracking-wider ${theme.twText} truncate leading-tight`}>
-                  {team.name}
-                </h3>
-              </div>
+              <h3 className={`text-xl sm:text-2xl font-black font-broadway uppercase tracking-wider ${theme.twText} truncate leading-tight`}>
+                {team.name}
+              </h3>
             </div>
 
-            {/* Indicador discreto del color oficial */}
-            <span
-              className={`w-4 h-4 rounded-full ${theme.twBg} shrink-0 border-2 border-[#d4af37]/60 shadow-md`}
-            />
-          </div>
-
-          {/* MARCADOR DE PUNTUACIÓN - PLACA DE LATÓN GRABADA */}
-          <div className="my-3 py-3 px-4 rounded-2xl bg-brass-plate flex items-center justify-between shadow-xl">
-            <div>
-              <span className="text-xs uppercase font-vintage font-bold tracking-widest text-[#c5a059] block">
-                PUNTUACIÓN
-              </span>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-4xl font-black font-broadway text-gold-gradient leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+            <div className="flex items-center gap-2 shrink-0">
+              {powerCardsCount > 0 && (
+                <span className="text-sm font-black font-mono text-[#f3e5ab] bg-[#d4af37]/20 border border-[#d4af37]/50 px-2.5 py-1 rounded-xl">
+                  🃏 {powerCardsCount}
+                </span>
+              )}
+              <div className="px-3 py-1 rounded-xl bg-brass-plate flex items-baseline gap-1 shadow-md">
+                <span className="text-2xl sm:text-3xl font-black font-broadway text-gold-gradient leading-none">
                   <CountUp end={team.score} duration={1.2} preserveValue />
                 </span>
                 <span className="text-xs font-black text-[#d4af37] font-broadway">PTS</span>
@@ -261,29 +231,19 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
             </div>
           </div>
 
-          {/* CARTAS DE PODER ASIGNADAS (MÁXIMO 3) */}
-          <div className="mb-2 py-2 px-3 rounded-xl bg-[#0a0a0f] border border-[#d4af37]/40 flex items-center justify-between">
-            <span className="text-xs uppercase font-vintage font-bold text-[#f3e5ab] flex items-center gap-1.5">
-              <span>🃏 Cartas de Poder:</span>
-            </span>
-            <span className="text-xs font-black font-mono text-[#f3e5ab] bg-[#d4af37]/20 border border-[#d4af37]/50 px-2 py-0.5 rounded-lg shadow-sm">
-              {powerCardsCount} / 3
-            </span>
-          </div>
-
-          {/* LISTA DE JUGADORES / MIEMBROS DEL EQUIPO (Máx 4-5 jugadores) */}
-          <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[165px] pr-1">
+          {/* LISTA DE JUGADORES PROTAGONISTA (AVATARES Y NOMBRES GRANDES) */}
+          <div className="mt-3 space-y-2 overflow-y-auto flex-1 pr-1">
             {members.map((m) => (
               <div
                 key={m.id}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold flex items-center justify-between transition-all ${
+                className={`rounded-2xl px-3.5 py-2 flex items-center justify-between transition-all ${
                   m.is_captain
-                    ? 'bg-amber-500/20 border-2 border-amber-400 text-amber-200 shadow-md'
-                    : 'bg-slate-800/90 border border-slate-700/60 text-slate-100'
+                    ? 'bg-amber-500/20 border-2 border-amber-400 text-amber-100 shadow-md'
+                    : 'bg-slate-900/90 border border-slate-700/60 text-slate-100'
                 }`}
               >
-                <div className="flex items-center gap-2 truncate">
-                  <div className="w-6 h-6 rounded-md bg-slate-950 border border-slate-700/80 shrink-0 overflow-hidden flex items-center justify-center shadow-inner">
+                <div className="flex items-center gap-3 truncate min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-950 border border-[#d4af37]/40 shrink-0 overflow-hidden flex items-center justify-center shadow-inner">
                     <img
                       src={generateAvatarDataUri(m.avatar_seed || m.nickname, (m.avatar_style as any) || 'avataaars')}
                       alt={m.nickname}
@@ -291,46 +251,37 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                     />
                   </div>
                   {m.badge_emoji && (
-                    <TwemojiText className="text-xs shrink-0">{m.badge_emoji}</TwemojiText>
+                    <TwemojiText className="text-base shrink-0">{m.badge_emoji}</TwemojiText>
                   )}
-                  {m.is_captain && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 flex-shrink-0" />}
-                  <span className="truncate">{m.nickname}</span>
+                  <span className="text-base sm:text-lg font-bold truncate">{m.nickname}</span>
                 </div>
-                {m.is_captain ? (
-                  <span className="text-xs font-black uppercase text-amber-300 bg-black/50 px-1.5 py-0.5 rounded border border-amber-400/30 shrink-0">
-                    CAPITÁN
-                  </span>
-                ) : (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                {m.is_captain && (
+                  <Crown className="w-5 h-5 text-amber-400 fill-amber-400 shrink-0 ml-2 drop-shadow" />
                 )}
               </div>
             ))}
             {members.length === 0 && (
-              <div className="text-center py-6 text-slate-500 text-xs italic">
-                Esperando reclutas...
+              <div className="h-full min-h-[90px] flex items-center justify-center text-slate-500 text-base font-vintage italic">
+                Sin jugadores
               </div>
             )}
           </div>
         </div>
 
-        {/* PARTE INFERIOR: MONTAÑA DE FICHAS DE CASINO QUE CRECE EN LA BASE */}
-        <div className="relative mt-2 pt-2 border-t border-slate-800/80 flex flex-col items-center">
-          <CasinoChipMountain
-            score={team.score}
-            theme={theme}
-            isLobby={variant === 'lobby'}
-            maxRoomScore={maxRoomScore}
-            className="w-full mb-1.5"
-          />
-
-          {/* PIE DE TARJETA: TOTAL JUGADORES */}
-          <div className="w-full text-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              {members.length} {members.length === 1 ? 'jugador' : 'jugadores'}
-            </span>
+        {/* MONTAÑA DE FICHAS EN LA BASE (SOLO SI HAY PUNTOS EN JUEGO) */}
+        {maxRoomScore > 0 && (
+          <div className="relative mt-2 pt-2 border-t border-slate-800/80 flex flex-col items-center shrink-0">
+            <CasinoChipMountain
+              score={team.score}
+              theme={theme}
+              isLobby={variant === 'lobby'}
+              maxRoomScore={maxRoomScore}
+              className="w-full"
+            />
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );
 };
+

@@ -116,7 +116,6 @@ export const PlayerFannedHandDrawer: React.FC<PlayerFannedHandDrawerProps> = ({
             <motion.button
               type="button"
               onClick={openDrawer}
-              onPointerDown={(e) => e.stopPropagation()}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.97 }}
               className={`pointer-events-auto px-4 py-2 rounded-t-2xl border-t-2 border-x-2 shadow-2xl flex items-center gap-2.5 backdrop-blur-xl transition-all cursor-pointer ${

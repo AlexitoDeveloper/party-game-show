@@ -481,6 +481,7 @@ export default function HostView() {
             current_game: roomRef.current.current_game,
             active_game_id: roomRef.current.active_game_id,
             active_teams_count: roomRef.current.active_teams_count,
+            game_phase: roomRef.current.game_phase || 'briefing',
           },
         });
         roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
@@ -492,6 +493,14 @@ export default function HostView() {
             current_game: roomRef.current.current_game,
             active_game_id: roomRef.current.active_game_id,
             active_teams_count: roomRef.current.active_teams_count,
+            game_phase: roomRef.current.game_phase || 'briefing',
+          },
+        });
+        roomSync.broadcast({
+          type: 'GAME_PHASE_UPDATE',
+          payload: {
+            phase: roomRef.current.game_phase || 'briefing',
+            game_id: roomRef.current.active_game_id || undefined,
           },
         });
         roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
@@ -730,10 +739,16 @@ export default function HostView() {
     }
 
     if (isSupabaseConfigured) {
-      await supabase.from('rooms').update({
-        status: 'playing',
-        current_game: game.engine,
-      }).eq('code', roomCode);
+      try {
+        await supabase.from('rooms').update({
+          status: 'playing',
+          current_game: game.engine,
+          active_game_id: game.id,
+          game_phase: 'briefing',
+        }).eq('code', roomCode);
+      } catch (err) {
+        console.warn('Error al persistir inicio de juego en Supabase:', err);
+      }
     }
   };
 
@@ -745,12 +760,23 @@ export default function HostView() {
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({
+      type: 'ROOM_UPDATE',
+      payload: { game_phase: 'active' },
+    });
+    roomSync.broadcast({
       type: 'GAME_PHASE_UPDATE',
       payload: {
         phase: 'active',
         game_id: room.active_game_id || activeGame.id,
       },
     });
+    if (isSupabaseConfigured) {
+      Promise.resolve(
+        supabase.from('rooms').update({ game_phase: 'active' }).eq('code', roomCode)
+      ).catch((err: any) => {
+        console.warn('Aviso Supabase: asegúrate de haber ejecutado la migración de game_phase en rooms.', err);
+      });
+    }
     hostTvAudioProxy.playDecoBell();
   };
 
@@ -763,12 +789,23 @@ export default function HostView() {
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({
+      type: 'ROOM_UPDATE',
+      payload: { game_phase: nextPhase },
+    });
+    roomSync.broadcast({
       type: 'GAME_PHASE_UPDATE',
       payload: {
         phase: nextPhase,
         game_id: room.active_game_id || activeGame.id,
       },
     });
+    if (isSupabaseConfigured) {
+      Promise.resolve(
+        supabase.from('rooms').update({ game_phase: nextPhase }).eq('code', roomCode)
+      ).catch((err: any) => {
+        console.warn('Aviso Supabase: asegúrate de haber ejecutado la migración de game_phase en rooms.', err);
+      });
+    }
   };
 
   const handleFinishShowAndShowGazette = async () => {

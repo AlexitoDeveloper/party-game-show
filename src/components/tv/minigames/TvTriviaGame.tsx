@@ -30,31 +30,31 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
 
         {/* Header: Categoría + Indicador de Rebote */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 z-20 relative">
-          <div className="bg-[#07070a]/90 backdrop-blur-md border border-[#d4af37]/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-vintage font-bold text-amber-300 shadow-lg">
-            <span className="text-base">{currentTriviaQuestion.categoryEmoji}</span>
+          <div className="bg-[#07070a]/90 backdrop-blur-md border border-[#d4af37]/60 px-5 py-2.5 rounded-2xl flex items-center gap-2.5 text-sm sm:text-base font-vintage font-bold text-amber-300 shadow-lg">
+            <span className="text-xl">{currentTriviaQuestion.categoryEmoji}</span>
             <span className="font-broadway uppercase tracking-wide">{currentTriviaQuestion.category}</span>
-            <span className="text-[#d4af37]/40">•</span>
-            <span className="text-amber-100/90 font-mono">Pregunta {triviaIndex + 1}</span>
+            <span className="text-[#d4af37]/50">•</span>
+            <span className="text-amber-100 font-mono">Pregunta {triviaIndex + 1}</span>
           </div>
 
           {triviaReboundActive && !triviaRevealed && (
-            <div className="bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-slate-950 px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-broadway font-black uppercase tracking-wider animate-bounce shadow-deco-gold border border-[#f5eedb]/50">
-              <RefreshCw className="w-4 h-4 animate-spin" />
+            <div className="bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-slate-950 px-5 py-2.5 rounded-2xl flex items-center gap-2 text-sm sm:text-base font-broadway font-black uppercase tracking-wider animate-bounce shadow-deco-gold border border-[#f5eedb]/60">
+              <RefreshCw className="w-5 h-5 animate-spin" />
               <span>¡REBOTE ABIERTO! CUALQUIERA PUEDE PULSAR (+1 pt)</span>
             </div>
           )}
         </div>
 
         {/* Tarjeta de Pregunta */}
-        <div className="p-6 md:p-8 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 text-center shadow-inner my-2">
-          <h2 className="text-2xl md:text-4xl font-broadway text-amber-50 leading-tight drop-shadow-md">
+        <div className="p-6 md:p-8 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/50 text-center shadow-inner my-2">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-broadway text-amber-50 leading-tight drop-shadow-md">
             {currentTriviaQuestion.question}
           </h2>
         </div>
 
-        {/* Opciones Tipo Test (si las tiene) o Badge de Pregunta Abierta */}
-        {currentTriviaQuestion.options && currentTriviaQuestion.options.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
+        {/* Opciones Tipo Test (si las tiene) */}
+        {currentTriviaQuestion.options && currentTriviaQuestion.options.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5">
             {currentTriviaQuestion.options.map((opt, oIdx) => {
               const letters = ['A', 'B', 'C', 'D'];
               const isCorrectOpt = triviaRevealed && (
@@ -64,25 +64,21 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
               return (
                 <div
                   key={oIdx}
-                  className={`p-4 rounded-2xl border-2 flex items-center gap-3.5 text-left transition-all ${
+                  className={`p-4 sm:p-5 rounded-2xl border-2 flex items-center gap-4 text-left transition-all ${
                     isCorrectOpt
                       ? 'bg-emerald-950/80 border-emerald-400 text-emerald-100 shadow-[0_0_25px_rgba(52,211,153,0.35)] scale-105'
-                      : 'bg-[#14141e]/90 border-[#d4af37]/30 text-amber-100/90 hover:border-[#d4af37]/60'
+                      : 'bg-[#14141e]/90 border-[#d4af37]/35 text-amber-100/90 hover:border-[#d4af37]/60'
                   }`}
                 >
-                  <span className={`w-9 h-9 rounded-xl flex items-center justify-center font-broadway font-black text-sm shrink-0 shadow-md ${
+                  <span className={`w-12 h-12 rounded-xl flex items-center justify-center font-broadway font-black text-lg sm:text-xl shrink-0 shadow-md ${
                     isCorrectOpt ? 'bg-emerald-400 text-slate-950' : 'bg-gold-gradient text-slate-950'
                   }`}>
                     {letters[oIdx]}
                   </span>
-                  <span className="font-vintage font-bold text-sm sm:text-base">{opt}</span>
+                  <span className="font-vintage font-bold text-lg sm:text-xl md:text-2xl leading-snug">{opt}</span>
                 </div>
               );
             })}
-          </div>
-        ) : (
-          <div className="my-4 py-2.5 px-5 rounded-xl bg-[#07070a]/90 border border-[#d4af37]/40 inline-block text-xs font-vintage font-bold text-amber-300">
-            💬 Pregunta de Conocimiento Clandestino — ¡Pulsa el timbre de mesa para responder!
           </div>
         )}
 
@@ -91,51 +87,46 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
+            className="mt-5 p-6 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
           >
-            <span className="text-xs uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-1">
+            <span className="text-sm sm:text-base uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-1">
               🎉 RESPUESTA CORRECTA
             </span>
-            <div className="text-2xl sm:text-4xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
+            <div className="text-3xl sm:text-5xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
               {currentTriviaQuestion.correctAnswer}
             </div>
             {currentTriviaQuestion.hint && (
-              <p className="text-xs text-amber-200/80 font-vintage mt-1 italic">
+              <p className="text-base sm:text-lg text-amber-200/90 font-vintage mt-2 italic">
                 💡 {currentTriviaQuestion.hint}
               </p>
             )}
           </motion.div>
         )}
 
-        {/* Turno activo de respuesta o espera */}
+        {/* Turno activo de respuesta */}
         <AnimatePresence mode="wait">
-          {buzzerLocked && buzzerWinner ? (
+          {buzzerLocked && buzzerWinner && (
             <motion.div
               key="buzzer-active"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mt-5 p-4 rounded-2xl border-2 border-amber-400 bg-[#1a1408]/90 backdrop-blur-md flex items-center justify-between shadow-xl"
+              className="mt-6 p-4 sm:p-5 rounded-2xl border-2 border-amber-400 bg-[#1a1408]/95 backdrop-blur-md flex items-center justify-between shadow-xl"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-3xl animate-bounce">⚡</span>
+              <div className="flex items-center gap-3.5">
+                <span className="text-3xl sm:text-4xl animate-bounce">⚡</span>
                 <div className="text-left">
-                  <span className="text-xs uppercase font-broadway tracking-wider text-amber-300">
+                  <span className="text-xs sm:text-sm uppercase font-broadway tracking-wider text-amber-300">
                     {triviaReboundActive ? '¡Rebote cazado por:' : '¡Pulsó primero:'}
                   </span>
-                  <div className="text-xl font-broadway text-gold-gradient">{buzzerWinner.teamName}</div>
+                  <div className="text-2xl sm:text-3xl font-broadway text-gold-gradient">{buzzerWinner.teamName}</div>
                 </div>
               </div>
-              <div className="text-xs font-vintage font-bold text-amber-300 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                <span>Respondiendo en directo...</span>
+              <div className="text-sm sm:text-base font-vintage font-bold text-amber-300 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
+                <span>Respondiendo...</span>
               </div>
             </motion.div>
-          ) : !triviaRevealed && (
-            <div className="mt-4 pt-3 border-t border-[#d4af37]/30 flex items-center justify-center gap-2 text-xs font-vintage font-bold text-amber-300">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-              <span>Pulsa el timbre de tu móvil para responder</span>
-            </div>
           )}
         </AnimatePresence>
       </div>
