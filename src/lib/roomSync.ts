@@ -261,30 +261,42 @@ export class RoomSync {
     if (this.isDestroyed) return;
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
 
+    // 0. Reconectar de inmediato el WebSocket Cloud Relay tras suspensión en iOS Safari
+    if (this.cloudRelay) {
+      this.cloudRelay.ensureConnected();
+    }
+
     // 1. Verificar salud de Supabase Realtime
     if (isSupabaseConfigured && (!this.supabaseChannel || !this.isSupabaseSubscribed)) {
       this.initSupabaseChannel();
     }
 
     // 2. Verificar salud de PeerJS y WebRTC tras desbloqueo en iOS / Android
-    const hubId = this.getHubId();
-    if (this.peer && !this.peer.destroyed && this.peer.disconnected) {
-      try {
-        this.peer.reconnect();
-      } catch {}
-    }
-
-    if (!this.isHub) {
-      if (!this.isWebRtcConnHealthy(this.hubConn)) {
-        if (this.PeerClassRef) {
-          this.scheduleReconnect(this.PeerClassRef, hubId, 150);
-        } else {
-          this.initPeerRelay();
-        }
+    const checkAndRecoverPeer = () => {
+      if (this.isDestroyed) return;
+      const hubId = this.getHubId();
+      if (this.peer && !this.peer.destroyed && this.peer.disconnected) {
+        try {
+          this.peer.reconnect();
+        } catch {}
       }
-    } else if (!this.peer || this.peer.destroyed) {
-      this.initPeerRelay();
-    }
+
+      if (!this.isHub) {
+        if (!this.isWebRtcConnHealthy(this.hubConn)) {
+          if (this.PeerClassRef) {
+            this.scheduleReconnect(this.PeerClassRef, hubId, 150);
+          } else {
+            this.initPeerRelay();
+          }
+        }
+      } else if (!this.peer || this.peer.destroyed) {
+        this.initPeerRelay();
+      }
+    };
+
+    checkAndRecoverPeer();
+    // En iOS Safari, WebKit tarda ~600ms tras desbloquear pantalla en marcar el socket UDP como caído
+    setTimeout(checkAndRecoverPeer, 750);
 
     // 3. Solicitar sincronización activa por red para que el Host envíe la foto completa
     if (this.role === 'host') {
@@ -659,6 +671,15 @@ export class RoomSync {
     if (this.processedEventIds.size > 300) {
       const first = Array.from(this.processedEventIds)[0];
       this.processedEventIds.delete(first);
+    }
+
+    if (
+      this.cloudRelay &&
+      (event.type === 'REQUEST_ROOM_SYNC' ||
+        event.type === 'PLAYER_JOINED' ||
+        event.type === 'PLAYER_UPDATED')
+    ) {
+      this.cloudRelay.resetDeduplication();
     }
 
     this.notifyListeners(event);
