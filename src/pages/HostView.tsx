@@ -39,6 +39,7 @@ import { HostSoundboardTab } from '../components/host/HostSoundboardTab';
 import { HostPowerCardModals } from '../components/host/HostPowerCardModals';
 import { HostTestVerdictModal } from '../components/host/HostTestVerdictModal';
 import { usePreventAccidentalNavigation } from '../hooks/usePreventAccidentalNavigation';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 export default function HostView() {
   const { code } = useParams<{ code: string }>();
@@ -46,6 +47,8 @@ export default function HostView() {
 
   // Bloquear salida accidental por botón "Atrás" físico o gestual en móviles
   usePreventAccidentalNavigation();
+  // Evitar bloqueo de pantalla en dispositivos móviles / tablets
+  useWakeLock();
 
   const [room, setRoom] = useState<Room>(() => {
     const saved = localStorage.getItem(`party_room_${roomCode}`);
@@ -353,6 +356,21 @@ export default function HostView() {
     soundFX: hostTvAudioProxy,
   });
 
+  const moviesStateRef = useRef(moviesState);
+  useEffect(() => { moviesStateRef.current = moviesState; }, [moviesState]);
+  const babyPhotosStateRef = useRef(babyPhotosState);
+  useEffect(() => { babyPhotosStateRef.current = babyPhotosState; }, [babyPhotosState]);
+  const musicStateRef = useRef(musicState);
+  useEffect(() => { musicStateRef.current = musicState; }, [musicState]);
+  const triviaStateRef = useRef(triviaState);
+  useEffect(() => { triviaStateRef.current = triviaState; }, [triviaState]);
+  const unDosTresStateRef = useRef(unDosTresState);
+  useEffect(() => { unDosTresStateRef.current = unDosTresState; }, [unDosTresState]);
+  const mimicaStateRef = useRef(mimicaState);
+  useEffect(() => { mimicaStateRef.current = mimicaState; }, [mimicaState]);
+  const buzzerStateRef = useRef({ isLocked, winner });
+  useEffect(() => { buzzerStateRef.current = { isLocked, winner }; }, [isLocked, winner]);
+
   // Power Cards State (Hook personalizado con proxy de audio silencioso a TV)
   const powerCardsHook = useHostPowerCards({
     roomCode,
@@ -371,29 +389,8 @@ export default function HostView() {
   }, [powerCards]);
 
   // Acciones de Gestión de Capitanes
-  const handleSetCaptain = (teamId: string, playerId: string) => {
-    setPlayers((prev) => {
-      const isAlreadyCaptain = prev.some(
-        (p) =>
-          (p.team_id === teamId || p.team_index === teams.find((t) => t.id === teamId)?.team_index) &&
-          p.id === playerId &&
-          p.is_captain
-      );
-      const targetCaptainId = isAlreadyCaptain ? '' : playerId;
-
-      const updated = prev.map((p) => {
-        if (p.team_id === teamId || p.team_index === teams.find((t) => t.id === teamId)?.team_index) {
-          return { ...p, is_captain: targetCaptainId ? p.id === targetCaptainId : false };
-        }
-        return p;
-      });
-      localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
-      roomSync.broadcast({
-        type: 'SET_CAPTAIN',
-        payload: { teamId, playerId: targetCaptainId },
-      });
-      return updated;
-    });
+  const handleSetCaptain = (_teamId: string, _playerId: string) => {
+    // Sistema de capitanes desactivado: todos los miembros del equipo tienen los mismos permisos
   };
 
   const handlePlaySoundEffect = (soundName: string) => {
@@ -456,17 +453,107 @@ export default function HostView() {
     }
   }, [isLocked, winner, teams]);
 
-  // Escuchar eventos de sincronización entrantes
+  // Emitir foto autoritativa completa de la sala (para TV y móviles Android/iOS al entrar o reconectar)
+  const broadcastFullRoomSnapshot = (overridePlayers?: Player[]) => {
+    const curRoom = roomRef.current;
+    roomSync.broadcast({
+      type: 'ROOM_UPDATE',
+      payload: {
+        status: curRoom.status,
+        current_game: curRoom.current_game,
+        active_game_id: curRoom.active_game_id,
+        active_teams_count: curRoom.active_teams_count,
+        game_phase: curRoom.game_phase || 'briefing',
+        presentation_slide: curRoom.presentation_slide,
+        title: curRoom.title,
+      },
+    });
+    roomSync.broadcast({
+      type: 'GAME_PHASE_UPDATE',
+      payload: {
+        phase: curRoom.game_phase || 'briefing',
+        game_id: curRoom.active_game_id || undefined,
+      },
+    });
+    roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+    roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: overridePlayers || playersRef.current });
+    if (powerCardsRef.current) {
+      roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCardsRef.current });
+    }
+    if (buzzerStateRef.current.isLocked && buzzerStateRef.current.winner) {
+      roomSync.broadcast({ type: 'BUZZER_LOCKED', payload: buzzerStateRef.current.winner });
+    } else {
+      roomSync.broadcast({ type: 'BUZZER_RESET' });
+    }
+
+    const activeId = curRoom.active_game_id;
+    if (activeId === 'music') {
+      const ms = musicStateRef.current;
+      ms.syncMusicState(ms.musicPlaying, ms.musicRevealed);
+    } else if (activeId === 'movies') {
+      const mvs = moviesStateRef.current;
+      mvs.syncMovieState(mvs.movieIndex, mvs.movieFrameLevel, mvs.movieRevealed, mvs.movieCategoryFilter, mvs.currentMovie);
+    } else if (activeId === 'trivial') {
+      const ts = triviaStateRef.current;
+      ts.syncTriviaState(ts.triviaIndex, ts.triviaRevealed, ts.triviaReboundActive, ts.currentTriviaQuestion);
+    } else if (activeId === 'fotos_proyector') {
+      const bps = babyPhotosStateRef.current;
+      bps.syncBabyPhotoState(bps.babyPhotoIndex, bps.babyPhotoRevealed, bps.currentBabyPhoto, bps.babyPhotosList.length);
+    } else if (activeId === 'un_dos_tres') {
+      const udt = unDosTresStateRef.current;
+      udt.syncUdtState(udt.udtPromptIndex, udt.currentUdtTeam?.id, udt.udtEliminatedTeamIds, udt.udtCountdown, udt.udtIsTimerRunning, udt.currentUdtChallenge);
+    } else if (activeId === 'bingo') {
+      bingoStateRef.current.syncBingoState();
+    } else if (activeId === 'mimica') {
+      const mms = mimicaStateRef.current;
+      mms.syncMimicaState(mms.mimicaHitsCount, mms.mimicaTimerSeconds, mms.mimicaIsRunning);
+    }
+
+    roomSync.broadcast({
+      type: 'ROUND_HITS_UPDATE',
+      payload: {
+        roundHits: roundHitsRef.current,
+        gameId: curRoom.active_game_id || curRoom.current_game,
+      },
+    });
+  };
+
+  // Escuchar eventos de sincronización entrantes y pulso periódico de auto-curación para móviles Android/iOS
   useEffect(() => {
     roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+    broadcastFullRoomSnapshot();
+
+    // Pulso periódico cada 6s para garantizar que ningún móvil Android/iOS o TV quede desincronizado tras micro-cortes de red
+    const syncPulseInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const curRoom = roomRef.current;
+      roomSync.broadcast({
+        type: 'ROOM_UPDATE',
+        payload: {
+          status: curRoom.status,
+          current_game: curRoom.current_game,
+          active_game_id: curRoom.active_game_id,
+          active_teams_count: curRoom.active_teams_count,
+          game_phase: curRoom.game_phase || 'briefing',
+          presentation_slide: curRoom.presentation_slide,
+          title: curRoom.title,
+        },
+      });
+      roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+      if (buzzerStateRef.current.isLocked && buzzerStateRef.current.winner) {
+        roomSync.broadcast({ type: 'BUZZER_LOCKED', payload: buzzerStateRef.current.winner });
+      }
+    }, 6000);
 
     const unsubscribe = roomSync.onEvent((event) => {
       if (event.type === 'PLAYER_JOINED') {
+        let nextPlayersSnapshot: Player[] = [];
         setPlayers((prev) => {
           const exists = prev.some((p) => p.id === event.payload.id);
           const updated = exists
             ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
             : [...prev, event.payload];
+          nextPlayersSnapshot = updated;
           localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
           setTimeout(() => {
             roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: updated });
@@ -474,56 +561,9 @@ export default function HostView() {
           return updated;
         });
 
-        roomSync.broadcast({
-          type: 'ROOM_UPDATE',
-          payload: {
-            status: roomRef.current.status,
-            current_game: roomRef.current.current_game,
-            active_game_id: roomRef.current.active_game_id,
-            active_teams_count: roomRef.current.active_teams_count,
-            game_phase: roomRef.current.game_phase || 'briefing',
-          },
-        });
-        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+        broadcastFullRoomSnapshot(nextPlayersSnapshot.length > 0 ? nextPlayersSnapshot : undefined);
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
-        roomSync.broadcast({
-          type: 'ROOM_UPDATE',
-          payload: {
-            status: roomRef.current.status,
-            current_game: roomRef.current.current_game,
-            active_game_id: roomRef.current.active_game_id,
-            active_teams_count: roomRef.current.active_teams_count,
-            game_phase: roomRef.current.game_phase || 'briefing',
-          },
-        });
-        roomSync.broadcast({
-          type: 'GAME_PHASE_UPDATE',
-          payload: {
-            phase: roomRef.current.game_phase || 'briefing',
-            game_id: roomRef.current.active_game_id || undefined,
-          },
-        });
-        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
-        roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
-        if (powerCardsRef.current) {
-          roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCardsRef.current });
-        }
-        if (captainDuelRef.current) {
-          roomSync.broadcast({ type: 'CAPTAIN_DUEL_STATE', payload: captainDuelRef.current });
-        }
-        if (roomRef.current.active_game_id === 'music') {
-          musicState.syncMusicState(musicState.musicPlaying, musicState.musicRevealed);
-        }
-        if (roomRef.current.active_game_id === 'bingo') {
-          bingoStateRef.current.syncBingoState();
-        }
-        roomSync.broadcast({
-          type: 'ROUND_HITS_UPDATE',
-          payload: {
-            roundHits: roundHitsRef.current,
-            gameId: roomRef.current.active_game_id || roomRef.current.current_game,
-          },
-        });
+        broadcastFullRoomSnapshot();
       } else if (event.type === 'PLAYER_UPDATED') {
         setPlayers((prev) => {
           const exists = prev.some((p) => p.id === event.payload.id);
@@ -607,6 +647,7 @@ export default function HostView() {
     });
 
     return () => {
+      clearInterval(syncPulseInterval);
       unsubscribe();
     };
   }, [roomSync]);

@@ -179,9 +179,6 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
                     <div className="min-w-0 text-left flex-1">
                       <h4 className="text-3xl sm:text-4xl font-broadway uppercase text-gold-emboss truncate flex items-center gap-2">
                         <span>{buzzerWinner.playerName}</span>
-                        {isWinnerCaptain && (
-                          <Crown className="w-6 h-6 fill-amber-400 text-amber-400 shrink-0" />
-                        )}
                       </h4>
                       <span
                         className="text-xl sm:text-2xl font-broadway uppercase block mt-0.5"

@@ -88,7 +88,7 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Lista de Miembros con Selector de Capitán */}
+                  {/* Lista de Miembros */}
                   {teamMembers.length > 0 && (
                     <div className="my-2 p-2 bg-[#07070a]/90 rounded-2xl border border-[#d4af37]/30 flex flex-wrap gap-1.5 items-center">
                       <span className="text-xs uppercase font-vintage font-bold text-amber-300/70 w-full flex items-center gap-1">
@@ -96,20 +96,12 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
                         <span>Miembros:</span>
                       </span>
                       {teamMembers.map((m) => (
-                        <button
+                        <div
                           key={m.id}
-                          onClick={() => onSetCaptain(team.id, m.id)}
-                          title={m.is_captain ? 'Capitán activo (Clic para desasignar o deshacer capitanía)' : 'Nombrar Capitán a este jugador'}
-                          className={`px-2 py-1 rounded-xl text-xs font-vintage font-bold flex items-center gap-1 transition-all active:scale-95 ${
-                            m.is_captain
-                              ? 'bg-gold-gradient hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-md border border-[#f5eedb]/40'
-                              : 'bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 border border-[#d4af37]/30'
-                          }`}
+                          className="px-2.5 py-1 rounded-xl text-xs font-vintage font-bold flex items-center gap-1 bg-[#14141e] text-amber-200 border border-[#d4af37]/30"
                         >
-                          <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current text-slate-950' : 'text-amber-400'}`} />
                           <span>{m.nickname}</span>
-                          {m.is_captain && <span className="text-xs opacity-80 ml-0.5">✕</span>}
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -192,35 +184,15 @@ export const HostTeamsScoreboard: React.FC<HostTeamsScoreboardProps> = ({
               return (
                 <div
                   key={p.id}
-                  className={`border px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-sm transition-all ${
-                    p.is_captain
-                      ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                      : 'bg-[#14141e] border-[#d4af37]/30 text-white'
-                  }`}
+                  className="border px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-sm transition-all bg-[#14141e] border-[#d4af37]/30 text-white"
                 >
                   <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${teamCatalog ? teamCatalog.twBg : 'bg-amber-400/40 animate-pulse'}`} />
                   <span className="text-xs font-vintage font-bold text-white flex items-center gap-1 truncate max-w-[110px] sm:max-w-none">
                     {p.nickname}
-                    {p.is_captain && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
                   </span>
                   <span className="text-xs text-amber-200/60 font-vintage truncate">
                     {teamCatalog ? `(${teamCatalog.name})` : '(Sin bando)'}
                   </span>
-                  {assignedTeam && (
-                    <button
-                      onClick={() => onSetCaptain(assignedTeam.id, p.id)}
-                      title={p.is_captain ? 'Capitán activo (Clic para desasignar o deshacer)' : 'Nombrar Capitán de su equipo'}
-                      className={`ml-1 px-2 py-0.5 rounded-lg text-xs font-vintage font-black flex items-center gap-1 transition-all active:scale-95 shrink-0 ${
-                        p.is_captain
-                          ? 'bg-gold-gradient hover:bg-red-500 hover:text-white text-slate-950 shadow-sm border border-[#f5eedb]/30'
-                          : 'bg-[#07070a] hover:bg-[#201628] text-amber-300 border border-[#d4af37]/30'
-                      }`}
-                    >
-                      <Crown className={`w-3 h-3 ${p.is_captain ? 'fill-current' : ''}`} />
-                      <span className="hidden sm:inline">{p.is_captain ? 'Quitar Cap ✕' : 'Nombrar Cap'}</span>
-                      <span className="sm:hidden">{p.is_captain ? '✕' : 'Cap'}</span>
-                    </button>
-                  )}
                 </div>
               );
             })}

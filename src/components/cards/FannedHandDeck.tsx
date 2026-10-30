@@ -220,8 +220,8 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
                   : 'bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 text-slate-950 shadow-deco-gold hover:brightness-110 border border-[#f5eedb]/40'
               }`}
             >
-              <Crown className="w-4 h-4 fill-slate-950" />
-              <span>{disabled ? 'Solo Capitán' : 'Jugar Carta'}</span>
+              <span>🃏</span>
+              <span>{disabled ? 'No disponible' : 'Jugar Carta'}</span>
             </button>
           </div>
         </div>
@@ -335,7 +335,7 @@ export const FannedHandDeck: React.FC<FannedHandDeckProps> = ({
                       : 'bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 text-black'
                   }`}
                 >
-                  {disabled ? 'Solo el Capitán puede Jugar' : `Jugar "${inspectingCard.name}"`}
+                  {disabled ? 'No disponible' : `Jugar "${inspectingCard.name}"`}
                 </button>
               </div>
             </motion.div>

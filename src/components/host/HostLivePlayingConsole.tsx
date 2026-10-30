@@ -227,39 +227,6 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
         </div>
       </div>
 
-      {/* APUESTAS DOBLE O NADA ACTIVAS DE LOS CAPITANES */}
-      {Object.values(captainGambles).length > 0 && (
-        <div className="p-3.5 bg-amber-500/15 border border-amber-400/40 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Star className="w-5 h-5 text-amber-400 fill-amber-400 shrink-0 animate-pulse" />
-            <div>
-              <span className="text-xs font-black text-amber-300 uppercase block tracking-wider">
-                ⭐ Apuesta Doble o Nada del Capitán en Curso:
-              </span>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Object.values(captainGambles).map((g) => (
-                  <span
-                    key={g.teamId}
-                    className="text-xs text-white font-bold bg-[#0c0c14] px-3 py-1 rounded-xl border border-[#d4af37]/40 flex items-center gap-1.5 shadow-sm"
-                  >
-                    <span>👑 {g.playerName}</span>
-                    <span className="text-amber-400">({g.teamName})</span>
-                    <strong className="text-emerald-400 font-mono">x2 PUNTOS</strong>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={onClearCaptainGambles}
-            className="text-xs text-amber-200/70 hover:text-white bg-[#14141e] px-3 py-1.5 rounded-xl border border-[#d4af37]/30 hover:border-amber-400 active:scale-95 transition-all font-vintage"
-          >
-            Limpiar Apuesta
-          </button>
-        </div>
-      )}
-
-
       {/* BOTONES DE PUNTUACIÓN SEGÚN LAS REGLAS EXACTAS DEL JUEGO */}
       <div className="space-y-3">
         <span className="text-xs uppercase font-vintage font-bold text-amber-200/70 tracking-wider block">

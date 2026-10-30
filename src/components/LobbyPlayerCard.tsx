@@ -47,11 +47,7 @@ export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, transition: { duration: 0.15 } }}
-      className={`relative rounded-2xl p-3 bg-slate-900/90 border-2 transition-all flex items-center justify-between gap-3 shadow-lg backdrop-blur-md ${
-        isCaptain
-          ? 'border-amber-400/80 shadow-amber-500/15 bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900'
-          : `${theme.twBorder} shadow-black/40`
-      } ${className}`}
+      className={`relative rounded-2xl p-3 bg-slate-900/90 border-2 transition-all flex items-center justify-between gap-3 shadow-lg backdrop-blur-md ${theme.twBorder} shadow-black/40 ${className}`}
     >
       {/* 1. SECCIÓN IZQUIERDA: AVATAR DE DICEBEAR + EMBLEMA TWEMOJI */}
       <div className="flex items-center gap-3 min-w-0">
@@ -75,9 +71,6 @@ export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
         {/* 2. NOMBRE DE JUGADOR Y STATUS */}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 truncate">
-            {isCaptain && (
-              <Crown size={15} weight="fill" className="text-amber-400 shrink-0 animate-pulse" />
-            )}
             <span className="text-sm font-black text-white truncate tracking-wide">
               {nickname}
             </span>
@@ -87,11 +80,6 @@ export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
             <span className="text-xs uppercase font-bold text-slate-400">
               {theme.name}
             </span>
-            {isCaptain && (
-              <span className="text-xs font-black uppercase text-amber-300 bg-amber-400/15 border border-amber-400/40 px-1 py-0.2 rounded tracking-wider">
-                CAPITÁN
-              </span>
-            )}
           </div>
         </div>
       </div>

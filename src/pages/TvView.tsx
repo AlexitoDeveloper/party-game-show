@@ -83,10 +83,12 @@ import { TvBingoGame } from '../components/tv/minigames/TvBingoGame';
 import { TvMimicaGame } from '../components/tv/minigames/TvMimicaGame';
 import { TvGameBriefingCard } from '../components/tv/TvGameBriefingCard';
 import { FullscreenButton } from '../components/common/FullscreenButton';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 export default function TvView() {
   const { code } = useParams<{ code: string }>();
   const roomCode = (code || '').toUpperCase();
+  useWakeLock();
   const { playBuzzer, playCountdown, playCorrect, playWrong, playVictory } = useGameAudio();
 
   const [room, setRoom] = useState<Room>(() => {
@@ -421,6 +423,7 @@ export default function TvView() {
 
   // Sincronización en tiempo real
   useEffect(() => {
+    roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
     roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
 
     const unsubscribe = roomSync.onEvent((event) => {
@@ -444,24 +447,7 @@ export default function TvView() {
       } else if (event.type === 'PLAYERS_UPDATE') {
         setPlayers(event.payload);
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
-        roomSync.broadcast({
-          type: 'ROOM_UPDATE',
-          payload: {
-            status: roomRef.current.status,
-            current_game: roomRef.current.current_game,
-            active_game_id: roomRef.current.active_game_id,
-            active_teams_count: roomRef.current.active_teams_count,
-            game_phase: roomRef.current.game_phase || 'briefing',
-          },
-        });
-        roomSync.broadcast({
-          type: 'GAME_PHASE_UPDATE',
-          payload: {
-            phase: roomRef.current.game_phase || 'briefing',
-            game_id: roomRef.current.active_game_id || undefined,
-          },
-        });
-        roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+        // Solo el Host es la fuente de verdad del estado de sala y puntuaciones; la TV únicamente sincroniza la gramola
         roomSync.broadcast({ type: 'JUKEBOX_STATE_SYNC', payload: speakeasyJukebox.getState() });
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
@@ -1027,23 +1013,6 @@ export default function TvView() {
       ) : (
         /* ================= VISTA ESCENARIO DE JUEGO ACTIVO ================= */
         <section className="flex-1 flex flex-col justify-center items-center my-2 z-10 w-full max-w-6xl mx-auto min-h-0">
-          {/* BANNER APUESTAS DOBLE O NADA DE CAPITANES */}
-          {Object.values(captainGambles).length > 0 && (
-            <div className="mb-3 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
-              {Object.values(captainGambles).map((gamble) => (
-                <div
-                  key={gamble.teamId}
-                  className="bg-[#14141e]/90 border-2 border-[#d4af37] text-amber-200 px-4 py-1.5 rounded-2xl text-sm font-broadway flex items-center gap-2 shadow-deco-gold backdrop-blur-md animate-pulse"
-                >
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <span>
-                    <strong className="text-white uppercase">{gamble.teamName}</strong>: DOBLE O NADA (x2)
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* TIRA DE EFECTOS DE CARTAS DE PODER ACTIVOS */}
           {powerCards && powerCards.activeEffects.length > 0 && (
             <div className="mb-3 flex flex-wrap items-center justify-center gap-2 max-w-4xl">
@@ -1092,7 +1061,7 @@ export default function TvView() {
                   babyPhotoRevealed={babyPhotoRevealed}
                   buzzerLocked={buzzerLocked}
                   buzzerWinner={buzzerWinner}
-                  isWinnerCaptain={isWinnerCaptain}
+                  isWinnerCaptain={false}
                 />
               ) : activeGame.id === 'music' ? (
                 <TvMusicGame
@@ -1102,7 +1071,7 @@ export default function TvView() {
                   musicRevealed={musicRevealed}
                   buzzerWinner={buzzerWinner}
                   players={players}
-                  isWinnerCaptain={isWinnerCaptain}
+                  isWinnerCaptain={false}
                 />
               ) : (
                 <AnimatePresence mode="wait">
@@ -1151,11 +1120,6 @@ export default function TvView() {
 
                         <h2 className="text-4xl md:text-6xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3">
                           <span>{buzzerWinner.playerName}</span>
-                          {isWinnerCaptain && (
-                            <span title="¡Capitán del equipo!" className="inline-flex items-center text-amber-400">
-                              <Crown className="w-10 h-10 md:w-12 md:h-12 fill-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] animate-bounce" />
-                            </span>
-                          )}
                         </h2>
                         <p
                           className="text-2xl md:text-3xl font-broadway uppercase mt-1"

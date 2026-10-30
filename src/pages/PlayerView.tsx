@@ -30,6 +30,7 @@ import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
 import { usePreventAccidentalNavigation } from '../hooks/usePreventAccidentalNavigation';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { FullscreenButton } from '../components/common/FullscreenButton';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 export default function PlayerView() {
   const { code } = useParams<{ code: string }>();
@@ -37,6 +38,8 @@ export default function PlayerView() {
 
   // Prevenir que el jugador salga de la partida al pulsar Atrás en su móvil
   usePreventAccidentalNavigation();
+  // Mantener pantalla encendida en Android e iOS durante la partida
+  useWakeLock();
 
   // Control de pantalla completa
   const { enterFullscreen } = useFullscreen();
@@ -256,22 +259,34 @@ export default function PlayerView() {
       roomSync.broadcast({ type: 'PLAYER_JOINED', payload: existingPlayer });
     }
 
-    // Reactivación inmediata al desbloquear pantalla o cambiar de aplicación
+    // Reactivación inmediata al desbloquear pantalla o cambiar de aplicación (Android Chrome / iOS Safari)
+    let wakeRetryTimer: any = null;
     const handleReactivation = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const syncNow = () => {
         roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
         if (playerRef.current) {
           roomSync.broadcast({ type: 'PLAYER_JOINED', payload: playerRef.current });
         }
-      }
+      };
+      syncNow();
+      if (wakeRetryTimer) clearTimeout(wakeRetryTimer);
+      wakeRetryTimer = setTimeout(syncNow, 800);
     };
 
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleReactivation);
+    }
     window.addEventListener('visibilitychange', handleReactivation);
     window.addEventListener('focus', handleReactivation);
     window.addEventListener('online', handleReactivation);
     window.addEventListener('pageshow', handleReactivation);
 
     return () => {
+      if (wakeRetryTimer) clearTimeout(wakeRetryTimer);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleReactivation);
+      }
       window.removeEventListener('visibilitychange', handleReactivation);
       window.removeEventListener('focus', handleReactivation);
       window.removeEventListener('online', handleReactivation);
@@ -347,6 +362,12 @@ export default function PlayerView() {
           const me = event.payload.find((p) => p.id === playerRef.current!.id);
           if (me) {
             setPlayer((prev) => (prev ? { ...prev, ...me } : prev));
+            if (me.team_index) {
+              const matchedCat = TEAMS_CATALOG.find((c) => c.index === me.team_index);
+              if (matchedCat) {
+                setSelectedTeam((prevTeam) => prevTeam || matchedCat);
+              }
+            }
           }
         }
       } else if (event.type === 'SET_CAPTAIN') {
@@ -549,8 +570,6 @@ export default function PlayerView() {
     }
 
     const teamId = `team_${catalogItem.index}`;
-    const teamAlreadyHasCaptain = allPlayers.some((p) => p.team_id === teamId && p.is_captain && p.id !== player?.id);
-    const shouldBeCaptain = !teamAlreadyHasCaptain;
 
     const updatedPlayer: Player = {
       ...(player || {
@@ -566,7 +585,7 @@ export default function PlayerView() {
       }),
       team_id: teamId,
       team_index: catalogItem.index,
-      is_captain: shouldBeCaptain,
+      is_captain: false,
       avatar_seed: avatarSeed,
       avatar_style: avatarStyle,
       badge_emoji: badgeEmoji,
@@ -711,12 +730,6 @@ export default function PlayerView() {
   }, [allPlayers, myTeamId, selectedTeam, player]);
 
   const handlePlayCard = (card: PowerCard) => {
-    if (!player?.is_captain) {
-      setFeedbackToast('👑 Solo el Capitán de tu equipo puede jugar cartas.');
-      setTimeout(() => setFeedbackToast(null), 3500);
-      return;
-    }
-
     if (card.id === 'ave_fenix') {
       const currentGameIndex = GAMES_CATALOG.findIndex((g) => g.id === (room.active_game_id || 'music'));
       const sortedTeams = [...activeTeams].sort((a, b) => b.score - a.score);
@@ -988,39 +1001,6 @@ export default function PlayerView() {
               >
                 Cambiar Bando
               </button>
-            </div>
-
-            {/* ROL DE CAPITÁN Y BOTONES DE ACCIÓN */}
-            <div className="w-full flex flex-col gap-2 px-1">
-              <div className="w-full flex items-center justify-between gap-2">
-                {player?.is_captain ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-gradient text-slate-950 text-xs font-broadway font-black uppercase shadow-sm">
-                    <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
-                    <span>👑 Eres el Capitán</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14141e] border border-[#d4af37]/25 text-amber-200/70 text-xs font-vintage font-bold">
-                    <UserCheck className="w-3 h-3 text-amber-400" />
-                    <span>Miembro de Mesa</span>
-                  </div>
-                )}
-
-                {/* Botón de Doble o Nada exclusivo para el Capitán */}
-                {player?.is_captain && (
-                  <button
-                    onClick={() => setIsDoubleModalOpen(true)}
-                    disabled={!!(myTeamId && captainGambles[myTeamId])}
-                    className={`px-3 py-1 rounded-full text-xs font-broadway uppercase tracking-wider flex items-center gap-1 transition-all shadow-md active:scale-95 ${
-                      myTeamId && captainGambles[myTeamId]
-                        ? 'bg-amber-500/20 text-amber-300 border border-[#d4af37]/50 opacity-70'
-                        : 'bg-gold-gradient hover:brightness-110 text-slate-950 shadow-deco-gold font-black'
-                    }`}
-                  >
-                    <Star className="w-3 h-3 fill-current" />
-                    <span>{myTeamId && captainGambles[myTeamId] ? '🔥 Doble o Nada Activo' : '⭐ Doble o Nada'}</span>
-                  </button>
-                )}
-              </div>
             </div>
 
             {/* Pastilla identificativa del juego actual */}
@@ -1329,13 +1309,6 @@ export default function PlayerView() {
           }}
         />
       )}
-
-      {/* MODAL DEL CAPITÁN: DOBLE O NADA */}
-      <PlayerDoubleOrNothingModal
-        isOpen={isDoubleModalOpen}
-        onClose={() => setIsDoubleModalOpen(false)}
-        onConfirm={handleTriggerDoubleOrNothing}
-      />
 
       {/* MODAL PARA EDITAR FOTO O AVATAR */}
       {showAvatarModal && (

@@ -260,7 +260,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                     {/* AVATARES DE LA CUADRILLA GANADORA (HASTA 5 JUGADORES) */}
                     <div className="w-full flex-1 flex flex-col justify-center items-center my-auto min-h-0 py-1">
                       {sortedWinnerMembers.length === 1 ? (
-                        /* CASO 1: UN SOLO INTEGRANTE / CAPITÁN */
+                        /* CASO 1: UN SOLO INTEGRANTE */
                         <div className="flex flex-col items-center">
                           <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-2xl bg-[#2a1e12] border-3 border-[#d4af37] ring-2 ring-amber-400/40 shadow-xl flex items-center justify-center p-0.5">
                             <img
@@ -272,7 +272,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                               className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-xl"
                             />
                             <div className="absolute -bottom-2 -right-2 bg-[#8a1c2a] text-[#f5eedb] text-xs font-broadway uppercase px-2.5 py-0.5 rounded-full border-2 border-[#f5eedb] shadow-lg rotate-[-8deg] tracking-wider">
-                              👑 GRAN CAPITÁN
+                              ★ CAMPEÓN
                             </div>
                           </div>
                           <span className="text-xs sm:text-sm font-vintage font-black text-stone-900 mt-1.5 truncate max-w-[160px]">
@@ -286,14 +286,10 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                             {sortedWinnerMembers.map((member) => (
                               <div key={member.id} className="flex flex-col items-center">
                                 <div
-                                  className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden ${
+                                  className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden border-2 border-[#3b2c1a] ${
                                     sortedWinnerMembers.length === 2
                                       ? 'w-20 h-20 sm:w-24 sm:h-24'
                                       : 'w-18 h-18 sm:w-20 sm:h-20'
-                                  } ${
-                                    member.is_captain
-                                      ? 'border-2 border-[#d4af37] ring-2 ring-amber-400/40 shadow-[0_0_12px_rgba(217,119,6,0.35)]'
-                                      : 'border-2 border-[#3b2c1a]'
                                   }`}
                                 >
                                   <img
@@ -304,27 +300,13 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                                     alt={member.nickname}
                                     className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-lg"
                                   />
-                                  {member.is_captain && (
-                                    <div
-                                      className="absolute -top-1 -right-1 bg-[#8a1c2a] text-[#f5eedb] text-[11px] w-5 h-5 rounded-full border border-[#f5eedb] flex items-center justify-center shadow-md font-black"
-                                      title="Capitán de la Cuadrilla"
-                                    >
-                                      👑
-                                    </div>
-                                  )}
                                 </div>
                                 <span className="font-vintage font-bold text-stone-900 text-xs mt-1 truncate max-w-[90px] text-center leading-tight">
                                   {member.nickname}
                                 </span>
-                                {member.is_captain ? (
-                                  <span className="text-[9px] font-broadway uppercase text-[#8a1c2a] font-black leading-none mt-0.5">
-                                    👑 Capitán
-                                  </span>
-                                ) : (
-                                  <span className="text-[9px] font-vintage text-stone-600 font-bold uppercase leading-none mt-0.5">
-                                    Cómplice
-                                  </span>
-                                )}
+                                <span className="text-[9px] font-vintage text-stone-600 font-bold uppercase leading-none mt-0.5">
+                                  Cómplice
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -336,17 +318,11 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                         /* CASO 3: 4 O 5 INTEGRANTES (DISTRIBUCIÓN 2 FILAS OPTIMIZADA SIN SCROLL) */
                         <div className="w-full flex flex-col items-center">
                           <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-full">
-                            {/* Fila 1: Primeros 2 o 3 miembros (con Capitán al frente) */}
+                            {/* Fila 1: Primeros 2 o 3 miembros */}
                             <div className="flex justify-center items-center gap-2.5 sm:gap-3">
                               {sortedWinnerMembers.slice(0, sortedWinnerMembers.length === 4 ? 2 : 3).map((member) => (
                                 <div key={member.id} className="flex flex-col items-center">
-                                  <div
-                                    className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden w-15 h-15 sm:w-16 sm:h-16 md:w-17 md:h-17 ${
-                                      member.is_captain
-                                        ? 'border-2 border-[#d4af37] ring-2 ring-amber-400/40 shadow-[0_0_10px_rgba(217,119,6,0.35)]'
-                                        : 'border-2 border-[#3b2c1a]'
-                                    }`}
-                                  >
+                                  <div className="relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden w-15 h-15 sm:w-16 sm:h-16 md:w-17 md:h-17 border-2 border-[#3b2c1a]">
                                     <img
                                       src={generateAvatarDataUri(
                                         member.avatar_seed || member.nickname,
@@ -355,27 +331,13 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                                       alt={member.nickname}
                                       className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-lg"
                                     />
-                                    {member.is_captain && (
-                                      <div
-                                        className="absolute -top-1 -right-1 bg-[#8a1c2a] text-[#f5eedb] text-[10px] w-4.5 h-4.5 rounded-full border border-[#f5eedb] flex items-center justify-center shadow-md font-black"
-                                        title="Capitán de la Cuadrilla"
-                                      >
-                                        👑
-                                      </div>
-                                    )}
                                   </div>
                                   <span className="font-vintage font-bold text-stone-900 text-[11px] sm:text-xs mt-0.5 truncate max-w-[80px] text-center leading-tight">
                                     {member.nickname}
                                   </span>
-                                  {member.is_captain ? (
-                                    <span className="text-[9px] font-broadway uppercase text-[#8a1c2a] font-black leading-none">
-                                      Capitán
-                                    </span>
-                                  ) : (
-                                    <span className="text-[8px] font-vintage text-stone-600 font-bold uppercase leading-none">
-                                      Cómplice
-                                    </span>
-                                  )}
+                                  <span className="text-[8px] font-vintage text-stone-600 font-bold uppercase leading-none">
+                                    Cómplice
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -384,13 +346,7 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                             <div className="flex justify-center items-center gap-2.5 sm:gap-3">
                               {sortedWinnerMembers.slice(sortedWinnerMembers.length === 4 ? 2 : 3).map((member) => (
                                 <div key={member.id} className="flex flex-col items-center">
-                                  <div
-                                    className={`relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden w-15 h-15 sm:w-16 sm:h-16 md:w-17 md:h-17 ${
-                                      member.is_captain
-                                        ? 'border-2 border-[#d4af37] ring-2 ring-amber-400/40 shadow-[0_0_10px_rgba(217,119,6,0.35)]'
-                                        : 'border-2 border-[#3b2c1a]'
-                                    }`}
-                                  >
+                                  <div className="relative rounded-xl bg-[#2a1e12] p-0.5 shadow-md flex items-center justify-center overflow-hidden w-15 h-15 sm:w-16 sm:h-16 md:w-17 md:h-17 border-2 border-[#3b2c1a]">
                                     <img
                                       src={generateAvatarDataUri(
                                         member.avatar_seed || member.nickname,
@@ -399,14 +355,6 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                                       alt={member.nickname}
                                       className="w-full h-full object-cover filter sepia-[0.3] contrast-125 rounded-lg"
                                     />
-                                    {member.is_captain && (
-                                      <div
-                                        className="absolute -top-1 -right-1 bg-[#8a1c2a] text-[#f5eedb] text-[10px] w-4.5 h-4.5 rounded-full border border-[#f5eedb] flex items-center justify-center shadow-md font-black"
-                                        title="Capitán de la Cuadrilla"
-                                      >
-                                        👑
-                                      </div>
-                                    )}
                                   </div>
                                   <span className="font-vintage font-bold text-stone-900 text-[11px] sm:text-xs mt-0.5 truncate max-w-[80px] text-center leading-tight">
                                     {member.nickname}

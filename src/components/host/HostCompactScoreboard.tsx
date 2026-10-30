@@ -41,7 +41,7 @@ export const HostCompactScoreboard: React.FC<HostCompactScoreboardProps> = ({
               </div>
             </div>
 
-            {/* Lista de Miembros con Selector de Capitán */}
+            {/* Lista de Miembros */}
             {teamMembers.length > 0 && (
               <div className="my-2 p-2 bg-[#07070a]/90 rounded-2xl border border-[#d4af37]/30 flex flex-wrap gap-1.5 items-center">
                 <span className="text-xs uppercase font-vintage font-bold text-amber-300/70 w-full flex items-center gap-1">
@@ -49,24 +49,12 @@ export const HostCompactScoreboard: React.FC<HostCompactScoreboardProps> = ({
                   <span>Miembros:</span>
                 </span>
                 {teamMembers.map((m) => (
-                  <button
+                  <div
                     key={m.id}
-                    onClick={() => onSetCaptain(team.id, m.id)}
-                    title={
-                      m.is_captain
-                        ? 'Capitán activo (Clic para desasignar o deshacer capitanía)'
-                        : 'Nombrar Capitán a este jugador'
-                    }
-                    className={`px-2 py-1 rounded-xl text-xs font-vintage font-bold flex items-center gap-1 transition-all active:scale-95 ${
-                      m.is_captain
-                        ? 'bg-gold-gradient hover:bg-red-500 hover:text-white text-slate-950 font-black shadow-md border border-[#f5eedb]/40'
-                        : 'bg-[#14141e] hover:bg-[#1f1f2e] text-amber-200 border border-[#d4af37]/30'
-                    }`}
+                    className="px-2.5 py-1 rounded-xl text-xs font-vintage font-bold flex items-center gap-1 bg-[#14141e] text-amber-200 border border-[#d4af37]/30"
                   >
-                    <Crown className={`w-3 h-3 ${m.is_captain ? 'fill-current text-slate-950' : 'text-amber-400'}`} />
                     <span>{m.nickname}</span>
-                    {m.is_captain && <span className="text-xs opacity-80 ml-0.5">✕</span>}
-                  </button>
+                  </div>
                 ))}
               </div>
             )}

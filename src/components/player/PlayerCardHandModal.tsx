@@ -313,11 +313,10 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                {/* Header bar indicando rol del jugador */}
+                {/* Header bar indicando mano del equipo */}
                 <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs text-amber-300 font-vintage mb-2">
                   <div className="flex items-center gap-1.5">
-                    <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{player?.is_captain ? 'Eres el Capitán: Puedes Jugar Naipes' : 'Solo Capitán puede jugarlas'}</span>
+                    <span>🃏 Mano de tu Mesa: Puedes jugar naipes</span>
                   </div>
                   <span className="text-xs text-amber-400/70">
                     {myTeamCards.length} en mano
@@ -327,13 +326,9 @@ export const PlayerCardHandModal: React.FC<PlayerCardHandModalProps> = ({
                 {/* Carrusel 3D Coverflow de Naipes */}
                 <FannedHandDeck
                   cards={myTeamCards}
-                  disabled={!player?.is_captain}
+                  disabled={false}
                   onPlayCard={(card) => {
-                    if (player?.is_captain) {
-                      handleSelectCard(card);
-                    } else {
-                      onToast('👑 Solo el Capitán puede jugar las cartas.');
-                    }
+                    handleSelectCard(card);
                   }}
                 />
               </div>

@@ -186,12 +186,14 @@ export class RoomSync {
 
   // WebRTC PeerJS Relay
   private peer: any = null;
+  private PeerClassRef: any = null;
   private hubConn: any = null;
   private clientConns: any[] = [];
   private isHub = false;
   private pendingQueue: RelayMessage[] = [];
   private heartbeatInterval: any = null;
   private reconnectTimeout: any = null;
+  private supabaseRetryTimeout: any = null;
   private connectTimeout: any = null;
   private isDestroyed = false;
 
@@ -232,25 +234,79 @@ export class RoomSync {
     if (typeof window !== 'undefined') {
       this.initPeerRelay();
 
-      // Escuchadores de reconexión móvil inmediata al desbloquear pantalla o cambiar de app
+      // Escuchadores de reconexión móvil inmediata al desbloquear pantalla o cambiar de app (iOS Safari + Android Chrome)
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      }
       window.addEventListener('visibilitychange', this.handleVisibilityChange);
+      window.addEventListener('pageshow', this.handleVisibilityChange);
       window.addEventListener('focus', this.handleVisibilityChange);
       window.addEventListener('online', this.handleVisibilityChange);
     }
   }
 
+  private getHubId(): string {
+    const cleanCode = this.roomCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `pgs-${cleanCode}-hub`;
+  }
+
+  private isWebRtcConnHealthy(conn: any): boolean {
+    if (!conn || !conn.open) return false;
+    const pc = conn.peerConnection as RTCPeerConnection | undefined;
+    if (pc) {
+      const ice = pc.iceConnectionState;
+      const state = pc.connectionState;
+      if (ice === 'failed' || ice === 'disconnected' || ice === 'closed') return false;
+      if (state === 'failed' || state === 'disconnected' || state === 'closed') return false;
+    }
+    return true;
+  }
+
   private handleVisibilityChange = () => {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      if (isSupabaseConfigured && (!this.supabaseChannel || !this.isSupabaseSubscribed)) {
-        this.initSupabaseChannel();
+    if (this.isDestroyed) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+
+    // 1. Verificar salud de Supabase Realtime
+    if (isSupabaseConfigured && (!this.supabaseChannel || !this.isSupabaseSubscribed)) {
+      this.initSupabaseChannel();
+    }
+
+    // 2. Verificar salud de PeerJS y WebRTC tras desbloqueo en iOS / Android
+    const hubId = this.getHubId();
+    if (this.peer && !this.peer.destroyed && this.peer.disconnected) {
+      try {
+        this.peer.reconnect();
+      } catch {}
+    }
+
+    if (!this.isHub) {
+      if (!this.isWebRtcConnHealthy(this.hubConn)) {
+        if (this.PeerClassRef) {
+          this.scheduleReconnect(this.PeerClassRef, hubId, 150);
+        } else {
+          this.initPeerRelay();
+        }
       }
+    } else if (!this.peer || this.peer.destroyed) {
+      this.initPeerRelay();
+    }
+
+    // 3. Solicitar sincronización activa por red para que el Host envíe la foto completa
+    if (this.role === 'host') {
       this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+      this.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+    } else {
+      this.broadcast({ type: 'REQUEST_ROOM_SYNC' });
       this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
     }
   };
 
   private initSupabaseChannel() {
     if (!isSupabaseConfigured || this.isDestroyed || !this.roomCode) return;
+    if (this.supabaseRetryTimeout) {
+      clearTimeout(this.supabaseRetryTimeout);
+      this.supabaseRetryTimeout = null;
+    }
     try {
       if (this.supabaseChannel) {
         try { supabase.removeChannel(this.supabaseChannel); } catch {}
@@ -269,13 +325,25 @@ export class RoomSync {
           }
         })
         .subscribe((status) => {
+          if (this.isDestroyed) return;
           if (status === 'SUBSCRIBED') {
             this.isSupabaseSubscribed = true;
             this.flushPendingSupabaseQueue();
-            this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
-            this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
+            if (this.role === 'host') {
+              this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+              this.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+            } else {
+              this.broadcast({ type: 'REQUEST_ROOM_SYNC' });
+              this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
+            }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             this.isSupabaseSubscribed = false;
+            if (!this.isDestroyed && !this.supabaseRetryTimeout) {
+              this.supabaseRetryTimeout = setTimeout(() => {
+                this.supabaseRetryTimeout = null;
+                this.initSupabaseChannel();
+              }, 2500);
+            }
           }
         });
     } catch (err) {
@@ -306,9 +374,9 @@ export class RoomSync {
     try {
       import('peerjs').then(({ Peer }) => {
         if (this.isDestroyed) return;
+        this.PeerClassRef = Peer;
 
-        const cleanCode = this.roomCode.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const hubId = `pgs-${cleanCode}-hub`;
+        const hubId = this.getHubId();
 
         // Los jugadores son clientes puros: van directos al HUB sin perder tiempo intentando crearlo
         if (this.role === 'player') {
@@ -332,6 +400,7 @@ export class RoomSync {
           tryHub.on('connection', (conn: any) => {
             conn.on('open', () => {
               console.log('[RoomSync] Nuevo dispositivo conectado al HUB:', conn.peer);
+              this.clientConns = this.clientConns.filter((c) => c !== conn && this.isWebRtcConnHealthy(c));
               this.clientConns.push(conn);
 
               // Pedir inmediatamente la identidad al jugador recién conectado
@@ -345,6 +414,7 @@ export class RoomSync {
               } catch {}
 
               // Notificar al host para que emita el estado actual de la sala
+              this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
               this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
               this.flushPendingQueue();
             });
@@ -376,14 +446,26 @@ export class RoomSync {
           this.startHeartbeat();
         });
 
+        tryHub.on('disconnected', () => {
+          if (!this.isDestroyed && !tryHub.destroyed) {
+            try {
+              tryHub.reconnect();
+            } catch {}
+          }
+        });
+
         tryHub.on('error', (err: any) => {
           // Si el ID de HUB ya está ocupado (ej. la TV o el Host ya lo crearon), conectarse como cliente
           if (err?.type === 'unavailable-id') {
             console.log('[RoomSync] HUB ya activo por otro dispositivo, conectando como cliente...');
-            tryHub.destroy();
+            try { tryHub.destroy(); } catch {}
             this.connectAsClient(Peer, hubId);
           } else {
             console.warn('[RoomSync] Error de tryHub:', err?.type || err);
+            if (!this.isHub) {
+              try { tryHub.destroy(); } catch {}
+              this.connectAsClient(Peer, hubId);
+            }
           }
         });
       }).catch((e) => console.warn('PeerJS relay import error:', e));
@@ -396,6 +478,9 @@ export class RoomSync {
     if (this.isDestroyed) return;
 
     try {
+      if (this.peer && !this.peer.destroyed) {
+        try { this.peer.destroy(); } catch {}
+      }
       const clientPeer = new PeerClass(PEER_CONFIG);
       this.peer = clientPeer;
       this.isHub = false;
@@ -411,11 +496,11 @@ export class RoomSync {
 
         if (this.connectTimeout) clearTimeout(this.connectTimeout);
         this.connectTimeout = setTimeout(() => {
-          if (!this.isDestroyed && (!this.hubConn || !this.hubConn.open)) {
+          if (!this.isDestroyed && !this.isWebRtcConnHealthy(this.hubConn)) {
             console.warn('[RoomSync] Timeout esperando DataConnection con HUB, reintentando...');
             this.scheduleReconnect(PeerClass, hubId);
           }
-        }, 6000);
+        }, 5000);
 
         conn.on('open', () => {
           if (this.connectTimeout) clearTimeout(this.connectTimeout);
@@ -457,6 +542,16 @@ export class RoomSync {
         });
       });
 
+      clientPeer.on('disconnected', () => {
+        if (!this.isDestroyed && !clientPeer.destroyed) {
+          try {
+            clientPeer.reconnect();
+          } catch {
+            this.scheduleReconnect(PeerClass, hubId);
+          }
+        }
+      });
+
       clientPeer.on('error', (err: any) => {
         console.warn('[RoomSync] Error en clientPeer:', err?.type || err);
         this.scheduleReconnect(PeerClass, hubId);
@@ -466,11 +561,11 @@ export class RoomSync {
     } catch {}
   }
 
-  private scheduleReconnect(PeerClass: any, hubId: string) {
+  private scheduleReconnect(PeerClass: any, hubId: string, delayMs = 1800) {
     if (this.isDestroyed || this.reconnectTimeout) return;
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
-      if (!this.isDestroyed && (!this.hubConn || !this.hubConn.open)) {
+      if (!this.isDestroyed && !this.isWebRtcConnHealthy(this.hubConn)) {
         if (this.hubConn) {
           try { this.hubConn.close(); } catch {}
           this.hubConn = null;
@@ -481,35 +576,38 @@ export class RoomSync {
         }
         this.connectAsClient(PeerClass, hubId);
       }
-    }, 2000);
+    }, delayMs);
   }
 
   private startHeartbeat() {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    // Ping ligero cada 4 segundos para evitar desconexiones por suspensión en móviles
+    // Ping ligero cada 4 segundos para evitar desconexiones por suspensión en móviles y detectar conexiones zombi
     this.heartbeatInterval = setInterval(() => {
       if (this.isDestroyed) return;
-      if (this.hubConn && this.hubConn.open) {
-        try {
-          this.hubConn.send({
-            roomCode: this.roomCode,
-            senderId: this.instanceId,
-            eventId: 'ping_' + Date.now(),
-            event: { type: 'PING' },
-          });
-        } catch {}
+      if (!this.isHub) {
+        if (this.isWebRtcConnHealthy(this.hubConn)) {
+          try {
+            this.hubConn.send({
+              roomCode: this.roomCode,
+              senderId: this.instanceId,
+              eventId: 'ping_' + Date.now(),
+              event: { type: 'PING' },
+            });
+          } catch {}
+        } else if (this.PeerClassRef) {
+          this.scheduleReconnect(this.PeerClassRef, this.getHubId(), 500);
+        }
       } else if (this.isHub && this.clientConns.length > 0) {
+        this.clientConns = this.clientConns.filter((c) => this.isWebRtcConnHealthy(c));
         this.clientConns.forEach((c) => {
-          if (c.open) {
-            try {
-              c.send({
-                roomCode: this.roomCode,
-                senderId: this.instanceId,
-                eventId: 'ping_' + Date.now(),
-                event: { type: 'PING' },
-              });
-            } catch {}
-          }
+          try {
+            c.send({
+              roomCode: this.roomCode,
+              senderId: this.instanceId,
+              eventId: 'ping_' + Date.now(),
+              event: { type: 'PING' },
+            });
+          } catch {}
         });
       }
     }, 4000);
@@ -532,6 +630,13 @@ export class RoomSync {
         try { this.hubConn.send(msg); } catch {}
       });
       this.pendingQueue = [];
+    }
+  }
+
+  private enqueuePending(queue: RelayMessage[], message: RelayMessage) {
+    queue.push(message);
+    if (queue.length > 40) {
+      queue.shift();
     }
   }
 
@@ -601,10 +706,10 @@ export class RoomSync {
             payload: message,
           });
         } catch {
-          this.pendingSupabaseQueue.push(message);
+          this.enqueuePending(this.pendingSupabaseQueue, message);
         }
       } else {
-        this.pendingSupabaseQueue.push(message);
+        this.enqueuePending(this.pendingSupabaseQueue, message);
       }
     }
 
@@ -621,17 +726,17 @@ export class RoomSync {
       });
       // Si no hay clientes todavía pero es un evento clave, guardar para emitir cuando conecten
       if (sentCount === 0 && (event.type === 'ROOM_UPDATE' || event.type === 'TEAMS_UPDATE' || event.type === 'SWITCH_GAME')) {
-        this.pendingQueue.push(message);
+        this.enqueuePending(this.pendingQueue, message);
       }
     } else if (this.hubConn && this.hubConn.open) {
       try {
         this.hubConn.send(message);
       } catch {
-        this.pendingQueue.push(message);
+        this.enqueuePending(this.pendingQueue, message);
       }
     } else {
       // Conexión aún no lista: encolar para emitir inmediatamente al abrirse
-      this.pendingQueue.push(message);
+      this.enqueuePending(this.pendingQueue, message);
     }
 
     // 5. Notificar a oyentes locales
@@ -646,6 +751,7 @@ export class RoomSync {
     this.isDestroyed = true;
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    if (this.supabaseRetryTimeout) clearTimeout(this.supabaseRetryTimeout);
     if (this.connectTimeout) clearTimeout(this.connectTimeout);
 
     const key = `${this.roomCode}_${this.role}`;
@@ -654,7 +760,11 @@ export class RoomSync {
     }
 
     if (typeof window !== 'undefined') {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      }
       window.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      window.removeEventListener('pageshow', this.handleVisibilityChange);
       window.removeEventListener('focus', this.handleVisibilityChange);
       window.removeEventListener('online', this.handleVisibilityChange);
     }

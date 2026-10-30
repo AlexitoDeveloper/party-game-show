@@ -96,9 +96,6 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
                   {buzzerWinner.playerName}{' '}
                   <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
                 </span>
-                {isWinnerCaptain && (
-                  <Crown className="w-5 h-5 fill-amber-400 text-amber-400" />
-                )}
               </div>
             </div>
           </motion.div>

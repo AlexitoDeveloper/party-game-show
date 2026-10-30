@@ -236,11 +236,7 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
             {members.map((m) => (
               <div
                 key={m.id}
-                className={`rounded-2xl px-3.5 py-2 flex items-center justify-between transition-all ${
-                  m.is_captain
-                    ? 'bg-amber-500/20 border-2 border-amber-400 text-amber-100 shadow-md'
-                    : 'bg-slate-900/90 border border-slate-700/60 text-slate-100'
-                }`}
+                className="rounded-2xl px-3.5 py-2 flex items-center justify-between transition-all bg-slate-900/90 border border-slate-700/60 text-slate-100"
               >
                 <div className="flex items-center gap-3 truncate min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-slate-950 border border-[#d4af37]/40 shrink-0 overflow-hidden flex items-center justify-center shadow-inner">
@@ -255,9 +251,6 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
                   )}
                   <span className="text-base sm:text-lg font-bold truncate">{m.nickname}</span>
                 </div>
-                {m.is_captain && (
-                  <Crown className="w-5 h-5 text-amber-400 fill-amber-400 shrink-0 ml-2 drop-shadow" />
-                )}
               </div>
             ))}
             {members.length === 0 && (

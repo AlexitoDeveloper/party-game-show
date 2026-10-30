@@ -91,18 +91,8 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 />
               </div>
 
-              {/* Insignia de Capitán de la Mesa */}
-              {player?.is_captain && (
-                <div
-                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gold-gradient border-2 border-slate-950 flex items-center justify-center shadow-lg animate-bounce"
-                  title="¡Eres el Capitán de tu Bando!"
-                >
-                  <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
-                </div>
-              )}
-
               {/* Badge Emoji */}
-              {player?.badge_emoji && !player?.is_captain && (
+              {player?.badge_emoji && (
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#0c0c14] border border-[#d4af37] flex items-center justify-center shadow">
                   <TwemojiText className="text-xs">{player.badge_emoji}</TwemojiText>
                 </div>
@@ -112,11 +102,6 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             {/* Datos del Jugador y Equipo */}
             <div className="text-right">
               <div className="flex items-center justify-end gap-1">
-                {player?.is_captain && (
-                  <span className="text-xs font-broadway uppercase tracking-wider text-amber-400 font-bold">
-                    CAPITÁN
-                  </span>
-                )}
                 <span className="text-xs uppercase font-vintage tracking-widest text-amber-200/60 block leading-tight">
                   MESA
                 </span>
