@@ -33,8 +33,9 @@ export function getTvLiteMode(): boolean {
   if (saved !== null) {
     return saved === 'true';
   }
-  // Valor predeterminado automático para Smart TVs heredadas
-  return isLegacyWebOS();
+  const path = window.location?.pathname || '';
+  const isTvRoute = path === '/tv' || path.endsWith('/tv');
+  return isTvRoute || isSmartTvBrowser() || isLegacyWebOS();
 }
 
 /**

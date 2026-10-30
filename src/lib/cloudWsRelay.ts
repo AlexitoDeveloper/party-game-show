@@ -131,8 +131,14 @@ export class CloudWsRelay {
       this.lastSentByType.set(evType, { hash: payloadHash, ts: now });
     }
 
-    // Eventos de pulsador o redirección de TV salen en 0ms sin esperar cola
-    if (evType === 'BUZZER_PRESS' || evType === 'BUZZER_LOCKED' || evType === 'TV_PAIR_REDIRECT') {
+    // Solo agrupar en cola de 25ms los snapshots masivos (ROOM_UPDATE, TEAMS_UPDATE, PLAYERS_UPDATE, POWER_CARDS_STATE_UPDATE)
+    const isSnapshotEvent =
+      evType === 'ROOM_UPDATE' ||
+      evType === 'TEAMS_UPDATE' ||
+      evType === 'PLAYERS_UPDATE' ||
+      evType === 'POWER_CARDS_STATE_UPDATE';
+
+    if (!isSnapshotEvent) {
       try {
         fetch(`https://ntfy.sh/pgs_room_v2_${this.cleanCode}`, {
           method: 'POST',
@@ -144,10 +150,10 @@ export class CloudWsRelay {
       return;
     }
 
-    // Agrupar ráfagas de snapshot (ROOM_UPDATE + TEAMS_UPDATE + PLAYERS_UPDATE) en 1 solo POST cada 45ms
+    // Agrupar ráfagas de snapshot (ROOM_UPDATE + TEAMS_UPDATE + PLAYERS_UPDATE) en 1 solo POST cada 25ms
     this.batchQueue.push(message);
     if (!this.batchTimeout) {
-      this.batchTimeout = setTimeout(this.flushBatch, 45);
+      this.batchTimeout = setTimeout(this.flushBatch, 25);
     }
   }
 

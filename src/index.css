@@ -459,7 +459,6 @@ body {
     ),
     /* Filigranas lineales de cuadrícula de casino */
     radial-gradient(ellipse at 50% 100%, rgba(92, 6, 18, 0.15) 0%, transparent 70%);
-  background-attachment: fixed;
 }
 
 /* Marco de Naipe de Casino "Hell of a Deal" (Doble orla dorada con ribete carmesí interior) */
@@ -534,14 +533,13 @@ body {
 
 /* Grano sutil de celuloide */
 .film-grain-overlay {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
-  background-size: 3px 3px;
+  display: none;
 }
 
 /* ==========================================================================
    SMART TV & OLED LITE MODE OPTIMIZATIONS
-   Desactiva filtros GPU costosos (backdrop-filter) y orbes de desenfoque
-   para garantizar 60 FPS estables en navegadores de Smart TV (LG webOS, Tizen)
+   Desactiva filtros GPU costosos (backdrop-filter), orbes de desenfoque y
+   animaciones CSS de fondo infinitas para garantizar 60 FPS en TCL / LG webOS
    ========================================================================== */
 .tv-lite-mode,
 .tv-lite-mode * {
@@ -549,12 +547,29 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
+.tv-lite-mode .foil-shimmer::after,
+.tv-lite-mode .blur-\[80px\],
 .tv-lite-mode .blur-\[100px\],
+.tv-lite-mode .blur-\[110px\],
 .tv-lite-mode .blur-\[120px\],
 .tv-lite-mode .blur-\[128px\],
+.tv-lite-mode .blur-\[140px\],
 .tv-lite-mode .blur-\[150px\],
 .tv-lite-mode .blur-3xl,
 .tv-lite-mode .blur-2xl {
   display: none !important;
 }
+
+.tv-lite-mode .lobby-border-agua,
+.tv-lite-mode .lobby-border-fuego,
+.tv-lite-mode .lobby-border-electricidad,
+.tv-lite-mode .lobby-border-luz,
+.tv-lite-mode .lobby-border-sombra,
+.tv-lite-mode .lobby-border-acido,
+.tv-lite-mode .lobby-border-galaxia,
+.tv-lite-mode .lobby-border-magma,
+.tv-lite-mode .animate-beam-rotate {
+  animation: none !important;
+}
+
 

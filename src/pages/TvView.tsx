@@ -447,7 +447,9 @@ export default function TvView() {
           return updated;
         });
       } else if (event.type === 'PLAYERS_UPDATE') {
-        setPlayers(event.payload);
+        setPlayers((prev) =>
+          JSON.stringify(prev) === JSON.stringify(event.payload) ? prev : event.payload
+        );
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
         // Solo el Host es la fuente de verdad del estado de sala y puntuaciones; la TV únicamente sincroniza la gramola
         roomSync.broadcast({ type: 'JUKEBOX_STATE_SYNC', payload: speakeasyJukebox.getState() });
@@ -499,9 +501,14 @@ export default function TvView() {
           game_phase: event.payload.phase,
         }));
       } else if (event.type === 'ROOM_UPDATE') {
-        setRoom((prev) => ({ ...prev, ...event.payload }));
+        setRoom((prev) => {
+          const next = { ...prev, ...event.payload };
+          return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+        });
       } else if (event.type === 'TEAMS_UPDATE') {
-        setTeams(event.payload);
+        setTeams((prev) =>
+          JSON.stringify(prev) === JSON.stringify(event.payload) ? prev : event.payload
+        );
       } else if (event.type === 'MUSIC_STATE_UPDATE') {
         setMusicPlaying(event.payload.isPlaying);
         setMusicRevealed(event.payload.isRevealed);
