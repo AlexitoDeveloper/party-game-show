@@ -240,7 +240,7 @@ export const GAMES_CATALOG: GameDefinition[] = [
     ],
   },
 
-  // 8. EL ENIGMA DEL REY (Adivina la película con emojis)
+  // 8. EL ENIGMA DEL REY (Adivina la película o serie con emojis)
   {
     id: 'movies',
     title: 'El enigma del Rey',
@@ -251,17 +251,17 @@ export const GAMES_CATALOG: GameDefinition[] = [
     participantsMode: 'all',
     participantsLabel: '👥 Todos los Jugadores',
     participantsDescription: 'Todos los miembros por equipo descifran las secuencias de emojis con el pulsador.',
-    description: 'Descifra la película o enigma oculto con jeroglíficos de emojis. Cada acierto suma al contador de películas de la prueba y al final se reparte el Podio de Enigmas.',
+    description: 'Descifra la película o serie mítica oculta tras las pistas de emojis. Cuanto antes pulses y aciertes, más puntos sumas para tu equipo.',
     rules: [
-      '🎯 Los aciertos suman al marcador de enigmas de la ronda',
-      '❌ Respuesta incorrecta tras pulsar: −1 punto de ronda y rebote',
+      '🎯 Pista 1 (3 Emojis de Trama): +3 puntos | Pista 2 (5 Emojis + Huecos del Título): +2 puntos',
+      '💡 Pista 3 (Iniciales + Pista de Texto): +1 punto | Pista 4 (Modo Salvavidas 4 Opciones): +1 punto',
+      '❌ Respuesta incorrecta tras pulsar: −1 punto de ronda y rebote para los demás equipos',
       '🏆 Podio final cinéfilo: 1.º (+5 pts), 2.º (+3 pts), 3.º (+2 pts), 4.º (+1 pt)',
-      '⚖️ El anfitrión asigna los puntos del podio al término de la tanda de enigmas',
     ],
     scoringOptions: [
-      { id: 'movie_lvl1', label: '🎬 Nivel 1', delta: 3, hitsDelta: 1, badge: '+3', color: 'amber', type: 'action', description: 'Acierto al primer frame (+3 pts)' },
-      { id: 'movie_lvl2', label: '🎬 Nivel 2', delta: 2, hitsDelta: 1, badge: '+2', color: 'emerald', type: 'action', description: 'Acierto al segundo frame (+2 pts)' },
-      { id: 'movie_lvl3', label: '🎬 Nivel 3', delta: 1, hitsDelta: 1, badge: '+1', color: 'blue', type: 'action', description: 'Acierto al tercer frame (+1 pt)' },
+      { id: 'movie_lvl1', label: '🎯 Pista 1 (3 Emojis)', delta: 3, hitsDelta: 1, badge: '+3', color: 'amber', type: 'action', description: 'Acierto con 3 emojis (+3 pts)' },
+      { id: 'movie_lvl2', label: '🔍 Pista 2 (+ Huecos)', delta: 2, hitsDelta: 1, badge: '+2', color: 'emerald', type: 'action', description: 'Acierto con 5 emojis y huecos (+2 pts)' },
+      { id: 'movie_lvl3', label: '💡 Pista 3 / 4 (Ayuda)', delta: 1, hitsDelta: 1, badge: '+1', color: 'blue', type: 'action', description: 'Acierto con iniciales o 4 opciones (+1 pt)' },
       { id: 'movie_miss', label: '❌ Fallo', delta: -1, hitsDelta: 0, badge: '-1', color: 'red', type: 'action', description: 'Fallo tras pulsar (-1 pt)' },
       { id: 'movie_p1', label: '🥇 1.º Puesto', delta: 5, hitsDelta: 0, badge: '+5', color: 'amber', type: 'podium', description: '1.º con más enigmas acertados (+5 pts)' },
       { id: 'movie_p2', label: '🥈 2.º Puesto', delta: 3, hitsDelta: 0, badge: '+3', color: 'blue', type: 'podium', description: '2.º puesto en enigmas (+3 pts)' },

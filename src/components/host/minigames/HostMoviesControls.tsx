@@ -11,7 +11,7 @@ import {
   X,
   Shuffle,
 } from 'lucide-react';
-import { MovieItem } from '../../../lib/moviesData';
+import { MovieItem, MovieCategory } from '../../../lib/moviesData';
 
 export interface HostMoviesControlsProps {
   activePackName: string;
@@ -21,8 +21,8 @@ export interface HostMoviesControlsProps {
   onShuffleMovies?: () => void;
   movieIndex: number;
   filteredMovies: MovieItem[];
-  movieCategoryFilter?: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror';
-  onCategoryFilterChange?: (cat: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror') => void;
+  movieCategoryFilter?: 'Todos' | MovieCategory;
+  onCategoryFilterChange?: (cat: 'Todos' | MovieCategory) => void;
   currentMovie: MovieItem;
   movieRevealed: boolean;
   onToggleReveal: () => void;
@@ -38,13 +38,10 @@ export interface HostMoviesControlsProps {
 export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
   activePackName,
   onLoadOfficialPack,
-  onUploadJson,
   onResetToDemo,
   onShuffleMovies,
   movieIndex,
   filteredMovies,
-  movieCategoryFilter,
-  onCategoryFilterChange,
   currentMovie,
   movieRevealed,
   onToggleReveal,
@@ -77,7 +74,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
           <button
             onClick={onLoadOfficialPack}
             className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black flex items-center gap-1.5 transition-all shadow-sm border border-[#f5eedb]/40 text-xs uppercase"
-            title="Cargar las 21 películas oficiales para la fiesta"
+            title="Cargar las 30 películas y series oficiales para la fiesta"
           >
             <Sparkle className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Pack Oficial Fiesta</span>
@@ -101,7 +98,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
         <div className="flex items-center gap-2">
           <Film className="w-5 h-5 text-[#d4af37]" />
           <span className="text-sm font-broadway uppercase tracking-wider text-gold-gradient">
-            Película en Pantalla ({movieIndex + 1}/{filteredMovies.length})
+            Enigma en Pantalla ({movieIndex + 1}/{filteredMovies.length})
           </span>
         </div>
 
@@ -127,7 +124,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
 
       {/* TARJETA DE CHIVATO SECRETO PARA EL ANFITRIÓN */}
       <div className="bg-[#07070a]/90 border border-[#d4af37]/40 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        <div className="space-y-1.5 flex-1">
+        <div className="space-y-2 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-lg">{currentMovie.genreEmoji}</span>
             <span className="text-xs font-vintage font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -142,20 +139,20 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
           </h3>
           {currentMovie.director && (
             <p className="text-xs font-vintage text-amber-200/70">
-              Director: <span className="text-white font-broadway">{currentMovie.director}</span>
+              Director / Creador: <span className="text-white font-broadway">{currentMovie.director}</span>
             </p>
           )}
 
           {/* Emojis mostrados por fases al host */}
           <div className="flex flex-wrap items-center gap-2 py-1">
             <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-xs text-amber-400 font-broadway uppercase">P1 (2 emojis):</span>
+              <span className="text-xs text-amber-400 font-broadway uppercase">P1 (3 emojis):</span>
               {currentMovie.emojisStage1.map((em, idx) => (
                 <span key={idx}>{em}</span>
               ))}
             </div>
             <div className="flex items-center gap-1.5 bg-[#14141e] px-2.5 py-1 rounded-xl border border-[#d4af37]/30 text-base">
-              <span className="text-xs text-sky-400 font-broadway uppercase">P2 (4 emojis):</span>
+              <span className="text-xs text-sky-400 font-broadway uppercase">P2 (5 + Huecos):</span>
               {currentMovie.emojisStage2.map((em, idx) => (
                 <span key={idx}>{em}</span>
               ))}
@@ -167,6 +164,28 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
               ))}
             </div>
           </div>
+
+          {currentMovie.options && currentMovie.options.length > 0 && (
+            <div className="grid grid-cols-2 gap-1.5 pt-1 text-xs">
+              {currentMovie.options.map((opt, oIdx) => {
+                const isCorrect =
+                  opt.toLowerCase().trim() === currentMovie.title.toLowerCase().trim() ||
+                  currentMovie.title.toLowerCase().includes(opt.toLowerCase().trim());
+                return (
+                  <div
+                    key={oIdx}
+                    className={`px-2.5 py-1.5 rounded-xl border ${
+                      isCorrect
+                        ? 'bg-emerald-950/80 border-emerald-400 text-emerald-200 font-broadway font-black'
+                        : 'bg-[#14141e] border-[#d4af37]/25 text-amber-100/80 font-vintage'
+                    }`}
+                  >
+                    {String.fromCharCode(65 + oIdx)}) {opt.replace(/^\[DEMO\]\s*/i, '')}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <p className="text-xs text-amber-200/80 font-vintage italic bg-[#0c0c14] px-3 py-1.5 rounded-xl border border-[#d4af37]/30">
             💡 Significado: {currentMovie.explanation}
@@ -189,14 +208,20 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
         </div>
       </div>
 
-      {/* VALIDACIÓN AUTOMÁTICA SEGÚN EMOJIS EN PANTALLA */}
+      {/* VALIDACIÓN AUTOMÁTICA SEGÚN PISTA EN PANTALLA */}
       <div className="bg-[#0c0c14]/90 border border-[#d4af37]/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-deco-gold">
         <div className="flex items-center gap-2">
           <span className="text-xs font-broadway text-amber-300 uppercase">
             Puntuación Automática:
           </span>
           <span className="px-2.5 py-1 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs shadow-sm">
-            {movieFrameLevel === 1 ? 'Nivel 1 (2 Emojis) = +3 pts' : movieFrameLevel === 2 ? 'Nivel 2 (4 Emojis) = +2 pts' : 'Nivel 3/4 (Pistas) = +1 pt'}
+            {movieFrameLevel === 1
+              ? 'Pista 1 (3 Emojis) = +3 pts'
+              : movieFrameLevel === 2
+              ? 'Pista 2 (5 Emojis + Huecos) = +2 pts'
+              : movieFrameLevel === 3
+              ? 'Pista 3 (Iniciales + Pista) = +1 pt'
+              : 'Pista 4 (4 Opciones Test) = +1 pt'}
           </span>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -220,7 +245,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
       {/* SELECTOR DE NIVEL DE PISTA / EMOJIS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07070a]/80 p-3 rounded-2xl border border-[#d4af37]/30">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-vintage font-bold text-amber-200/80">Pista:</span>
+          <span className="text-xs font-vintage font-bold text-amber-200/80">Pista en TV:</span>
           <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => onSetFrameLevel(1)}
@@ -230,8 +255,8 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
                   : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
               }`}
             >
-              <span className="sm:hidden">P1 (+5)</span>
-              <span className="hidden sm:inline">P1: 2 Emojis (+5)</span>
+              <span className="sm:hidden">P1 (+3)</span>
+              <span className="hidden sm:inline">P1: 3 Emojis (+3)</span>
             </button>
             <button
               onClick={() => onSetFrameLevel(2)}
@@ -241,8 +266,8 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
                   : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
               }`}
             >
-              <span className="sm:hidden">P2 (+3)</span>
-              <span className="hidden sm:inline">P2: 4 Emojis (+3)</span>
+              <span className="sm:hidden">P2 (+2)</span>
+              <span className="hidden sm:inline">P2: + Huecos (+2)</span>
             </button>
             <button
               onClick={() => onSetFrameLevel(3)}
@@ -253,7 +278,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
               }`}
             >
               <span className="sm:hidden">P3 (+1)</span>
-              <span className="hidden sm:inline">P3: Todos (+1)</span>
+              <span className="hidden sm:inline">P3: + Iniciales y Pista (+1)</span>
             </button>
             <button
               onClick={() => onSetFrameLevel(4)}
@@ -263,8 +288,8 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
                   : 'bg-[#14141e] text-amber-200/60 hover:text-white border border-[#d4af37]/30'
               }`}
             >
-              <span className="sm:hidden">P4 (+1)</span>
-              <span className="hidden sm:inline">P4: Pistas (+1)</span>
+              <span className="sm:hidden">P4 Test (+1)</span>
+              <span className="hidden sm:inline">P4: 4 Opciones Test (+1)</span>
             </button>
           </div>
         </div>
@@ -273,7 +298,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
           <button
             onClick={onPrevMovie}
             className="p-2 bg-[#14141e] hover:bg-[#1a1a28] border border-[#d4af37]/30 rounded-xl text-amber-200 active:scale-95 transition-all"
-            title="Película anterior"
+            title="Enigma anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -281,7 +306,7 @@ export const HostMoviesControls: React.FC<HostMoviesControlsProps> = ({
             onClick={onNextMovie}
             className="px-3.5 sm:px-4 py-2 bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center gap-1.5 shadow-deco-gold active:scale-95 transition-all border border-[#f5eedb]/40"
           >
-            <span className="hidden sm:inline">Siguiente Película</span>
+            <span className="hidden sm:inline">Siguiente Enigma</span>
             <span className="sm:hidden">Siguiente</span>
             <ChevronRight className="w-4 h-4" />
           </button>

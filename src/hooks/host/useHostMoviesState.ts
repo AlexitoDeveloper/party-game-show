@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MovieItem, DEV_MOCK_MOVIES } from '../../lib/moviesData';
+import { MovieItem, MovieCategory, DEV_MOCK_MOVIES } from '../../lib/moviesData';
 import { RoomSync } from '../../lib/roomSync';
 import { BuzzerPressPayload, Team } from '../../lib/types';
 import { TEAMS_CATALOG } from '../../lib/constants';
@@ -42,19 +42,19 @@ export function useHostMoviesState({
   soundFX,
 }: UseHostMoviesStateParams) {
   const [movieBank, setMovieBank] = useState<MovieItem[]>(() => {
-    const saved = localStorage.getItem(`party_movie_bank_${roomCode}`);
+    const saved = localStorage.getItem(`party_movie_bank_v2_${roomCode}`);
     if (saved) {
       try { return JSON.parse(saved); } catch {}
     }
     return shuffleArray(DEV_MOCK_MOVIES);
   });
   const [activePackName, setActivePackName] = useState<string>(() => {
-    return localStorage.getItem(`party_movie_pack_name_${roomCode}`) || 'Modo Demo (Pruebas)';
+    return localStorage.getItem(`party_movie_pack_name_v2_${roomCode}`) || 'Modo Demo (Pruebas)';
   });
   const [movieIndex, setMovieIndex] = useState(0);
   const [movieFrameLevel, setMovieFrameLevel] = useState<1 | 2 | 3 | 4>(1);
   const [movieRevealed, setMovieRevealed] = useState(false);
-  const [movieCategoryFilter, setMovieCategoryFilter] = useState<'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror'>('Todos');
+  const [movieCategoryFilter, setMovieCategoryFilter] = useState<'Todos' | MovieCategory>('Todos');
 
   // En la prueba de emojis se juegan todas las películas mezcladas y en orden aleatorio
   const filteredMovies = useMemo(() => {
@@ -87,7 +87,7 @@ export function useHostMoviesState({
   const handleShuffleMovies = () => {
     const shuffled = shuffleArray(movieBank);
     setMovieBank(shuffled);
-    localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(shuffled));
+    localStorage.setItem(`party_movie_bank_v2_${roomCode}`, JSON.stringify(shuffled));
     setMovieIndex(0);
     setMovieFrameLevel(1);
     setMovieRevealed(false);
@@ -104,10 +104,10 @@ export function useHostMoviesState({
         // Mezclar aleatoriamente el pack de películas para que no salgan por categorías
         const shuffled = shuffleArray(data);
         setMovieBank(shuffled);
-        const name = `Pack Oficial Fiesta (${shuffled.length} películas)`;
+        const name = `Pack Oficial Fiesta (${shuffled.length} títulos)`;
         setActivePackName(name);
-        localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(shuffled));
-        localStorage.setItem(`party_movie_pack_name_${roomCode}`, name);
+        localStorage.setItem(`party_movie_bank_v2_${roomCode}`, JSON.stringify(shuffled));
+        localStorage.setItem(`party_movie_pack_name_v2_${roomCode}`, name);
         setMovieIndex(0);
         setMovieFrameLevel(1);
         setMovieRevealed(false);
@@ -123,8 +123,8 @@ export function useHostMoviesState({
     const shuffled = shuffleArray(DEV_MOCK_MOVIES);
     setMovieBank(shuffled);
     setActivePackName('Modo Demo (Pruebas)');
-    localStorage.removeItem(`party_movie_bank_${roomCode}`);
-    localStorage.removeItem(`party_movie_pack_name_${roomCode}`);
+    localStorage.removeItem(`party_movie_bank_v2_${roomCode}`);
+    localStorage.removeItem(`party_movie_pack_name_v2_${roomCode}`);
     setMovieIndex(0);
     setMovieFrameLevel(1);
     setMovieRevealed(false);
@@ -144,8 +144,8 @@ export function useHostMoviesState({
           setMovieBank(shuffled);
           const name = `Custom: ${file.name} (${shuffled.length} pelis)`;
           setActivePackName(name);
-          localStorage.setItem(`party_movie_bank_${roomCode}`, JSON.stringify(shuffled));
-          localStorage.setItem(`party_movie_pack_name_${roomCode}`, name);
+          localStorage.setItem(`party_movie_bank_v2_${roomCode}`, JSON.stringify(shuffled));
+          localStorage.setItem(`party_movie_pack_name_v2_${roomCode}`, name);
           setMovieIndex(0);
           setMovieFrameLevel(1);
           setMovieRevealed(false);
@@ -190,7 +190,7 @@ export function useHostMoviesState({
     syncMovieState(movieIndex, movieFrameLevel, nextRevealed);
   };
 
-  const handleCategoryFilterChange = (cat: 'Todos' | 'Taquillazos' | 'Disney / Pixar' | 'Terror') => {
+  const handleCategoryFilterChange = (cat: 'Todos' | MovieCategory) => {
     setMovieCategoryFilter(cat);
     setMovieIndex(0);
     setMovieFrameLevel(1);
