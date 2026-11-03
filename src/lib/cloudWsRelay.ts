@@ -18,6 +18,12 @@ export class CloudWsRelay {
   private instanceId: string;
   private onMessage: (msg: CloudRelayMessage) => void;
 
+  private lastSentByType = new Map<string, { hash: string; ts: number }>();
+  private lastResetTs = 0;
+  private rateLimitedUntil = 0;
+  private batchQueue: CloudRelayMessage[] = [];
+  private batchTimeout: any = null;
+
   constructor(roomCode: string, instanceId: string, onMessage: (msg: CloudRelayMessage) => void) {
     this.cleanCode = (roomCode || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     this.instanceId = instanceId;
@@ -27,9 +33,18 @@ export class CloudWsRelay {
     }
   }
 
-  private lastSentByType = new Map<string, { hash: string; ts: number }>();
-  private batchQueue: CloudRelayMessage[] = [];
-  private batchTimeout: any = null;
+  private dispatchMessage(parsed: any) {
+    if (!parsed || this.isDestroyed) return;
+    if (Array.isArray(parsed.batch)) {
+      parsed.batch.forEach((item: CloudRelayMessage) => {
+        if (item && item.eventId && item.senderId !== this.instanceId) {
+          this.onMessage(item);
+        }
+      });
+    } else if (parsed && parsed.eventId && parsed.senderId !== this.instanceId) {
+      this.onMessage(parsed);
+    }
+  }
 
   private connect() {
     if (this.isDestroyed || !this.cleanCode) return;
@@ -42,16 +57,23 @@ export class CloudWsRelay {
         if (this.isDestroyed) return;
         try {
           const ntfyData = JSON.parse(ev.data);
-          if (ntfyData.event === 'message' && ntfyData.message) {
-            const parsed = JSON.parse(ntfyData.message);
-            if (parsed && Array.isArray(parsed.batch)) {
-              parsed.batch.forEach((item: CloudRelayMessage) => {
-                if (item && item.eventId && item.senderId !== this.instanceId) {
-                  this.onMessage(item);
-                }
-              });
-            } else if (parsed && parsed.eventId && parsed.senderId !== this.instanceId) {
-              this.onMessage(parsed);
+          if (ntfyData.event === 'message') {
+            if (ntfyData.attachment?.url) {
+              fetch(ntfyData.attachment.url)
+                .then((r) => r.json())
+                .then((data) => this.dispatchMessage(data))
+                .catch(() => {});
+              return;
+            }
+            if (ntfyData.message) {
+              if (
+                typeof ntfyData.message === 'string' &&
+                ntfyData.message.startsWith('You received a file:')
+              ) {
+                return;
+              }
+              const parsed = JSON.parse(ntfyData.message);
+              this.dispatchMessage(parsed);
             }
           }
         } catch {}
@@ -81,7 +103,11 @@ export class CloudWsRelay {
   }
 
   resetDeduplication(): void {
-    this.lastSentByType.clear();
+    const now = Date.now();
+    if (now - this.lastResetTs > 2500) {
+      this.lastResetTs = now;
+      this.lastSentByType.clear();
+    }
   }
 
   ensureConnected(): void {
@@ -95,21 +121,70 @@ export class CloudWsRelay {
     }
   }
 
-  private flushBatch = () => {
-    this.batchTimeout = null;
-    if (this.batchQueue.length === 0 || !this.cleanCode) return;
-    const items = [...this.batchQueue];
-    this.batchQueue = [];
-    const bodyPayload = items.length === 1 ? items[0] : { batch: items };
+  private postToNtfy(bodyPayload: any): void {
+    if (this.isDestroyed || !this.cleanCode) return;
+    if (Date.now() < this.rateLimitedUntil) return;
     try {
       fetch(`https://ntfy.sh/pgs_room_v2_${this.cleanCode}`, {
         method: 'POST',
         body: JSON.stringify(bodyPayload),
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
-      }).catch(() => {});
+      })
+        .then((res) => {
+          if (res.status === 429) {
+            this.rateLimitedUntil = Date.now() + 8000;
+          }
+        })
+        .catch(() => {});
     } catch {}
+  }
+
+  private flushBatch = () => {
+    this.batchTimeout = null;
+    if (this.batchQueue.length === 0 || !this.cleanCode) return;
+    const items = [...this.batchQueue];
+    this.batchQueue = [];
+
+    // Chunk items into batches where JSON.stringify(bodyPayload).length <= 3200
+    const chunks: (CloudRelayMessage | { batch: CloudRelayMessage[] })[] = [];
+    let currentBatch: CloudRelayMessage[] = [];
+
+    for (const item of items) {
+      const testBatch = [...currentBatch, item];
+      const testPayload = testBatch.length === 1 ? testBatch[0] : { batch: testBatch };
+      if (JSON.stringify(testPayload).length > 3200 && currentBatch.length > 0) {
+        chunks.push(currentBatch.length === 1 ? currentBatch[0] : { batch: currentBatch });
+        currentBatch = [item];
+      } else {
+        currentBatch = testBatch;
+      }
+    }
+    if (currentBatch.length > 0) {
+      chunks.push(currentBatch.length === 1 ? currentBatch[0] : { batch: currentBatch });
+    }
+
+    for (const chunkPayload of chunks) {
+      this.postToNtfy(chunkPayload);
+    }
   };
+
+  private sanitizeMessage(message: CloudRelayMessage): CloudRelayMessage {
+    if (message?.event?.type === 'POWER_CARDS_STATE_UPDATE' && message.event.payload?.deck) {
+      const { deck, ...restPayload } = message.event.payload;
+      return {
+        ...message,
+        event: {
+          ...message.event,
+          payload: {
+            ...restPayload,
+            deck: [], // Omit deck for ntfy relay to prevent >4KB attachment overflow
+          },
+        },
+      };
+    }
+    return message;
+  }
 
   send(message: CloudRelayMessage, force = false): void {
     if (!this.cleanCode || !message?.event) return;
@@ -131,7 +206,9 @@ export class CloudWsRelay {
       this.lastSentByType.set(evType, { hash: payloadHash, ts: now });
     }
 
-    // Solo agrupar en cola de 25ms los snapshots masivos (ROOM_UPDATE, TEAMS_UPDATE, PLAYERS_UPDATE, POWER_CARDS_STATE_UPDATE)
+    const sanitizedMsg = this.sanitizeMessage(message);
+
+    // Solo agrupar en cola de 90ms los snapshots masivos (ROOM_UPDATE, TEAMS_UPDATE, PLAYERS_UPDATE, POWER_CARDS_STATE_UPDATE)
     const isSnapshotEvent =
       evType === 'ROOM_UPDATE' ||
       evType === 'TEAMS_UPDATE' ||
@@ -139,21 +216,14 @@ export class CloudWsRelay {
       evType === 'POWER_CARDS_STATE_UPDATE';
 
     if (!isSnapshotEvent) {
-      try {
-        fetch(`https://ntfy.sh/pgs_room_v2_${this.cleanCode}`, {
-          method: 'POST',
-          body: JSON.stringify(message),
-          headers: { 'Content-Type': 'application/json' },
-          mode: 'cors',
-        }).catch(() => {});
-      } catch {}
+      this.postToNtfy(sanitizedMsg);
       return;
     }
 
-    // Agrupar ráfagas de snapshot (ROOM_UPDATE + TEAMS_UPDATE + PLAYERS_UPDATE) en 1 solo POST cada 25ms
-    this.batchQueue.push(message);
+    // Agrupar ráfagas de snapshot en batches de 90ms
+    this.batchQueue.push(sanitizedMsg);
     if (!this.batchTimeout) {
-      this.batchTimeout = setTimeout(this.flushBatch, 25);
+      this.batchTimeout = setTimeout(this.flushBatch, 90);
     }
   }
 

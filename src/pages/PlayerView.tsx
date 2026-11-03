@@ -300,6 +300,33 @@ export default function PlayerView() {
     playerRef.current = player;
   }, [player]);
 
+  // Pulso periódico de auto-curación de presencia del jugador en el lobby / sala
+  useEffect(() => {
+    if (!isJoined || !player) return;
+
+    const presenceInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const curPlayer = playerRef.current || player;
+      const isConfirmed = allPlayers.some(
+        (p) =>
+          p.id === curPlayer.id &&
+          p.team_index === curPlayer.team_index &&
+          p.nickname === curPlayer.nickname
+      );
+
+      // Si aún no está confirmado con su equipo o mientras la sala siga en el lobby
+      if (!isConfirmed || room.status === 'lobby') {
+        const eventType = curPlayer.team_index ? 'PLAYER_UPDATED' : 'PLAYER_JOINED';
+        roomSync.broadcast({ type: eventType, payload: curPlayer });
+        if (allPlayers.length === 0) {
+          roomSync.broadcast({ type: 'REQUEST_ROOM_SYNC' });
+        }
+      }
+    }, 3500);
+
+    return () => clearInterval(presenceInterval);
+  }, [isJoined, player, allPlayers, room.status, roomSync]);
+
   // Escuchar eventos de sincronización entrantes
   useEffect(() => {
     const unsubscribe = roomSync.onEvent((event) => {
@@ -370,6 +397,8 @@ export default function PlayerView() {
             }
           }
         }
+      } else if (event.type === 'PLAYERS_CLEAR') {
+        setAllPlayers([]);
       } else if (event.type === 'SET_CAPTAIN') {
         const curPlayer = playerRef.current;
         const myTeamId = curPlayer?.team_id || (curPlayer?.team_index !== undefined && curPlayer?.team_index !== null ? `team_${curPlayer.team_index}` : null);

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRoomSync, RoomSyncEvent } from '../lib/roomSync';
 import { getOrCreateTvPin } from '../lib/tvPairing';
 import { initTvLiteMode, setTvLiteMode } from '../lib/smartTv';
+import { supabase, isSupabaseRealtimeConfigured } from '../lib/supabase';
 
 export interface UseTvRemoteReceiverOptions {
   roomCode?: string;
@@ -127,31 +128,46 @@ export function useTvRemoteReceiver(options: UseTvRemoteReceiverOptions = {}) {
     };
   }, [tvPin, isReceiverPage, roomCode, handleRedirect, toggleLiteMode]);
 
-  // 2. Sondeo HTTP periódico (polling cada 2s) en /tv o sin sala activa
+  // 2. Canal directo Supabase Realtime para TV pairing instantáneo
   useEffect(() => {
-    if (!isReceiverPage && roomCode) return;
+    if (!isSupabaseRealtimeConfigured) return;
+    const channels: ReturnType<typeof supabase.channel>[] = [];
+
+    const setupChan = (channelName: string) => {
+      try {
+        const chan = supabase.channel(channelName);
+        chan
+          .on('broadcast', { event: 'STATE_EVENT' }, ({ payload }) => {
+            const redirectPayload = payload?.event?.payload || payload?.payload || payload;
+            if (redirectPayload?.roomCode) {
+              handleRedirect(redirectPayload);
+            }
+          })
+          .subscribe();
+        channels.push(chan);
+      } catch {}
+    };
+
+    setupChan(`tv-pair:${tvPin}`);
+    if (isReceiverPage || !roomCode) {
+      setupChan('tv-pair:global');
+    }
+
+    return () => {
+      channels.forEach((c) => {
+        try {
+          supabase.removeChannel(c);
+        } catch {}
+      });
+    };
+  }, [tvPin, isReceiverPage, roomCode, handleRedirect]);
+
+  // 3. Sondeo HTTP periódico de respaldo en /tv (isReceiverPage) cada 4000ms (sin saturar ntfy.sh)
+  useEffect(() => {
+    if (!isReceiverPage) return;
     let cancelled = false;
 
     const poll = async () => {
-      // ntfy poll
-      try {
-        const res = await fetch(`https://ntfy.sh/pgs_tv_pin_${tvPin}/json?poll=1&since=30s`);
-        if (res.ok && !cancelled) {
-          const text = await res.text();
-          text.trim().split('\n').forEach((line) => {
-            if (!line) return;
-            try {
-              const item = JSON.parse(line);
-              if (item.event === 'message' && item.message) {
-                const parsed = JSON.parse(item.message);
-                if (parsed.roomCode) handleRedirect(parsed);
-              }
-            } catch {}
-          });
-        }
-      } catch {}
-
-      // /api/tv-pair poll
       try {
         const res = await fetch(`/api/tv-pair?pin=${tvPin}`);
         if (res.ok && !cancelled) {
@@ -163,12 +179,12 @@ export function useTvRemoteReceiver(options: UseTvRemoteReceiverOptions = {}) {
     };
 
     poll();
-    const interval = setInterval(poll, 2000);
+    const interval = setInterval(poll, 4000);
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [tvPin, isReceiverPage, roomCode, handleRedirect]);
+  }, [tvPin, isReceiverPage, handleRedirect]);
 
   // 3. Suscripciones RoomSync
   useEffect(() => {

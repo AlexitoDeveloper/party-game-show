@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isSupabaseRealtimeConfigured } from './supabase';
 import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, CaptainGamble, CaptainDuelState, TeamRepresentative, BingoClaimPayload, GamePhase } from './types';
 import { MovieItem } from './moviesData';
 import { PowerCardsState, PowerCard } from './powerCards';
@@ -16,6 +16,7 @@ export type RoomSyncEvent =
   | { type: 'ROOM_UPDATE'; payload: Partial<Room> }
   | { type: 'TEAMS_UPDATE'; payload: Team[] }
   | { type: 'PLAYERS_UPDATE'; payload: Player[] }
+  | { type: 'PLAYERS_CLEAR' }
   | { type: 'PLAYER_JOINED'; payload: Player }
   | { type: 'PLAYER_UPDATED'; payload: Player }
   | { type: 'REQUEST_PLAYERS_SYNC' }
@@ -134,15 +135,74 @@ interface RelayMessage {
   event: RoomSyncEvent;
 }
 
-// Configuración de servidores STUN ultrarrápidos para atravesar NAT y redes móviles
+export function mergePlayersList(existing: Player[] = [], incoming: Player[] = []): Player[] {
+  const result: Player[] = [];
+  const idIndexMap = new Map<string, number>();
+  const tokenIndexMap = new Map<string, number>();
+
+  for (const p of existing) {
+    if (!p) continue;
+    const idx = result.length;
+    result.push({ ...p });
+    if (p.id) idIndexMap.set(p.id, idx);
+    if (p.session_token) tokenIndexMap.set(p.session_token, idx);
+  }
+
+  for (const inc of incoming) {
+    if (!inc) continue;
+    let existingIdx = -1;
+    if (inc.id && idIndexMap.has(inc.id)) {
+      existingIdx = idIndexMap.get(inc.id)!;
+    } else if (inc.session_token && tokenIndexMap.has(inc.session_token)) {
+      existingIdx = tokenIndexMap.get(inc.session_token)!;
+    }
+
+    if (existingIdx >= 0) {
+      const prev = result[existingIdx];
+      const merged: Player = {
+        ...prev,
+        ...inc,
+        team_id: inc.team_id !== undefined ? inc.team_id : prev.team_id,
+        team_index: inc.team_index !== undefined ? inc.team_index : prev.team_index,
+      };
+      result[existingIdx] = merged;
+      if (merged.id) idIndexMap.set(merged.id, existingIdx);
+      if (merged.session_token) tokenIndexMap.set(merged.session_token, existingIdx);
+    } else {
+      const idx = result.length;
+      result.push({ ...inc });
+      if (inc.id) idIndexMap.set(inc.id, idx);
+      if (inc.session_token) tokenIndexMap.set(inc.session_token, idx);
+    }
+  }
+
+  return result;
+}
+
+// Configuración de servidores STUN y TURN para atravesar NAT y redes móviles
 const PEER_CONFIG = {
   debug: 1,
   config: {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:openrelay.metered.ca:80' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
     ],
   },
 };
@@ -173,15 +233,27 @@ export class RoomSync {
   private listeners: ((event: RoomSyncEvent) => void)[] = [];
   private processedEventIds = new Set<string>();
 
-  // WebRTC PeerJS Relay
+  // Supabase Presence State Tracking
+  private hostPresenceState: { role: 'host'; room?: Partial<Room>; teams?: Team[] } | null = null;
+  private playerPresenceState: { role: 'player'; player?: Player } | null = null;
+  private lastHostPresenceTrackTs = 0;
+  private hostPresenceTrackTimeout: any = null;
+  private lastSyncedPlayerHashes = new Map<string, string>();
+  private lastSyncedHostRoomHash = '';
+  private lastSyncedHostTeamsHash = '';
+
+  // WebRTC PeerJS Dual-Hub Relay
   private peer: any = null;
+  private secondaryPeer: any = null;
   private PeerClassRef: any = null;
   private hubConn: any = null;
+  private tvConn: any = null;
   private clientConns: any[] = [];
   private isHub = false;
   private pendingQueue: RelayMessage[] = [];
   private heartbeatInterval: any = null;
   private reconnectTimeout: any = null;
+  private secondaryReconnectTimeout: any = null;
   private supabaseRetryTimeout: any = null;
   private connectTimeout: any = null;
   private isDestroyed = false;
@@ -199,7 +271,7 @@ export class RoomSync {
         if (ev.data && ev.data.eventId) {
           const msg = ev.data as RelayMessage;
           if (msg.senderId !== this.instanceId) {
-            this.handleIncoming(msg.eventId, msg.event);
+            this.handleIncoming(msg.eventId, msg.event, true);
           }
         }
       };
@@ -210,13 +282,13 @@ export class RoomSync {
       import.meta.hot.on('party-event', (data: any) => {
         const msg = data as RelayMessage;
         if (msg && msg.roomCode === this.roomCode && msg.senderId !== this.instanceId) {
-          this.handleIncoming(msg.eventId, msg.event);
+          this.handleIncoming(msg.eventId, msg.event, true);
         }
       });
     }
 
     // 3. Canal Supabase Realtime (WebSockets en la nube para Vercel y datos móviles 4G/5G)
-    if (isSupabaseConfigured) {
+    if (isSupabaseRealtimeConfigured) {
       this.initSupabaseChannel();
     }
 
@@ -227,7 +299,7 @@ export class RoomSync {
       });
     }
 
-    // 5. Canal WebRTC PeerJS P2P (Respaldo directo)
+    // 5. Canal WebRTC PeerJS P2P (Dual-Hub Relay)
     if (typeof window !== 'undefined') {
       this.initPeerRelay();
 
@@ -242,9 +314,13 @@ export class RoomSync {
     }
   }
 
-  private getHubId(): string {
+  private getHubIds(): { hostHubId: string; tvHubId: string } {
     const cleanCode = this.roomCode.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return `pgs-${cleanCode}-hub`;
+    const isTvChannel = this.roomCode.startsWith('TV_');
+    return {
+      hostHubId: isTvChannel ? `pgs-${cleanCode}-tv` : `pgs-${cleanCode}-hub`,
+      tvHubId: `pgs-${cleanCode}-tv`,
+    };
   }
 
   private isWebRtcConnHealthy(conn: any): boolean {
@@ -269,41 +345,57 @@ export class RoomSync {
     }
 
     // 1. Verificar salud de Supabase Realtime
-    if (isSupabaseConfigured && (!this.supabaseChannel || !this.isSupabaseSubscribed)) {
+    if (isSupabaseRealtimeConfigured && (!this.supabaseChannel || !this.isSupabaseSubscribed)) {
       this.initSupabaseChannel();
     }
 
     // 2. Verificar salud de PeerJS y WebRTC tras desbloqueo en iOS / Android
     const checkAndRecoverPeer = () => {
       if (this.isDestroyed) return;
-      const hubId = this.getHubId();
       if (this.peer && !this.peer.destroyed && this.peer.disconnected) {
         try {
           this.peer.reconnect();
         } catch {}
       }
+      if (this.secondaryPeer && !this.secondaryPeer.destroyed && this.secondaryPeer.disconnected) {
+        try {
+          this.secondaryPeer.reconnect();
+        } catch {}
+      }
+
+      const { hostHubId, tvHubId } = this.getHubIds();
 
       if (!this.isHub) {
-        if (!this.isWebRtcConnHealthy(this.hubConn)) {
-          if (this.PeerClassRef) {
-            this.scheduleReconnect(this.PeerClassRef, hubId, 150);
-          } else {
-            this.initPeerRelay();
-          }
+        if (!this.isWebRtcConnHealthy(this.hubConn) && this.PeerClassRef) {
+          this.scheduleHubReconnect(this.PeerClassRef, hostHubId, 150);
         }
-      } else if (!this.peer || this.peer.destroyed) {
-        this.initPeerRelay();
+        if (!this.isWebRtcConnHealthy(this.tvConn) && this.PeerClassRef) {
+          this.scheduleSecondaryReconnect(this.PeerClassRef, tvHubId, 150);
+        }
+      } else {
+        if (!this.peer || this.peer.destroyed) {
+          this.initPeerRelay();
+        }
+        if (this.role === 'host' && !this.isWebRtcConnHealthy(this.tvConn) && this.PeerClassRef) {
+          this.scheduleSecondaryReconnect(this.PeerClassRef, tvHubId, 150);
+        }
+        if (this.role === 'tv' && !this.isWebRtcConnHealthy(this.hubConn) && this.PeerClassRef) {
+          this.scheduleSecondaryReconnect(this.PeerClassRef, hostHubId, 150);
+        }
       }
     };
 
     checkAndRecoverPeer();
-    // En iOS Safari, WebKit tarda ~600ms tras desbloquear pantalla en marcar el socket UDP como caído
     setTimeout(checkAndRecoverPeer, 750);
 
-    // 3. Solicitar sincronización activa por red para que el Host envíe la foto completa
+    // 3. Solicitar sincronización activa por red
     if (this.role === 'host') {
-      this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
       this.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+      setTimeout(() => {
+        if (!this.isDestroyed) {
+          this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+        }
+      }, 250);
     } else {
       this.broadcast({ type: 'REQUEST_ROOM_SYNC' });
       this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
@@ -311,7 +403,7 @@ export class RoomSync {
   };
 
   private initSupabaseChannel() {
-    if (!isSupabaseConfigured || this.isDestroyed || !this.roomCode) return;
+    if (!isSupabaseRealtimeConfigured || this.isDestroyed || !this.roomCode) return;
     if (this.supabaseRetryTimeout) {
       clearTimeout(this.supabaseRetryTimeout);
       this.supabaseRetryTimeout = null;
@@ -323,7 +415,13 @@ export class RoomSync {
       }
       this.isSupabaseSubscribed = false;
 
-      const chan = supabase.channel(`room-state-sync:${this.roomCode}`);
+      const chan = supabase.channel(`room-state-sync:${this.roomCode}`, {
+        config: {
+          presence: {
+            key: `${this.role}_${this.instanceId}`,
+          },
+        },
+      });
       this.supabaseChannel = chan;
 
       chan
@@ -333,15 +431,32 @@ export class RoomSync {
             this.handleIncoming(msg.eventId, msg.event);
           }
         })
+        .on('presence', { event: 'sync' }, () => {
+          this.handlePresenceSync();
+        })
+        .on('presence', { event: 'join' }, () => {
+          this.handlePresenceSync();
+        })
         .subscribe((status) => {
           if (this.isDestroyed) return;
           if (status === 'SUBSCRIBED') {
             this.isSupabaseSubscribed = true;
             this.flushPendingSupabaseQueue();
+
             if (this.role === 'host') {
-              this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+              if (this.hostPresenceState) {
+                chan.track(this.hostPresenceState).catch(() => {});
+              }
               this.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+              setTimeout(() => {
+                if (!this.isDestroyed) {
+                  this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+                }
+              }, 250);
             } else {
+              if (this.role === 'player' && this.playerPresenceState) {
+                chan.track(this.playerPresenceState).catch(() => {});
+              }
               this.broadcast({ type: 'REQUEST_ROOM_SYNC' });
               this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
             }
@@ -358,6 +473,73 @@ export class RoomSync {
     } catch (err) {
       console.warn('Error inicializando canal de Supabase:', err);
     }
+  }
+
+  private handlePresenceSync() {
+    if (!this.supabaseChannel || this.isDestroyed) return;
+    try {
+      const presenceState = this.supabaseChannel.presenceState();
+      const allPresences: any[] = [];
+      Object.values(presenceState).forEach((presList: any) => {
+        if (Array.isArray(presList)) {
+          presList.forEach((p) => allPresences.push(p));
+        }
+      });
+
+      // Extraer jugadores registrados en presencia
+      for (const item of allPresences) {
+        if (item?.role === 'player' && item.player && item.player.id) {
+          const player = item.player as Player;
+          const playerJson = JSON.stringify(player);
+          const prevHash = this.lastSyncedPlayerHashes.get(player.id);
+          if (prevHash !== playerJson) {
+            this.lastSyncedPlayerHashes.set(player.id, playerJson);
+            this.notifyListeners({ type: 'PLAYER_JOINED', payload: player });
+          }
+        }
+      }
+
+      // Si no somos el host, extraer el último estado emitido por el host
+      if (this.role !== 'host') {
+        const hostItem = allPresences.find((item) => item?.role === 'host' && (item.room || item.teams));
+        if (hostItem) {
+          if (hostItem.room) {
+            const roomJson = JSON.stringify(hostItem.room);
+            if (this.lastSyncedHostRoomHash !== roomJson) {
+              this.lastSyncedHostRoomHash = roomJson;
+              this.notifyListeners({ type: 'ROOM_UPDATE', payload: hostItem.room });
+            }
+          }
+          if (hostItem.teams) {
+            const teamsJson = JSON.stringify(hostItem.teams);
+            if (this.lastSyncedHostTeamsHash !== teamsJson) {
+              this.lastSyncedHostTeamsHash = teamsJson;
+              this.notifyListeners({ type: 'TEAMS_UPDATE', payload: hostItem.teams });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[RoomSync] Error sincronizando presencia de Supabase:', err);
+    }
+  }
+
+  private trackHostPresenceThrottled() {
+    if (!this.supabaseChannel || !this.isSupabaseSubscribed || !this.hostPresenceState || this.role !== 'host') return;
+    const now = Date.now();
+    if (now - this.lastHostPresenceTrackTs < 400) {
+      if (!this.hostPresenceTrackTimeout) {
+        this.hostPresenceTrackTimeout = setTimeout(() => {
+          this.hostPresenceTrackTimeout = null;
+          this.trackHostPresenceThrottled();
+        }, 400 - (now - this.lastHostPresenceTrackTs));
+      }
+      return;
+    }
+    this.lastHostPresenceTrackTs = now;
+    try {
+      this.supabaseChannel.track(this.hostPresenceState).catch(() => {});
+    } catch {}
   }
 
   private flushPendingSupabaseQueue() {
@@ -385,111 +567,303 @@ export class RoomSync {
         if (this.isDestroyed) return;
         this.PeerClassRef = Peer;
 
-        const hubId = this.getHubId();
-
-        // En salas normales: SOLO 'host' intenta ser HUB. 'player' y 'tv' van directo como clientes.
-        // En canales de TV (TV_...): 'tv' es el HUB y 'host'/'player' van como clientes.
+        const { hostHubId, tvHubId } = this.getHubIds();
         const isTvChannel = this.roomCode.startsWith('TV_');
-        const shouldBeHub = isTvChannel ? this.role === 'tv' : this.role === 'host';
 
-        if (!shouldBeHub) {
-          this.connectAsClient(Peer, hubId);
+        if (isTvChannel) {
+          // Canales de TV (TV_...): 'tv' es el HUB y 'host'/'player' van como clientes
+          if (this.role === 'tv') {
+            this.setupHubPeer(Peer, tvHubId);
+          } else {
+            this.connectToHubAsClient(Peer, tvHubId, 'hub');
+          }
           return;
         }
 
-        // Registrarse como HUB central del canal
-        const tryHub = new Peer(hubId, PEER_CONFIG);
-
-        tryHub.on('open', () => {
-          if (this.isDestroyed) {
-            tryHub.destroy();
-            return;
-          }
-          this.peer = tryHub;
-          this.isHub = true;
-          console.log('[RoomSync] Registrado como HUB principal de la sala:', hubId);
-
-          // Escuchar conexiones de jugadores y TVs
-          tryHub.on('connection', (conn: any) => {
-            conn.on('open', () => {
-              console.log('[RoomSync] Nuevo dispositivo conectado al HUB:', conn.peer);
-              this.clientConns = this.clientConns.filter((c) => c !== conn && this.isWebRtcConnHealthy(c));
-              this.clientConns.push(conn);
-
-              // Pedir inmediatamente la identidad al jugador recién conectado
-              try {
-                conn.send({
-                  roomCode: this.roomCode,
-                  senderId: this.instanceId,
-                  eventId: 'ev_req_sync_' + Date.now(),
-                  event: { type: 'REQUEST_PLAYERS_SYNC' },
-                });
-              } catch {}
-
-              // Notificar al host para que emita el estado actual de la sala
-              this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
-              this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
-              this.flushPendingQueue();
-            });
-
-            conn.on('data', (data: any) => {
-              if (data && data.eventId) {
-                const msg = data as RelayMessage;
-                if (msg.senderId !== this.instanceId) {
-                  this.handleIncoming(msg.eventId, msg.event);
-                  // El hub retransmite a los demás clientes conectados
-                  this.clientConns.forEach((c) => {
-                    if (c !== conn && c.open) {
-                      try { c.send(msg); } catch {}
-                    }
-                  });
-                }
-              }
-            });
-
-            conn.on('close', () => {
-              this.clientConns = this.clientConns.filter((c) => c !== conn);
-            });
-
-            conn.on('error', () => {
-              this.clientConns = this.clientConns.filter((c) => c !== conn);
-            });
-          });
-
-          this.startHeartbeat();
-        });
-
-        tryHub.on('disconnected', () => {
-          if (!this.isDestroyed && !tryHub.destroyed) {
-            try {
-              tryHub.reconnect();
-            } catch {}
-          }
-        });
-
-        tryHub.on('error', (err: any) => {
-          // Si el ID de HUB ya está ocupado (ej. la TV o el Host ya lo crearon), conectarse como cliente
-          if (err?.type === 'unavailable-id') {
-            console.log('[RoomSync] HUB ya activo por otro dispositivo, conectando como cliente...');
-            try { tryHub.destroy(); } catch {}
-            this.connectAsClient(Peer, hubId);
-          } else {
-            console.warn('[RoomSync] Error de tryHub:', err?.type || err);
-            if (!this.isHub) {
-              try { tryHub.destroy(); } catch {}
-              this.connectAsClient(Peer, hubId);
-            }
-          }
-        });
+        // Para salas normales: Dual-Hub Relay (host AND tv)
+        if (this.role === 'host') {
+          // Host registra Hub en hostHubId y conecta como cliente a tvHubId
+          this.setupHubPeer(Peer, hostHubId);
+          this.connectSecondaryClient(Peer, tvHubId);
+        } else if (this.role === 'tv') {
+          // TV registra Hub en tvHubId y conecta como cliente a hostHubId
+          this.setupHubPeer(Peer, tvHubId);
+          this.connectSecondaryClient(Peer, hostHubId);
+        } else {
+          // Player conecta a hostHubId Y a tvHubId
+          this.connectPlayerClients(Peer, hostHubId, tvHubId);
+        }
       }).catch((e) => console.warn('PeerJS relay import error:', e));
     } catch (e) {
       console.warn('PeerJS relay error:', e);
     }
   }
 
-  private connectAsClient(PeerClass: any, hubId: string) {
+  private setupHubPeer(PeerClass: any, hubId: string) {
     if (this.isDestroyed) return;
+    try {
+      if (this.peer && !this.peer.destroyed) {
+        try { this.peer.destroy(); } catch {}
+      }
 
+      const hubPeer = new PeerClass(hubId, PEER_CONFIG);
+      this.peer = hubPeer;
+
+      hubPeer.on('open', () => {
+        if (this.isDestroyed) {
+          hubPeer.destroy();
+          return;
+        }
+        this.isHub = true;
+        console.log('[RoomSync] Registrado como HUB principal de la sala:', hubId);
+
+        hubPeer.on('connection', (conn: any) => {
+          conn.on('open', () => {
+            console.log('[RoomSync] Nuevo dispositivo conectado al HUB:', conn.peer);
+            this.clientConns = this.clientConns.filter((c) => c !== conn && this.isWebRtcConnHealthy(c));
+            this.clientConns.push(conn);
+
+            // Solicitar jugadores de inmediato
+            try {
+              conn.send({
+                roomCode: this.roomCode,
+                senderId: this.instanceId,
+                eventId: 'ev_req_sync_' + Date.now(),
+                event: { type: 'REQUEST_PLAYERS_SYNC' },
+              });
+            } catch {}
+
+            this.broadcast({ type: 'REQUEST_PLAYERS_SYNC' });
+            this.flushPendingQueue();
+
+            setTimeout(() => {
+              if (!this.isDestroyed) {
+                this.notifyListeners({ type: 'REQUEST_ROOM_SYNC' });
+              }
+            }, 250);
+          });
+
+          conn.on('data', (data: any) => {
+            if (data && data.eventId) {
+              const msg = data as RelayMessage;
+              if (msg.senderId !== this.instanceId) {
+                this.handleIncoming(msg.eventId, msg.event);
+                // Retransmitir a los demás clientes conectados
+                this.clientConns.forEach((c) => {
+                  if (c !== conn && this.isWebRtcConnHealthy(c)) {
+                    try { c.send(msg); } catch {}
+                  }
+                });
+                // También enviar al conn secundario si está abierto
+                const sec = this.tvConn || this.hubConn;
+                if (sec && sec !== conn && this.isWebRtcConnHealthy(sec)) {
+                  try { sec.send(msg); } catch {}
+                }
+              }
+            }
+          });
+
+          conn.on('close', () => {
+            this.clientConns = this.clientConns.filter((c) => c !== conn);
+          });
+
+          conn.on('error', () => {
+            this.clientConns = this.clientConns.filter((c) => c !== conn);
+          });
+        });
+
+        this.startHeartbeat();
+      });
+
+      hubPeer.on('disconnected', () => {
+        if (!this.isDestroyed && !hubPeer.destroyed) {
+          try { hubPeer.reconnect(); } catch {}
+        }
+      });
+
+      hubPeer.on('error', (err: any) => {
+        if (err?.type === 'unavailable-id') {
+          console.log(`[RoomSync] Hub ID ${hubId} ya en uso, reconectando como cliente...`);
+          try { hubPeer.destroy(); } catch {}
+          this.connectToHubAsClient(PeerClass, hubId, 'hub');
+        } else {
+          console.warn('[RoomSync] Error de hubPeer:', err?.type || err);
+        }
+      });
+    } catch (e) {
+      console.warn('[RoomSync] setupHubPeer error:', e);
+    }
+  }
+
+  private connectSecondaryClient(PeerClass: any, targetHubId: string) {
+    if (this.isDestroyed) return;
+    try {
+      if (this.secondaryPeer && !this.secondaryPeer.destroyed) {
+        try { this.secondaryPeer.destroy(); } catch {}
+      }
+      const clientPeer = new PeerClass(PEER_CONFIG);
+      this.secondaryPeer = clientPeer;
+
+      clientPeer.on('open', () => {
+        if (this.isDestroyed) {
+          clientPeer.destroy();
+          return;
+        }
+
+        const conn = clientPeer.connect(targetHubId, { reliable: true });
+        if (this.role === 'host') {
+          this.tvConn = conn;
+        } else {
+          this.hubConn = conn;
+        }
+
+        conn.on('open', () => {
+          console.log('[RoomSync] Conexión puente secundaria establecida con:', targetHubId);
+          this.flushPendingQueue();
+          if (this.role === 'tv') {
+            try {
+              conn.send({
+                roomCode: this.roomCode,
+                senderId: this.instanceId,
+                eventId: 'ev_req_room_' + Date.now(),
+                event: { type: 'REQUEST_ROOM_SYNC' },
+              });
+            } catch {}
+          }
+        });
+
+        conn.on('data', (data: any) => {
+          if (data && data.eventId) {
+            const msg = data as RelayMessage;
+            if (msg.senderId !== this.instanceId) {
+              this.handleIncoming(msg.eventId, msg.event);
+            }
+          }
+        });
+
+        conn.on('close', () => {
+          if (this.role === 'host') this.tvConn = null;
+          else this.hubConn = null;
+          this.scheduleSecondaryReconnect(PeerClass, targetHubId);
+        });
+
+        conn.on('error', () => {
+          if (this.role === 'host') this.tvConn = null;
+          else this.hubConn = null;
+          this.scheduleSecondaryReconnect(PeerClass, targetHubId);
+        });
+      });
+
+      clientPeer.on('error', (err: any) => {
+        if (err?.type === 'peer-unavailable') {
+          this.scheduleSecondaryReconnect(PeerClass, targetHubId, 3500);
+        } else {
+          console.warn('[RoomSync] Error en secondaryPeer:', err?.type || err);
+          this.scheduleSecondaryReconnect(PeerClass, targetHubId);
+        }
+      });
+    } catch (e) {
+      console.warn('[RoomSync] connectSecondaryClient error:', e);
+    }
+  }
+
+  private connectPlayerClients(PeerClass: any, hostHubId: string, tvHubId: string) {
+    if (this.isDestroyed) return;
+    try {
+      if (this.peer && !this.peer.destroyed) {
+        try { this.peer.destroy(); } catch {}
+      }
+      const clientPeer = new PeerClass(PEER_CONFIG);
+      this.peer = clientPeer;
+      this.isHub = false;
+
+      clientPeer.on('open', () => {
+        if (this.isDestroyed) {
+          clientPeer.destroy();
+          return;
+        }
+
+        // 1. Conexión a Host Hub
+        this.setupPlayerConn(clientPeer, hostHubId, 'host');
+
+        // 2. Conexión a TV Hub
+        this.setupPlayerConn(clientPeer, tvHubId, 'tv');
+      });
+
+      clientPeer.on('disconnected', () => {
+        if (!this.isDestroyed && !clientPeer.destroyed) {
+          try { clientPeer.reconnect(); } catch {}
+        }
+      });
+
+      clientPeer.on('error', (err: any) => {
+        if (err?.type === 'peer-unavailable') {
+          // Ignorar fallo puntual, el reconectador por temporizador se encarga
+        } else {
+          console.warn('[RoomSync] Error en clientPeer:', err?.type || err);
+        }
+      });
+
+      this.startHeartbeat();
+    } catch (e) {
+      console.warn('[RoomSync] connectPlayerClients error:', e);
+    }
+  }
+
+  private setupPlayerConn(clientPeer: any, hubId: string, type: 'host' | 'tv') {
+    if (this.isDestroyed || !clientPeer || clientPeer.destroyed) return;
+    try {
+      const conn = clientPeer.connect(hubId, { reliable: true });
+      if (type === 'host') this.hubConn = conn;
+      else this.tvConn = conn;
+
+      conn.on('open', () => {
+        console.log(`[RoomSync] Jugador conectado con ${type} HUB:`, hubId);
+        this.flushPendingQueue();
+        try {
+          conn.send({
+            roomCode: this.roomCode,
+            senderId: this.instanceId,
+            eventId: 'ev_req_room_' + Date.now(),
+            event: { type: 'REQUEST_ROOM_SYNC' },
+          });
+        } catch {}
+        this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
+      });
+
+      conn.on('data', (data: any) => {
+        if (data && data.eventId) {
+          const msg = data as RelayMessage;
+          if (msg.senderId !== this.instanceId) {
+            this.handleIncoming(msg.eventId, msg.event);
+          }
+        }
+      });
+
+      conn.on('close', () => {
+        if (type === 'host') {
+          this.hubConn = null;
+          this.scheduleHubReconnect(this.PeerClassRef, hubId);
+        } else {
+          this.tvConn = null;
+          this.scheduleSecondaryReconnect(this.PeerClassRef, hubId);
+        }
+      });
+
+      conn.on('error', () => {
+        if (type === 'host') {
+          this.hubConn = null;
+          this.scheduleHubReconnect(this.PeerClassRef, hubId);
+        } else {
+          this.tvConn = null;
+          this.scheduleSecondaryReconnect(this.PeerClassRef, hubId);
+        }
+      });
+    } catch {}
+  }
+
+  private connectToHubAsClient(PeerClass: any, hubId: string, targetType: 'hub' | 'tv' = 'hub') {
+    if (this.isDestroyed) return;
     try {
       if (this.peer && !this.peer.destroyed) {
         try { this.peer.destroy(); } catch {}
@@ -505,23 +879,12 @@ export class RoomSync {
         }
 
         const conn = clientPeer.connect(hubId, { reliable: true });
-        this.hubConn = conn;
-
-        if (this.connectTimeout) clearTimeout(this.connectTimeout);
-        this.connectTimeout = setTimeout(() => {
-          if (!this.isDestroyed && !this.isWebRtcConnHealthy(this.hubConn)) {
-            console.warn('[RoomSync] Timeout esperando DataConnection con HUB, reintentando...');
-            this.scheduleReconnect(PeerClass, hubId);
-          }
-        }, 12000);
+        if (targetType === 'tv') this.tvConn = conn;
+        else this.hubConn = conn;
 
         conn.on('open', () => {
-          if (this.connectTimeout) clearTimeout(this.connectTimeout);
-          console.log('[RoomSync] P2P conectado con HUB exitosamente:', hubId);
-          // Conexión P2P activa: vaciar cola de mensajes pendientes
+          console.log('[RoomSync] Conectado con HUB exitosamente:', hubId);
           this.flushPendingQueue();
-
-          // Solicitar sincronización inicial de la sala
           try {
             conn.send({
               roomCode: this.roomCode,
@@ -530,8 +893,6 @@ export class RoomSync {
               event: { type: 'REQUEST_ROOM_SYNC' },
             });
           } catch {}
-
-          // Notificar localmente para re-enviar datos del jugador guardado si existe
           this.notifyListeners({ type: 'REQUEST_PLAYERS_SYNC' });
         });
 
@@ -545,36 +906,40 @@ export class RoomSync {
         });
 
         conn.on('close', () => {
-          this.hubConn = null;
-          this.scheduleReconnect(PeerClass, hubId);
+          if (targetType === 'tv') this.tvConn = null;
+          else this.hubConn = null;
+          this.scheduleHubReconnect(PeerClass, hubId);
         });
 
         conn.on('error', () => {
-          this.hubConn = null;
-          this.scheduleReconnect(PeerClass, hubId);
+          if (targetType === 'tv') this.tvConn = null;
+          else this.hubConn = null;
+          this.scheduleHubReconnect(PeerClass, hubId);
         });
       });
 
       clientPeer.on('disconnected', () => {
         if (!this.isDestroyed && !clientPeer.destroyed) {
-          try {
-            clientPeer.reconnect();
-          } catch {
-            this.scheduleReconnect(PeerClass, hubId);
+          try { clientPeer.reconnect(); } catch {
+            this.scheduleHubReconnect(PeerClass, hubId);
           }
         }
       });
 
       clientPeer.on('error', (err: any) => {
-        console.warn('[RoomSync] Error en clientPeer:', err?.type || err);
-        this.scheduleReconnect(PeerClass, hubId);
+        if (err?.type === 'peer-unavailable') {
+          this.scheduleHubReconnect(PeerClass, hubId, 3000);
+        } else {
+          console.warn('[RoomSync] Error en clientPeer:', err?.type || err);
+          this.scheduleHubReconnect(PeerClass, hubId);
+        }
       });
 
       this.startHeartbeat();
     } catch {}
   }
 
-  private scheduleReconnect(PeerClass: any, hubId: string, delayMs = 1800) {
+  private scheduleHubReconnect(PeerClass: any, hubId: string, delayMs = 2000) {
     if (this.isDestroyed || this.reconnectTimeout) return;
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
@@ -583,65 +948,118 @@ export class RoomSync {
           try { this.hubConn.close(); } catch {}
           this.hubConn = null;
         }
-        if (this.peer) {
-          try { this.peer.destroy(); } catch {}
-          this.peer = null;
+        if (this.role === 'player') {
+          if (this.peer && !this.peer.destroyed) {
+            this.setupPlayerConn(this.peer, hubId, 'host');
+          } else {
+            const { hostHubId, tvHubId } = this.getHubIds();
+            this.connectPlayerClients(PeerClass, hostHubId, tvHubId);
+          }
+        } else {
+          this.connectToHubAsClient(PeerClass, hubId, 'hub');
         }
-        this.connectAsClient(PeerClass, hubId);
+      }
+    }, delayMs);
+  }
+
+  private scheduleSecondaryReconnect(PeerClass: any, hubId: string, delayMs = 2500) {
+    if (this.isDestroyed || this.secondaryReconnectTimeout) return;
+    this.secondaryReconnectTimeout = setTimeout(() => {
+      this.secondaryReconnectTimeout = null;
+      if (!this.isDestroyed) {
+        if (this.role === 'player') {
+          if (!this.isWebRtcConnHealthy(this.tvConn)) {
+            if (this.tvConn) {
+              try { this.tvConn.close(); } catch {}
+              this.tvConn = null;
+            }
+            if (this.peer && !this.peer.destroyed) {
+              this.setupPlayerConn(this.peer, hubId, 'tv');
+            } else {
+              const { hostHubId, tvHubId } = this.getHubIds();
+              this.connectPlayerClients(PeerClass, hostHubId, tvHubId);
+            }
+          }
+        } else if (this.role === 'host' || this.role === 'tv') {
+          const targetConn = this.role === 'host' ? this.tvConn : this.hubConn;
+          if (!this.isWebRtcConnHealthy(targetConn)) {
+            if (targetConn) {
+              try { targetConn.close(); } catch {}
+              if (this.role === 'host') this.tvConn = null;
+              else this.hubConn = null;
+            }
+            this.connectSecondaryClient(PeerClass, hubId);
+          }
+        }
       }
     }, delayMs);
   }
 
   private startHeartbeat() {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    // Ping ligero cada 4 segundos para evitar desconexiones por suspensión en móviles y detectar conexiones zombi
     this.heartbeatInterval = setInterval(() => {
       if (this.isDestroyed) return;
-      if (!this.isHub) {
-        if (this.isWebRtcConnHealthy(this.hubConn)) {
-          try {
-            this.hubConn.send({
-              roomCode: this.roomCode,
-              senderId: this.instanceId,
-              eventId: 'ping_' + Date.now(),
-              event: { type: 'PING' },
-            });
-          } catch {}
-        } else if (this.PeerClassRef) {
-          this.scheduleReconnect(this.PeerClassRef, this.getHubId(), 500);
-        }
-      } else if (this.isHub && this.clientConns.length > 0) {
+
+      const pingMsg = {
+        roomCode: this.roomCode,
+        senderId: this.instanceId,
+        eventId: 'ping_' + Date.now(),
+        event: { type: 'PING' as const },
+      };
+
+      if (this.isHub && this.clientConns.length > 0) {
         this.clientConns = this.clientConns.filter((c) => this.isWebRtcConnHealthy(c));
         this.clientConns.forEach((c) => {
-          try {
-            c.send({
-              roomCode: this.roomCode,
-              senderId: this.instanceId,
-              eventId: 'ping_' + Date.now(),
-              event: { type: 'PING' },
-            });
-          } catch {}
+          try { c.send(pingMsg); } catch {}
         });
+      }
+
+      const { hostHubId, tvHubId } = this.getHubIds();
+
+      if (this.hubConn) {
+        if (this.isWebRtcConnHealthy(this.hubConn)) {
+          try { this.hubConn.send(pingMsg); } catch {}
+        } else if (this.PeerClassRef) {
+          this.scheduleHubReconnect(this.PeerClassRef, hostHubId, 600);
+        }
+      }
+
+      if (this.tvConn) {
+        if (this.isWebRtcConnHealthy(this.tvConn)) {
+          try { this.tvConn.send(pingMsg); } catch {}
+        } else if (this.PeerClassRef) {
+          this.scheduleSecondaryReconnect(this.PeerClassRef, tvHubId, 600);
+        }
       }
     }, 4000);
   }
 
   private flushPendingQueue() {
     if (this.pendingQueue.length === 0) return;
+    const toSend = [...this.pendingQueue];
+    let anySent = false;
 
-    if (this.isHub) {
+    if (this.isHub && this.clientConns.length > 0) {
       this.clientConns.forEach((c) => {
-        if (c.open) {
-          this.pendingQueue.forEach((msg) => {
-            try { c.send(msg); } catch {}
+        if (this.isWebRtcConnHealthy(c)) {
+          toSend.forEach((msg) => {
+            try { c.send(msg); anySent = true; } catch {}
           });
         }
       });
-      this.pendingQueue = [];
-    } else if (this.hubConn && this.hubConn.open) {
-      this.pendingQueue.forEach((msg) => {
-        try { this.hubConn.send(msg); } catch {}
+    }
+    if (this.hubConn && this.isWebRtcConnHealthy(this.hubConn)) {
+      toSend.forEach((msg) => {
+        try { this.hubConn.send(msg); anySent = true; } catch {}
       });
+    }
+    if (this.tvConn && this.isWebRtcConnHealthy(this.tvConn)) {
+      toSend.forEach((msg) => {
+        try { this.tvConn.send(msg); anySent = true; } catch {}
+      });
+    }
+
+    if (anySent) {
       this.pendingQueue = [];
     }
   }
@@ -664,7 +1082,11 @@ export class RoomSync {
     return this.onEvent(callback);
   }
 
-  private handleIncoming(eventId: string, event: RoomSyncEvent) {
+  receiveFromSameTab(eventId: string, event: RoomSyncEvent): void {
+    this.handleIncoming(eventId, event, true);
+  }
+
+  private handleIncoming(eventId: string, event: RoomSyncEvent, fromLocal = false) {
     if (event.type === 'PING') return; // Ignorar pings de latido
 
     if (this.processedEventIds.has(eventId)) return;
@@ -673,6 +1095,29 @@ export class RoomSync {
     if (this.processedEventIds.size > 300) {
       const first = Array.from(this.processedEventIds)[0];
       this.processedEventIds.delete(first);
+    }
+
+    if (!fromLocal) {
+      if (this.localChannel) {
+        try {
+          this.localChannel.postMessage({
+            roomCode: this.roomCode,
+            senderId: this.instanceId,
+            eventId,
+            event,
+          });
+        } catch {}
+      }
+
+      SHARED_INSTANCES.forEach((inst) => {
+        if (inst !== this && inst.roomCode === this.roomCode && !inst.getIsDestroyed()) {
+          inst.receiveFromSameTab(eventId, event);
+        }
+      });
+    }
+
+    if (event.type === 'PLAYERS_CLEAR') {
+      this.lastSyncedPlayerHashes.clear();
     }
 
     if (
@@ -701,6 +1146,82 @@ export class RoomSync {
     const eventId = 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     this.processedEventIds.add(eventId);
 
+    if (event.type === 'PLAYERS_CLEAR') {
+      this.lastSyncedPlayerHashes.clear();
+    }
+
+    // Actualizar estado de presencia local para Supabase
+    if (this.role === 'host') {
+      if (event.type === 'ROOM_UPDATE') {
+        this.hostPresenceState = {
+          ...this.hostPresenceState,
+          role: 'host',
+          room: { ...(this.hostPresenceState?.room || {}), ...event.payload },
+        };
+        this.trackHostPresenceThrottled();
+      } else if (event.type === 'TEAMS_UPDATE') {
+        this.hostPresenceState = {
+          ...this.hostPresenceState,
+          role: 'host',
+          teams: event.payload,
+        };
+        this.trackHostPresenceThrottled();
+      } else if (event.type === 'SWITCH_GAME') {
+        this.hostPresenceState = {
+          ...this.hostPresenceState,
+          role: 'host',
+          room: {
+            ...(this.hostPresenceState?.room || {}),
+            status: event.payload.status,
+            current_game: event.payload.current_game,
+            active_game_id: event.payload.game_id || this.hostPresenceState?.room?.active_game_id,
+            game_phase: event.payload.game_phase || 'briefing',
+          },
+        };
+        this.trackHostPresenceThrottled();
+      } else if (event.type === 'GAME_PHASE_UPDATE') {
+        this.hostPresenceState = {
+          ...this.hostPresenceState,
+          role: 'host',
+          room: {
+            ...(this.hostPresenceState?.room || {}),
+            game_phase: event.payload.phase,
+          },
+        };
+        this.trackHostPresenceThrottled();
+      } else if (event.type === 'PRESENTATION_SLIDE') {
+        this.hostPresenceState = {
+          ...this.hostPresenceState,
+          role: 'host',
+          room: {
+            ...(this.hostPresenceState?.room || {}),
+            status: 'presentation',
+            presentation_slide: event.payload.slide,
+          },
+        };
+        this.trackHostPresenceThrottled();
+      } else if (event.type === 'RETURN_TO_LOBBY') {
+        this.hostPresenceState = {
+          ...this.hostPresenceState,
+          role: 'host',
+          room: {
+            ...(this.hostPresenceState?.room || {}),
+            status: 'lobby',
+          },
+        };
+        this.trackHostPresenceThrottled();
+      }
+    } else if (this.role === 'player') {
+      if (event.type === 'PLAYER_JOINED' || event.type === 'PLAYER_UPDATED') {
+        this.playerPresenceState = { role: 'player', player: event.payload };
+        if (this.supabaseChannel && this.isSupabaseSubscribed) {
+          try {
+            this.supabaseChannel.track(this.playerPresenceState).catch(() => {});
+          } catch {}
+        }
+      }
+    }
+
     const message: RelayMessage = {
       roomCode: this.roomCode,
       senderId: this.instanceId,
@@ -715,12 +1236,17 @@ export class RoomSync {
       } catch {}
     }
 
-    // 2. Enviar por BroadcastChannel (pestañas locales)
+    // 2. Enviar por BroadcastChannel (pestañas locales) y otras instancias en la misma pestaña
     if (this.localChannel) {
       try {
         this.localChannel.postMessage(message);
       } catch {}
     }
+    SHARED_INSTANCES.forEach((inst) => {
+      if (inst !== this && inst.roomCode === this.roomCode && !inst.getIsDestroyed()) {
+        inst.receiveFromSameTab(eventId, event);
+      }
+    });
 
     // 3. Enviar por Supabase Realtime si está activo
     if (this.supabaseChannel) {
@@ -739,36 +1265,31 @@ export class RoomSync {
       }
     }
 
-    // 4. Enviar por PeerJS WebRTC P2P (Vercel)
-    if (this.isHub) {
-      let sentCount = 0;
+    // 4. Enviar por PeerJS WebRTC P2P (Dual-Hub)
+    let webrtcSent = false;
+    if (this.isHub && this.clientConns.length > 0) {
       this.clientConns.forEach((c) => {
-        if (c.open) {
+        if (this.isWebRtcConnHealthy(c)) {
           try {
             c.send(message);
-            sentCount++;
+            webrtcSent = true;
           } catch {}
         }
       });
-      // Si no hay clientes todavía pero es un evento clave, guardar para emitir cuando conecten
-      if (
-        sentCount === 0 &&
-        (event.type === 'ROOM_UPDATE' ||
-          event.type === 'TEAMS_UPDATE' ||
-          event.type === 'SWITCH_GAME' ||
-          event.type === 'TV_PAIR_REDIRECT' ||
-          event.type === 'TV_SET_LITE_MODE')
-      ) {
-        this.enqueuePending(this.pendingQueue, message);
-      }
-    } else if (this.hubConn && this.hubConn.open) {
+    }
+    if (this.hubConn && this.isWebRtcConnHealthy(this.hubConn)) {
       try {
         this.hubConn.send(message);
-      } catch {
-        this.enqueuePending(this.pendingQueue, message);
-      }
-    } else {
-      // Conexión aún no lista: encolar para emitir inmediatamente al abrirse
+        webrtcSent = true;
+      } catch {}
+    }
+    if (this.tvConn && this.isWebRtcConnHealthy(this.tvConn)) {
+      try {
+        this.tvConn.send(message);
+        webrtcSent = true;
+      } catch {}
+    }
+    if (!webrtcSent) {
       this.enqueuePending(this.pendingQueue, message);
     }
 
@@ -795,8 +1316,10 @@ export class RoomSync {
     this.isDestroyed = true;
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    if (this.secondaryReconnectTimeout) clearTimeout(this.secondaryReconnectTimeout);
     if (this.supabaseRetryTimeout) clearTimeout(this.supabaseRetryTimeout);
     if (this.connectTimeout) clearTimeout(this.connectTimeout);
+    if (this.hostPresenceTrackTimeout) clearTimeout(this.hostPresenceTrackTimeout);
     if (this.cloudRelay) {
       this.cloudRelay.destroy();
       this.cloudRelay = null;
@@ -821,15 +1344,36 @@ export class RoomSync {
       this.localChannel = null;
     }
     if (this.supabaseChannel) {
-      supabase.removeChannel(this.supabaseChannel);
+      try {
+        if (this.isSupabaseSubscribed) {
+          this.supabaseChannel.untrack().catch(() => {});
+        }
+        supabase.removeChannel(this.supabaseChannel);
+      } catch {}
       this.supabaseChannel = null;
+    }
+    if (this.hubConn) {
+      try { this.hubConn.close(); } catch {}
+      this.hubConn = null;
+    }
+    if (this.tvConn) {
+      try { this.tvConn.close(); } catch {}
+      this.tvConn = null;
+    }
+    if (this.clientConns.length > 0) {
+      this.clientConns.forEach((c) => {
+        try { c.close(); } catch {}
+      });
+      this.clientConns = [];
     }
     if (this.peer) {
       try { this.peer.destroy(); } catch {}
       this.peer = null;
     }
-    this.clientConns = [];
-    this.hubConn = null;
+    if (this.secondaryPeer) {
+      try { this.secondaryPeer.destroy(); } catch {}
+      this.secondaryPeer = null;
+    }
     this.listeners = [];
   }
 }

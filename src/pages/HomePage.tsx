@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tv, Smartphone, Crown, Sparkles, ArrowRight, Monitor } from 'lucide-react';
+import { Tv, Smartphone, Crown, Sparkles, ArrowRight, Monitor, Laptop } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { pushRoomToTv } from '../lib/tvPairing';
+import { Button, Input } from '../components/ui';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,8 +19,7 @@ export default function HomePage() {
     }
   };
 
-  const handleCreateRoom = async () => {
-    setIsCreating(true);
+  const createRoomInstance = async () => {
     // Generar código aleatorio de 4 letras consonantes fáciles de pronunciar
     const letters = 'BCDFGHJKLMNPQRSTVWXYZ';
     let code = '';
@@ -60,7 +60,22 @@ export default function HomePage() {
     // Emparejar automáticamente a cualquier TV que esté a la espera en /tv
     pushRoomToTv(code, { title: finalTitle });
 
+    return { code, hostToken, finalTitle };
+  };
+
+  const handleCreateAsHost = async () => {
+    setIsCreating(true);
+    const { code } = await createRoomInstance();
     navigate(`/room/${code}/host`);
+  };
+
+  const handleCreateForLaptopHdmi = async () => {
+    setIsCreating(true);
+    const { code } = await createRoomInstance();
+    // Abrir mando anfitrión en una nueva pestaña
+    window.open(`/room/${code}/host`, '_blank');
+    // Navegar en la pantalla actual a la vista de TV (ideal para pantalla extendida o duplicada por HDMI)
+    navigate(`/room/${code}/tv`);
   };
 
   return (
@@ -97,7 +112,7 @@ export default function HomePage() {
           </div>
 
           <form onSubmit={handleJoin} className="space-y-4">
-            <input
+            <Input
               type="text"
               maxLength={4}
               placeholder="ABCD"
@@ -105,14 +120,17 @@ export default function HomePage() {
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
               className="w-full bg-slate-950 border-2 border-slate-700 rounded-2xl py-3.5 text-center text-3xl font-black font-mono tracking-widest text-amber-400 uppercase placeholder:text-slate-700 focus:outline-none focus:border-amber-400 shadow-inner"
             />
-            <button
+            <Button
               type="submit"
+              variant="gold"
+              size="lg"
+              fullWidth
               disabled={roomCode.length !== 4}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-4 rounded-2xl uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all"
+              className="shadow-lg shadow-orange-500/20"
             >
               <span>Conectar Mando</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              <ArrowRight className="w-4 h-4 shrink-0" />
+            </Button>
           </form>
         </div>
 
@@ -129,29 +147,44 @@ export default function HomePage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-              Título del Evento / Show:
-            </label>
-            <input
+            <Input
+              label="Título del Evento / Show:"
               type="text"
               value={customTitle}
               onChange={(e) => setCustomTitle(e.target.value)}
               placeholder="GAME SHOW ARENA (o tu título personalizado)"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-400"
+              helperText="Sustituye el rótulo 'GAME SHOW ARENA' en la pantalla de la TV (ej: Cumpleaños de Alex, Fiestón 2026...)"
             />
-            <p className="text-xs text-slate-500">
-              Sustituye el rótulo "GAME SHOW ARENA" en la pantalla de la TV (ej: Cumpleaños de Alex, Fiestón 2026...)
-            </p>
           </div>
 
-          <button
-            onClick={handleCreateRoom}
-            disabled={isCreating}
-            className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 active:scale-95 transition-all"
-          >
-            <Crown className="w-4 h-4" />
-            <span>{isCreating ? 'Iniciando Sala...' : 'Crear Sala para la TV'}</span>
-          </button>
+          <div className="space-y-2 pt-1">
+            <Button
+              type="button"
+              variant="gold"
+              size="md"
+              fullWidth
+              onClick={handleCreateAsHost}
+              disabled={isCreating}
+              isLoading={isCreating}
+              className="shadow-md shadow-amber-500/20"
+            >
+              <Crown className="w-4 h-4 shrink-0" />
+              <span>Crear Sala (Mando Anfitrión)</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              fullWidth
+              onClick={handleCreateForLaptopHdmi}
+              disabled={isCreating}
+              className="border-purple-500/50 hover:border-purple-400 text-purple-200"
+            >
+              <Laptop className="w-4 h-4 shrink-0 text-purple-400" />
+              <span>Crear y Abrir Pantalla TV (Portátil HDMI)</span>
+            </Button>
+          </div>
         </div>
 
         {/* MODO PANTALLA TV (RECEPTOR SMART TV) */}
@@ -165,12 +198,15 @@ export default function HomePage() {
               <p className="text-[11px] text-slate-400 truncate">Para navegadores de Smart TV o Proyector (/tv)</p>
             </div>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => navigate('/tv')}
-            className="shrink-0 bg-[#14141e] hover:bg-[#1f1f2e] text-amber-300 border border-[#d4af37]/50 font-bold text-xs uppercase px-3 py-2 rounded-xl shadow active:scale-95 transition-all"
+            className="shrink-0"
           >
             Abrir TV
-          </button>
+          </Button>
         </div>
       </div>
 

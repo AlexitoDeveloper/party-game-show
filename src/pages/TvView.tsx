@@ -50,7 +50,7 @@ import { getBingoBallTheme } from '../lib/bingoUtils';
 import { soundFX } from '../lib/audio';
 import { HellCasinoBackground } from '../components/deco/HellCasinoBackground';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
-import { RoomSync, getRoomSync } from '../lib/roomSync';
+import { RoomSync, getRoomSync, mergePlayersList } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition } from '../lib/games';
 import { MOVIES_DATABASE, MovieItem } from '../lib/moviesData';
 import { DEV_MOCK_BABY_PHOTOS, BabyPhotoItem } from '../lib/babyPhotosData';
@@ -420,10 +420,59 @@ export default function TvView() {
     localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(teams));
   }, [teams, roomCode]);
 
+  useEffect(() => {
+    localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(players));
+  }, [players, roomCode]);
+
   const roomRef = useRef(room);
   useEffect(() => { roomRef.current = room; }, [room]);
   const teamsRef = useRef(teams);
   useEffect(() => { teamsRef.current = teams; }, [teams]);
+  const playersRef = useRef(players);
+  useEffect(() => { playersRef.current = players; }, [players]);
+
+  // Sincronización instantánea con el mando anfitrión cuando se ejecuta en el mismo portátil (Laptop HDMI)
+  useEffect(() => {
+    if (!roomCode || typeof window === 'undefined') return;
+    const roomKey = `party_room_${roomCode}`;
+    const teamsKey = `party_teams_${roomCode}`;
+    const playersKey = `party_players_${roomCode}`;
+    const cardsKey = `party_power_cards_${roomCode}`;
+
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.newValue) return;
+      try {
+        if (e.key === roomKey) {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && typeof parsed === 'object') {
+            roomRef.current = parsed;
+            setRoom(parsed);
+          }
+        } else if (e.key === teamsKey) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            teamsRef.current = parsed;
+            setTeams(parsed);
+          }
+        } else if (e.key === playersKey) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            const merged = mergePlayersList(playersRef.current, parsed);
+            playersRef.current = merged;
+            setPlayers(merged);
+          }
+        } else if (e.key === cardsKey) {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && typeof parsed === 'object') {
+            setPowerCards(parsed);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [roomCode]);
 
   // Sincronización en tiempo real
   useEffect(() => {
@@ -433,28 +482,40 @@ export default function TvView() {
     const unsubscribe = roomSync.onEvent((event) => {
       if (event.type === 'PLAYER_JOINED') {
         soundFX.playJoin();
-        setPlayers((prev) => {
-          const exists = prev.some((p) => p.id === event.payload.id);
-          const updated = exists
-            ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
-            : [...prev, event.payload];
-          return updated;
-        });
+        const merged = mergePlayersList(playersRef.current, [event.payload]);
+        playersRef.current = merged;
+        setPlayers(merged);
+        localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(merged));
       } else if (event.type === 'PLAYER_UPDATED') {
-        setPlayers((prev) => {
-          const exists = prev.some((p) => p.id === event.payload.id);
-          const updated = exists
-            ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
-            : [...prev, event.payload];
-          return updated;
-        });
+        const merged = mergePlayersList(playersRef.current, [event.payload]);
+        playersRef.current = merged;
+        setPlayers(merged);
+        localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(merged));
       } else if (event.type === 'PLAYERS_UPDATE') {
-        setPlayers((prev) =>
-          JSON.stringify(prev) === JSON.stringify(event.payload) ? prev : event.payload
-        );
+        const merged = mergePlayersList(playersRef.current, event.payload);
+        playersRef.current = merged;
+        setPlayers(merged);
+        localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(merged));
+        if (merged.length > event.payload.length) {
+          roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: merged });
+        }
+      } else if (event.type === 'PLAYERS_CLEAR') {
+        playersRef.current = [];
+        setPlayers([]);
+        localStorage.removeItem(`party_players_${roomCode}`);
+      } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
+        if (playersRef.current.length > 0) {
+          roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
+        }
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
-        // Solo el Host es la fuente de verdad del estado de sala y puntuaciones; la TV únicamente sincroniza la gramola
         roomSync.broadcast({ type: 'JUKEBOX_STATE_SYNC', payload: speakeasyJukebox.getState() });
+        setTimeout(() => {
+          if (playersRef.current.length > 0) {
+            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
+          }
+          roomSync.broadcast({ type: 'ROOM_UPDATE', payload: roomRef.current });
+          roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
+        }, 350);
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
         resetBuzzer();

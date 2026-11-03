@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     code VARCHAR(4) NOT NULL UNIQUE,
     host_token VARCHAR(64) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'lobby' CHECK (status IN ('lobby', 'playing', 'paused', 'podium', 'ended')),
+    status VARCHAR(20) NOT NULL DEFAULT 'lobby' CHECK (status IN ('lobby', 'presentation', 'playing', 'paused', 'podium', 'ended')),
     active_teams_count INT NOT NULL DEFAULT 5 CHECK (active_teams_count BETWEEN 2 AND 8),
     current_game VARCHAR(50) DEFAULT 'buzzer',
     active_game_id VARCHAR(50) DEFAULT 'music',
@@ -66,7 +66,9 @@ CREATE OR REPLACE FUNCTION create_game_room(
     p_host_token VARCHAR(64),
     p_teams_count INT DEFAULT 5
 )
-RETURNS UUID AS $$
+RETURNS UUID
+SECURITY DEFINER
+AS $$
 DECLARE
     v_room_id UUID;
     v_team_names TEXT[] := ARRAY['Azul', 'Rojo', 'Amarillo', 'Blanco', 'Negro', 'Verde', 'Morado', 'Naranja'];
@@ -104,7 +106,9 @@ CREATE OR REPLACE FUNCTION set_active_teams_count(
     p_room_id UUID,
     p_count INT
 )
-RETURNS VOID AS $$
+RETURNS VOID
+SECURITY DEFINER
+AS $$
 BEGIN
     UPDATE rooms 
     SET active_teams_count = p_count, updated_at = NOW() 
@@ -132,7 +136,9 @@ CREATE POLICY "Public Update Players" ON players FOR UPDATE USING (true);
 
 CREATE POLICY "Public Insert Rooms" ON rooms FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Update Rooms" ON rooms FOR UPDATE USING (true);
+CREATE POLICY "Public Insert Teams" ON teams FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Update Teams" ON teams FOR UPDATE USING (true);
+CREATE POLICY "Public Insert Game States" ON game_states FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Update Game States" ON game_states FOR UPDATE USING (true);
 
 -- 8. HABILITAR REALTIME

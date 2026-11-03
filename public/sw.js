@@ -1,5 +1,5 @@
-// Service Worker v2: Resiliencia de red offline y sincronización en tiempo real
-const CACHE_NAME = 'party-game-cache-v2';
+// Service Worker v3: Resiliencia de red offline y sincronización en tiempo real
+const CACHE_NAME = 'party-game-cache-v3';
 const SHELL_ASSETS = ['/', '/index.html', '/tv'];
 
 self.addEventListener('install', (event) => {

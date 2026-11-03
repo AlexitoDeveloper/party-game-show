@@ -6,7 +6,7 @@ import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { TEAMS_CATALOG } from '../lib/constants';
 import { Room, Team, Player, CaptainDuelState, TeamRepresentative } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
-import { getRoomSync } from '../lib/roomSync';
+import { getRoomSync, mergePlayersList } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition, ScoringOption } from '../lib/games';
 import { PowerCardsState } from '../lib/powerCards';
 import { CoinBurstCelebration } from '../components/particles/CoinBurstCelebration';
@@ -254,6 +254,7 @@ export default function HostView() {
         ? { ...t, score: Math.max(0, t.score + effectiveDelta) }
         : t
     );
+    teamsRef.current = updatedTeams;
     setTeams(updatedTeams);
     localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(updatedTeams));
 
@@ -448,6 +449,26 @@ export default function HostView() {
     localStorage.setItem(`party_jukebox_${roomCode}`, JSON.stringify(jukeboxState));
   }, [jukeboxState, roomCode]);
 
+  // Sincronización instantánea de jugadores entre pestañas en el mismo portátil (HDMI Laptop + Host tab)
+  useEffect(() => {
+    if (!roomCode || typeof window === 'undefined') return;
+    const storageKey = `party_players_${roomCode}`;
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === storageKey && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            const updated = mergePlayersList(playersRef.current, parsed);
+            playersRef.current = updated;
+            setPlayers(updated);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [roomCode]);
+
   // Sincronizar automáticamente el equipo seleccionado para puntos con el ganador del buzzer
   useEffect(() => {
     if (isLocked && winner) {
@@ -552,37 +573,29 @@ export default function HostView() {
 
     const unsubscribe = roomSync.onEvent((event) => {
       if (event.type === 'PLAYER_JOINED') {
-        let nextPlayersSnapshot: Player[] = [];
-        setPlayers((prev) => {
-          const exists = prev.some((p) => p.id === event.payload.id);
-          const updated = exists
-            ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
-            : [...prev, event.payload];
-          nextPlayersSnapshot = updated;
-          localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
-          setTimeout(() => {
-            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: updated });
-          }, 30);
-          return updated;
-        });
-
-        broadcastFullRoomSnapshot(nextPlayersSnapshot.length > 0 ? nextPlayersSnapshot : undefined);
+        const updated = mergePlayersList(playersRef.current, [event.payload]);
+        playersRef.current = updated;
+        setPlayers(updated);
+        localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
+        broadcastFullRoomSnapshot(updated);
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
         broadcastFullRoomSnapshot();
       } else if (event.type === 'PLAYER_UPDATED') {
-        setPlayers((prev) => {
-          const exists = prev.some((p) => p.id === event.payload.id);
-          const updated = exists
-            ? prev.map((p) => (p.id === event.payload.id ? event.payload : p))
-            : [...prev, event.payload];
-          localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
-          setTimeout(() => {
-            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: updated });
-          }, 30);
-          return updated;
-        });
+        const updated = mergePlayersList(playersRef.current, [event.payload]);
+        playersRef.current = updated;
+        setPlayers(updated);
+        localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
+        roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: updated });
       } else if (event.type === 'PLAYERS_UPDATE') {
-        setPlayers(event.payload);
+        const updated = mergePlayersList(playersRef.current, event.payload);
+        playersRef.current = updated;
+        setPlayers(updated);
+        localStorage.setItem(`party_players_${roomCode}`, JSON.stringify(updated));
+      } else if (event.type === 'PLAYERS_CLEAR') {
+        playersRef.current = [];
+        setPlayers([]);
+        localStorage.removeItem(`party_players_${roomCode}`);
+        roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
       } else if (event.type === 'SWITCH_GAME') {
@@ -649,6 +662,7 @@ export default function HostView() {
           setTeamRepresentatives({});
         }
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
+        roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
         if (powerCardsRef.current) {
           roomSync.broadcast({ type: 'POWER_CARDS_STATE_UPDATE', payload: powerCardsRef.current });
         }
@@ -681,6 +695,7 @@ export default function HostView() {
   // Acciones de Navegación del Show
   const handleStartPresentation = () => {
     const updatedRoom: Room = { ...room, status: 'presentation', presentation_slide: 0 };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({ type: 'PRESENTATION_SLIDE', payload: { slide: 0 } });
@@ -689,6 +704,7 @@ export default function HostView() {
 
   const handleSetPresentationSlide = (slide: number) => {
     const updatedRoom: Room = { ...room, status: 'presentation', presentation_slide: slide };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({ type: 'PRESENTATION_SLIDE', payload: { slide } });
@@ -734,6 +750,7 @@ export default function HostView() {
   const handleReturnToLobby = async () => {
     powerCardsHook.handleClearAllActiveEffects();
     const updatedRoom: Room = { ...room, status: 'lobby' };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
 
     if (musicState.musicPlaying) {
@@ -758,6 +775,7 @@ export default function HostView() {
       active_game_id: game.id,
       game_phase: 'briefing',
     };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
     resetBuzzer();
     setActiveTab('live');
@@ -807,6 +825,7 @@ export default function HostView() {
       ...room,
       game_phase: 'active',
     };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({
@@ -836,6 +855,7 @@ export default function HostView() {
       ...room,
       game_phase: nextPhase,
     };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({
@@ -860,6 +880,7 @@ export default function HostView() {
 
   const handleFinishShowAndShowGazette = async () => {
     const updatedRoom: Room = { ...room, status: 'podium' };
+    roomRef.current = updatedRoom;
     setRoom(updatedRoom);
     localStorage.setItem(`party_room_${roomCode}`, JSON.stringify(updatedRoom));
     roomSync.broadcast({
@@ -913,6 +934,8 @@ export default function HostView() {
     const updatedTeams = teams.map((t) => ({ ...t, is_active: t.team_index <= newCount }));
     const updatedRoom = { ...room, active_teams_count: newCount };
 
+    roomRef.current = updatedRoom;
+    teamsRef.current = updatedTeams;
     setRoom(updatedRoom);
     setTeams(updatedTeams);
 
@@ -958,6 +981,7 @@ export default function HostView() {
         score: Math.max(0, (t.score || 0) + (res.finalPoints || 0)),
       };
     });
+    teamsRef.current = updatedTeams;
     setTeams(updatedTeams);
     localStorage.setItem(`party_teams_${roomCode}`, JSON.stringify(updatedTeams));
     roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: updatedTeams });
@@ -1223,8 +1247,10 @@ export default function HostView() {
             onScoreChange={handleScoreChange}
             onSetCaptain={handleSetCaptain}
             onClearPlayers={() => {
+              playersRef.current = [];
               setPlayers([]);
               localStorage.removeItem(`party_players_${roomCode}`);
+              roomSync.broadcast({ type: 'PLAYERS_CLEAR' });
               roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: [] });
             }}
             onRescanPlayers={() => roomSync.broadcast({ type: 'REQUEST_PLAYERS_SYNC' })}

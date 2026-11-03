@@ -1,4 +1,5 @@
 import { getRoomSync } from './roomSync';
+import { supabase, isSupabaseRealtimeConfigured } from './supabase';
 
 const TV_PIN_STORAGE_KEY = 'party_tv_device_pin';
 const HOST_PAIRED_TV_PIN_KEY = 'party_host_paired_tv_pin';
@@ -78,7 +79,52 @@ export function pushRoomToTv(roomCode: string, options?: PushRoomOptions): void 
   // 2. Enviar POST al relé HTTP local / serverless
   postJsonSafely('/api/tv-pair', payload);
 
-  // 3. Emitir por RoomSync (TV_${targetPin} y TV_DISCOVERY) con reintentos a 400ms y 1200ms
+  // 3. Emitir por Supabase Realtime Broadcast directo si está disponible
+  if (isSupabaseRealtimeConfigured) {
+    try {
+      const globalChan = supabase.channel('tv-pair:global');
+      globalChan.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          globalChan
+            .send({
+              type: 'broadcast',
+              event: 'STATE_EVENT',
+              payload: { event: { type: 'TV_PAIR_REDIRECT', payload } },
+            })
+            .finally(() => {
+              setTimeout(() => {
+                try {
+                  supabase.removeChannel(globalChan);
+                } catch {}
+              }, 3000);
+            });
+        }
+      });
+
+      if (targetPin && targetPin.length === 4) {
+        const pinChan = supabase.channel(`tv-pair:${targetPin}`);
+        pinChan.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            pinChan
+              .send({
+                type: 'broadcast',
+                event: 'STATE_EVENT',
+                payload: { event: { type: 'TV_PAIR_REDIRECT', payload } },
+              })
+              .finally(() => {
+                setTimeout(() => {
+                  try {
+                    supabase.removeChannel(pinChan);
+                  } catch {}
+                }, 3000);
+              });
+          }
+        });
+      }
+    } catch {}
+  }
+
+  // 4. Emitir por RoomSync (TV_${targetPin} y TV_DISCOVERY) con reintentos a 400ms y 1200ms
   const emitRoomSync = () => {
     try {
       const discoverySync = getRoomSync('TV_DISCOVERY', 'host');
@@ -96,6 +142,18 @@ export function pushRoomToTv(roomCode: string, options?: PushRoomOptions): void 
   emitRoomSync();
   setTimeout(emitRoomSync, 400);
   setTimeout(emitRoomSync, 1200);
+
+  // Destruir instancias temporales de RoomSync tras 5 segundos para liberar WebSockets y PeerJS
+  setTimeout(() => {
+    try {
+      getRoomSync('TV_DISCOVERY', 'host').destroy();
+    } catch {}
+    if (targetPin && targetPin.length === 4) {
+      try {
+        getRoomSync(`TV_${targetPin}`, 'host').destroy();
+      } catch {}
+    }
+  }, 5000);
 }
 
 export function pushLiteModeToTv(roomCode: string, enabled: boolean, tvPin?: string): void {
