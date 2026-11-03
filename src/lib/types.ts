@@ -40,32 +40,7 @@ export interface Player {
   badge_emoji?: string;
   session_token: string;
   is_connected: boolean;
-  is_captain?: boolean;
   joined_at: string;
-}
-
-export interface CaptainGamble {
-  teamId: string;
-  teamName: string;
-  playerName: string;
-  gameId: string;
-  timestamp: number;
-}
-
-export interface CaptainDuelState {
-  isActive: boolean;
-  title: string;
-  winnerTeamId?: string | null;
-  winnerPlayerName?: string | null;
-}
-
-export interface TeamRepresentative {
-  teamId: string;
-  representativePlayerIds: string[];
-  representativeNames: string[];
-  // Campos opcionales para compatibilidad
-  representativePlayerId?: string;
-  representativeName?: string;
 }
 
 export interface SecretCard {

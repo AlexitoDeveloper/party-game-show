@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Crown } from '@phosphor-icons/react';
 import { generateAvatarDataUri, DiceBearStyle } from '../lib/dicebear';
 import { TwemojiText } from './TwemojiText';
 import { GameIcon } from './GameIcon';
@@ -12,7 +11,6 @@ export interface LobbyPlayerCardProps {
   avatarStyle?: DiceBearStyle;
   badgeEmoji?: string;
   teamIndex: number;
-  isCaptain?: boolean;
   score?: number;
   className?: string;
 }
@@ -23,7 +21,7 @@ export interface LobbyPlayerCardProps {
  * 1. Avatar dinámico vectorial de DiceBear (estilo 'avataaars' o 'adventurer')
  * 2. Emblema personal con Twemoji SVG unificado
  * 3. Icono oficial del equipo con Phosphor Icons y resplandor neón LED
- * 4. Insignia de Capitán y puntuación
+ * 4. Puntuación
  */
 export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
   nickname,
@@ -31,7 +29,6 @@ export const LobbyPlayerCard: React.FC<LobbyPlayerCardProps> = ({
   avatarStyle = 'avataaars',
   badgeEmoji,
   teamIndex,
-  isCaptain = false,
   score,
   className = '',
 }) => {

@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Crown } from 'lucide-react';
 import { TeamTheme } from '../lib/teamThemes';
 import { BorderBeam } from './BorderBeam';
 import CountUp from 'react-countup';
@@ -12,7 +11,6 @@ import { CasinoChipMountain } from './casino/CasinoChipMountain';
 export interface TeamMemberInfo {
   id: string;
   nickname: string;
-  is_captain?: boolean;
   avatar_seed?: string;
   avatar_style?: string;
   badge_emoji?: string;
@@ -21,7 +19,6 @@ export interface TeamMemberInfo {
 export interface TeamActiveEffects {
   hasDouble?: boolean;
   hasBomb?: boolean;
-  hasGamble?: boolean;
   hasShield?: boolean;
   hasSentence?: boolean;
   hasCurse?: boolean;
@@ -115,7 +112,6 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
           {/* Iconos de cartas y efectos activos sin texto redundante */}
           {(powerCardsCount > 0 ||
             activeEffects.hasDouble ||
-            activeEffects.hasGamble ||
             activeEffects.hasBomb ||
             activeEffects.hasShield ||
             activeEffects.hasSentence ||
@@ -137,11 +133,6 @@ export const TeamScoreCard: React.FC<TeamScoreCardProps> = ({
               {activeEffects.hasDouble && (
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded font-black animate-pulse">
                   x2
-                </span>
-              )}
-              {activeEffects.hasGamble && (
-                <span className="text-[10px] bg-amber-500/30 text-amber-300 border border-amber-400/60 px-1 py-0.2 rounded font-black animate-pulse">
-                  ⭐x2
                 </span>
               )}
               {activeEffects.hasBomb && <span className="text-[10px] animate-pulse">💣</span>}

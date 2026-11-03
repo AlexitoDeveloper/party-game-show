@@ -46,7 +46,7 @@ export const playerHaptics = {
   },
 
   /**
-   * Latido de tensión para el duelo de capitanes
+   * Latido de tensión para duelos de mesa
    */
   duel(): void {
     this.vibrate([40, 100, 40]);

@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, RefreshCw, Play, BookOpen, CheckCircle2 } from 'lucide-react';
 import { TEAMS_CATALOG } from '../../lib/constants';
 import { GameDefinition } from '../../lib/games';
-import { Team, BuzzerPressPayload, GamePhase, Player, TeamRepresentative } from '../../lib/types';
+import { Team, BuzzerPressPayload, GamePhase } from '../../lib/types';
 import { HostMusicControls } from './minigames/HostMusicControls';
 import { HostMoviesControls } from './minigames/HostMoviesControls';
 import { HostBabyPhotosControls } from './minigames/HostBabyPhotosControls';
@@ -20,10 +20,6 @@ export interface HostLivePlayingConsoleProps {
   selectedTeamForPoints: string;
   onSelectTeamForPoints: (teamId: string) => void;
   selectedTeamCatalog: (typeof TEAMS_CATALOG)[0] | undefined;
-  captainDuel?: { isActive: boolean } | null;
-  onToggleCaptainDuel?: () => void;
-  captainGambles: Record<string, { teamId: string; teamName: string; playerName: string }>;
-  onClearCaptainGambles: () => void;
   isLocked: boolean;
   winner: BuzzerPressPayload | null;
   onResetBuzzer: () => void;
@@ -43,8 +39,6 @@ export interface HostLivePlayingConsoleProps {
   onToggleBriefing?: () => void;
   onFinishTest?: () => void;
   onLaunchTimer?: (seconds: number) => void;
-  teamRepresentatives?: Record<string, TeamRepresentative>;
-  players?: Player[];
 }
 
 const GAMES_WITH_TEAM_SELECTOR = new Set([

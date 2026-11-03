@@ -2,22 +2,18 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { ArcadeBuzzer } from '../ArcadeBuzzer';
-import { BuzzerPressPayload, Player } from '../../lib/types';
+import { BuzzerPressPayload } from '../../lib/types';
 import { getTeamTheme } from '../../lib/teamThemes';
 
 interface PlayerBuzzerSectionProps {
   isBanned: boolean;
   bannedShake: boolean;
   onBannedClick: () => void;
-  captainDuel?: any;
-  player: Player | null;
   selectedTeamIndex: number;
   isLocked: boolean;
   onBuzzerClick: () => void;
   isMeWinner: boolean;
   winner: BuzzerPressPayload | null;
-  isBenchMode?: boolean;
-  representativeNames?: string[];
 }
 
 export const PlayerBuzzerSection: React.FC<PlayerBuzzerSectionProps> = ({

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, VolumeX, Crown } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { SongTrack } from '../../../lib/musicData';
 import { BuzzerPressPayload, Player } from '../../../lib/types';
 import { DiceBearStyle, generateAvatarDataUri } from '../../../lib/dicebear';
@@ -13,7 +13,6 @@ export interface TvMusicGameProps {
   musicRevealed: boolean;
   buzzerWinner: BuzzerPressPayload | null;
   players: Player[];
-  isWinnerCaptain: boolean;
 }
 
 export const TvMusicGame: React.FC<TvMusicGameProps> = ({
@@ -23,7 +22,6 @@ export const TvMusicGame: React.FC<TvMusicGameProps> = ({
   musicRevealed,
   buzzerWinner,
   players,
-  isWinnerCaptain,
 }) => {
   // ESCENARIO EN ESPERA: SIN CANCIÓN SELECCIONADA
   if (!currentSong) {

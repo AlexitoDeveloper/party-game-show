@@ -3,11 +3,10 @@ import { motion } from 'framer-motion';
 import { GameDefinition, GAMES_CATALOG } from '../../lib/games';
 import { GameCoverImage } from '../common/GameCoverImage';
 
-import { Team, TeamRepresentative } from '../../lib/types';
+import { Team } from '../../lib/types';
 
 interface TvGameBriefingCardProps {
   game: GameDefinition;
-  teamRepresentatives?: Record<string, TeamRepresentative>;
   activeTeams?: Team[];
 }
 

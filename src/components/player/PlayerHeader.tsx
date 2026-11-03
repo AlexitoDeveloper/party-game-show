@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crown, LogOut, Radio, Trophy } from 'lucide-react';
+import { LogOut, Radio, Trophy } from 'lucide-react';
 import { Player, Team } from '../../lib/types';
 import { TeamCatalogItem } from '../../lib/constants';
 import { DiceBearStyle, generateAvatarDataUri } from '../../lib/dicebear';
@@ -21,7 +21,7 @@ interface PlayerHeaderProps {
 
 /**
  * PlayerHeader: Cabecera Art Déco para el dispositivo móvil del jugador.
- * Incluye placa de latón con código de sala, medallón de avatar, corona de capitán,
+ * Incluye placa de latón con código de sala, medallón de avatar,
  * marcador de puntos en vivo y botón de salida con modal de confirmación.
  */
 export const PlayerHeader: React.FC<PlayerHeaderProps> = ({

@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { JukeboxState, JUKEBOX_PLAYLIST } from '../lib/audio';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { TEAMS_CATALOG } from '../lib/constants';
-import { Room, Team, Player, CaptainDuelState, TeamRepresentative } from '../lib/types';
+import { Room, Team, Player } from '../lib/types';
 import { useBuzzerRace } from '../lib/useBuzzerRace';
 import { getRoomSync, mergePlayersList } from '../lib/roomSync';
 import { GAMES_CATALOG, GameDefinition, ScoringOption } from '../lib/games';
@@ -125,36 +125,7 @@ export default function HostView() {
     };
   });
 
-  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(() => {
-    const saved = localStorage.getItem(`party_captain_duel_${roomCode}`);
-    if (saved) {
-      try { return JSON.parse(saved); } catch {}
-    }
-    return null;
-  });
 
-  useEffect(() => {
-    try {
-      if (captainDuel) {
-        localStorage.setItem(`party_captain_duel_${roomCode}`, JSON.stringify(captainDuel));
-      } else {
-        localStorage.removeItem(`party_captain_duel_${roomCode}`);
-      }
-    } catch {}
-  }, [captainDuel, roomCode]);
-
-  const [captainGambles, setCaptainGambles] = useState<Record<string, { teamId: string; teamName: string; playerName: string }>>({});
-  const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
-    const saved = localStorage.getItem(`party_representatives_${roomCode}`);
-    if (saved) {
-      try { return JSON.parse(saved); } catch {}
-    }
-    return {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem(`party_representatives_${roomCode}`, JSON.stringify(teamRepresentatives));
-  }, [teamRepresentatives, roomCode]);
 
   const [showCoinBurst, setShowCoinBurst] = useState(false);
   const [selectedTeamForPoints, setSelectedTeamForPoints] = useState<string>('');
@@ -222,12 +193,6 @@ export default function HostView() {
   const playersRef = useRef(players);
   useEffect(() => { playersRef.current = players; }, [players]);
   const powerCardsRef = useRef<PowerCardsState | null>(null);
-  const captainDuelRef = useRef(captainDuel);
-  useEffect(() => { captainDuelRef.current = captainDuel; }, [captainDuel]);
-  const teamRepresentativesRef = useRef(teamRepresentatives);
-  useEffect(() => { teamRepresentativesRef.current = teamRepresentatives; }, [teamRepresentatives]);
-  const captainGamblesRef = useRef(captainGambles);
-  useEffect(() => { captainGamblesRef.current = captainGambles; }, [captainGambles]);
   const roundHitsRef = useRef(roundHits);
   useEffect(() => {
     roundHitsRef.current = roundHits;
@@ -250,15 +215,6 @@ export default function HostView() {
         String(t.team_index) === teamId
     );
     const resolvedTeamId = targetTeam ? targetTeam.id : teamId;
-
-    const teamGamble = captainGambles[resolvedTeamId] || captainGambles[teamId];
-    if (teamGamble && delta !== 0) {
-      if (delta > 0) {
-        effectiveDelta = effectiveDelta * 2;
-      }
-      handleClearCaptainGambles(resolvedTeamId);
-      if (resolvedTeamId !== teamId) handleClearCaptainGambles(teamId);
-    }
 
     const updatedTeams = teams.map((t) =>
       t.id === resolvedTeamId || t.id === teamId
@@ -403,28 +359,9 @@ export default function HostView() {
     powerCardsRef.current = powerCards;
   }, [powerCards]);
 
-  // Acciones de Gestión de Capitanes
-  const handleSetCaptain = (_teamId: string, _playerId: string) => {
-    // Sistema de capitanes desactivado: todos los miembros del equipo tienen los mismos permisos
-  };
-
   const handlePlaySoundEffect = (soundName: string) => {
     // Modo anfitrión silencioso: se delega el sonido 100% a la pantalla de TV
     roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: soundName } });
-  };
-
-  const handleToggleCaptainDuel = () => {
-    const nextActive = !captainDuel?.isActive;
-    const nextState: CaptainDuelState = {
-      isActive: nextActive,
-      title: '⚔️ MINIDUELO DE CAPITANES',
-    };
-    setCaptainDuel(nextState);
-    roomSync.broadcast({
-      type: 'CAPTAIN_DUEL_STATE',
-      payload: nextState,
-    });
-    resetBuzzer();
   };
 
   const handleToggleTvQr = () => {
@@ -433,20 +370,6 @@ export default function HostView() {
       roomSync.broadcast({ type: 'SHOW_TV_QR', payload: { isOpen: next } });
       return next;
     });
-  };
-
-  const handleClearCaptainGambles = (teamId?: string) => {
-    if (teamId) {
-      setCaptainGambles((prev) => {
-        const next = { ...prev };
-        delete next[teamId];
-        return next;
-      });
-      roomSync.broadcast({ type: 'CLEAR_CAPTAIN_GAMBLES', payload: { teamId } });
-    } else {
-      setCaptainGambles({});
-      roomSync.broadcast({ type: 'CLEAR_CAPTAIN_GAMBLES' });
-    }
   };
 
   // Guardar en localStorage para persistencia local
@@ -561,30 +484,6 @@ export default function HostView() {
         gameId: curRoom.active_game_id || curRoom.current_game,
       },
     });
-
-    roomSync.broadcast({
-      type: 'CAPTAIN_DUEL_STATE',
-      payload: captainDuelRef.current || { isActive: false, title: '' },
-    });
-
-    const curRepresentatives = teamRepresentativesRef.current;
-    if (curRepresentatives && Object.keys(curRepresentatives).length > 0) {
-      roomSync.broadcast({
-        type: 'TEAM_REPRESENTATIVES',
-        payload: curRepresentatives,
-      });
-      Object.values(curRepresentatives).forEach((rep) => {
-        roomSync.broadcast({ type: 'CAPTAIN_REPRESENTATIVE', payload: rep });
-      });
-    } else {
-      roomSync.broadcast({ type: 'CLEAR_TEAM_REPRESENTATIVES' });
-    }
-
-    if (captainGamblesRef.current && Object.keys(captainGamblesRef.current).length > 0) {
-      Object.values(captainGamblesRef.current).forEach((gamble) => {
-        roomSync.broadcast({ type: 'CAPTAIN_DOUBLE_OR_NOTHING', payload: gamble as any });
-      });
-    }
   };
 
   // Escuchar eventos de sincronización entrantes y pulso periódico de auto-curación para móviles Android/iOS
@@ -653,43 +552,6 @@ export default function HostView() {
         setIsTvQrOpen(event.payload.isOpen);
       } else if (event.type === 'TOGGLE_TV_QR') {
         setIsTvQrOpen((prev) => (event.payload?.isOpen !== undefined ? event.payload.isOpen : !prev));
-      } else if (event.type === 'SET_CAPTAIN') {
-        setPlayers((prev) =>
-          prev.map((p) => {
-            if (p.team_id === event.payload.teamId) {
-              return { ...p, is_captain: p.id === event.payload.playerId };
-            }
-            return p;
-          })
-        );
-      } else if (event.type === 'CAPTAIN_DOUBLE_OR_NOTHING') {
-        setCaptainGambles((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
-      } else if (event.type === 'CLEAR_CAPTAIN_GAMBLES') {
-        if (event.payload?.teamId) {
-          setCaptainGambles((prev) => {
-            const next = { ...prev };
-            delete next[event.payload!.teamId!];
-            return next;
-          });
-        } else {
-          setCaptainGambles({});
-        }
-      } else if (event.type === 'CAPTAIN_DUEL_STATE') {
-        setCaptainDuel(event.payload);
-      } else if (event.type === 'TEAM_REPRESENTATIVES') {
-        setTeamRepresentatives(event.payload || {});
-      } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
-        setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
-      } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
-        if (event.payload?.teamId) {
-          setTeamRepresentatives((prev) => {
-            const next = { ...prev };
-            delete next[event.payload!.teamId!];
-            return next;
-          });
-        } else {
-          setTeamRepresentatives({});
-        }
       } else if (event.type === 'REQUEST_PLAYERS_SYNC') {
         roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
         if (powerCardsRef.current) {
@@ -751,10 +613,6 @@ export default function HostView() {
     }
     resetBuzzer();
 
-    setCaptainGambles({});
-    localStorage.removeItem(`party_captain_gambles_${roomCode}`);
-    roomSync.broadcast({ type: 'CLEAR_CAPTAIN_GAMBLES', payload: {} });
-
     roomSync.broadcast({
       type: 'TEST_FINISHED',
       payload: {
@@ -814,11 +672,6 @@ export default function HostView() {
     if (powerCards && powerCards.activeEffects.length > 0) {
       powerCardsHook.handleClearAllActiveEffects();
     }
-
-    // Reiniciar representantes para que se asignen durante la presentación de esta prueba
-    setTeamRepresentatives({});
-    try { localStorage.removeItem(`party_representatives_${roomCode}`); } catch {}
-    roomSync.broadcast({ type: 'CLEAR_TEAM_REPRESENTATIVES' });
 
     roomSync.broadcast({
       type: 'SWITCH_GAME',
@@ -1266,10 +1119,6 @@ export default function HostView() {
                 selectedTeamForPoints={selectedTeamForPoints}
                 onSelectTeamForPoints={setSelectedTeamForPoints}
                 selectedTeamCatalog={selectedTeamCatalog || undefined}
-                captainDuel={captainDuel}
-                onToggleCaptainDuel={handleToggleCaptainDuel}
-                captainGambles={captainGambles}
-                onClearCaptainGambles={() => handleClearCaptainGambles()}
                 isLocked={isLocked}
                 winner={winner}
                 onResetBuzzer={resetBuzzer}
@@ -1289,8 +1138,6 @@ export default function HostView() {
                 onToggleBriefing={handleToggleBriefing}
                 onFinishTest={() => handleFinishTest()}
                 onLaunchTimer={(seconds) => roomSync.broadcast({ type: 'LAUNCH_TIMER', payload: { seconds } })}
-                teamRepresentatives={teamRepresentatives}
-                players={players}
               />
             ) : (
               <HostStandbySection
@@ -1328,7 +1175,6 @@ export default function HostView() {
             players={players}
             onTeamCountChange={handleTeamCountChange}
             onScoreChange={handleScoreChange}
-            onSetCaptain={handleSetCaptain}
             onClearPlayers={() => {
               playersRef.current = [];
               setPlayers([]);

@@ -10,7 +10,6 @@ export interface HostTeamsScoreboardProps {
   players: Player[];
   onTeamCountChange: (count: number) => void;
   onScoreChange: (teamId: string, delta: number) => void;
-  onSetCaptain: (teamId: string, playerId: string) => void;
   onClearPlayers: () => void;
   onRescanPlayers: () => void;
 }

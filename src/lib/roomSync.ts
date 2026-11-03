@@ -1,5 +1,5 @@
 import { supabase, isSupabaseRealtimeConfigured } from './supabase';
-import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, CaptainGamble, CaptainDuelState, TeamRepresentative, BingoClaimPayload, GamePhase } from './types';
+import { Room, Team, Player, MinigameType, RoomStatus, BuzzerPressPayload, BingoClaimPayload, GamePhase } from './types';
 import { MovieItem } from './moviesData';
 import { PowerCardsState, PowerCard } from './powerCards';
 import { BabyPhotoItem } from './babyPhotosData';
@@ -73,15 +73,8 @@ export type RoomSyncEvent =
       };
     }
   | { type: 'BABY_PHOTO_UPDATE'; payload: { photoIndex: number; isRevealed: boolean; photoData?: BabyPhotoItem; totalPhotos?: number } }
-  | { type: 'SET_CAPTAIN'; payload: { teamId: string; playerId: string } }
-  | { type: 'CAPTAIN_DOUBLE_OR_NOTHING'; payload: CaptainGamble }
-  | { type: 'CAPTAIN_DUEL_STATE'; payload: CaptainDuelState }
-  | { type: 'CAPTAIN_REPRESENTATIVE'; payload: TeamRepresentative }
-  | { type: 'TEAM_REPRESENTATIVES'; payload: Record<string, TeamRepresentative> }
   | { type: 'PLAY_SOUND'; payload: { sound: string } }
   | { type: 'LAUNCH_TIMER'; payload: { seconds: number } }
-  | { type: 'CLEAR_CAPTAIN_GAMBLES'; payload?: { teamId?: string } }
-  | { type: 'CLEAR_TEAM_REPRESENTATIVES'; payload?: { teamId?: string } }
   | { type: 'TEST_FINISHED'; payload: { gameTitle: string; winnerTeamName?: string } }
   | {
       type: 'TEST_VERDICT_APPLIED';

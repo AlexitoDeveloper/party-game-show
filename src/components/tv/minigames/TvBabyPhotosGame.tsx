@@ -13,7 +13,6 @@ export interface TvBabyPhotosGameProps {
   babyPhotoRevealed: boolean;
   buzzerLocked?: boolean;
   buzzerWinner?: BuzzerPressPayload | null;
-  isWinnerCaptain?: boolean;
 }
 
 export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({

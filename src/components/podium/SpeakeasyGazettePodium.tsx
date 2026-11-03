@@ -36,12 +36,6 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
     .sort((a, b) => b.score - a.score);
 
   const winner = rankedTeams[0] || teams[0];
-  const winnerCaptain = players.find(
-    (p) =>
-      (p.team_id === winner.id ||
-        (p.team_index !== undefined && p.team_index === winner.team_index)) &&
-      p.is_captain
-  );
 
   const winnerMembers = players.filter(
     (p) =>
@@ -49,32 +43,27 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
       (p.team_index !== undefined && p.team_index === winner.team_index)
   );
 
-  // Cuadrilla ordenada con el capitán primero, asegurando que todos los miembros tengan avatar
+  // Cuadrilla ordenada por apodo, asegurando que todos los miembros tengan avatar
   const sortedWinnerMembers = React.useMemo(() => {
-    const members = [...winnerMembers].sort((a, b) => {
-      if (a.is_captain && !b.is_captain) return -1;
-      if (!a.is_captain && b.is_captain) return 1;
-      return a.nickname.localeCompare(b.nickname);
-    });
+    const members = [...winnerMembers].sort((a, b) => a.nickname.localeCompare(b.nickname));
 
     if (members.length > 0) return members;
 
     return [
       {
-        id: 'fallback_captain',
+        id: 'fallback_member',
         room_id: winner.room_id || '',
         team_id: winner.id,
         team_index: winner.team_index,
-        nickname: winnerCaptain?.nickname || winner.name,
-        avatar_seed: winnerCaptain?.avatar_seed || winner.name,
-        avatar_style: winnerCaptain?.avatar_style,
+        nickname: winner.name,
+        avatar_seed: winner.name,
+        avatar_style: 'avataaars',
         session_token: '',
         is_connected: true,
-        is_captain: true,
         joined_at: new Date().toISOString(),
       } as Player,
     ];
-  }, [winnerMembers, winnerCaptain, winner]);
+  }, [winnerMembers, winner]);
 
   // Fecha conmemorativa de época
   const currentDateFormatted = new Intl.DateTimeFormat('es-ES', {
@@ -382,11 +371,6 @@ export const SpeakeasyGazettePodium: React.FC<SpeakeasyGazettePodiumProps> = ({
                       >
                         {winner.name}
                       </h3>
-                      {winnerCaptain && sortedWinnerMembers.length > 1 && (
-                        <span className="text-xs font-editorial text-stone-700 italic block mt-0.5 truncate">
-                          Liderados por "{winnerCaptain.nickname}"
-                        </span>
-                      )}
                     </div>
 
                     {/* PLACA DE RECOMPENSA EN DÓLARES */}

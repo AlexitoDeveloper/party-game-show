@@ -1,19 +1,17 @@
 import React from 'react';
-import { Users, Crown } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { Team, Player } from '../../lib/types';
 import { TEAMS_CATALOG } from '../../lib/constants';
 
 interface HostCompactScoreboardProps {
   activeTeams: Team[];
   players: Player[];
-  onSetCaptain: (teamId: string, playerId: string) => void;
   onScoreChange: (teamId: string, delta: number) => void;
 }
 
 export const HostCompactScoreboard: React.FC<HostCompactScoreboardProps> = ({
   activeTeams,
   players,
-  onSetCaptain,
   onScoreChange,
 }) => {
   return (

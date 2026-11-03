@@ -13,7 +13,6 @@ import {
   RefreshCw,
   ExternalLink,
   ArrowLeft,
-  Swords,
   Layers,
   Play,
   Palette,
@@ -23,7 +22,6 @@ import {
   Zap,
   Camera,
   Image as ImageIcon,
-  Crown,
   Star,
   ShieldAlert,
   Moon,
@@ -41,7 +39,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { TEAMS_CATALOG, SAMPLE_CHALLENGES } from '../lib/constants';
-import { Room, Team, Player, MinigameType, CaptainGamble, CaptainDuelState, BingoClaimPayload, TeamRepresentative } from '../lib/types';
+import { Room, Team, Player, MinigameType, BingoClaimPayload } from '../lib/types';
 import { OFFICIAL_TRIVIA_QUESTIONS, TriviaQuestion } from '../lib/triviaData';
 import { OFFICIAL_UN_DOS_TRES_CHALLENGES, UnDosTresChallenge } from '../lib/unDosTresData';
 import { OFFICIAL_MIMICA_CARDS, MimicaCard } from '../lib/mimicaData';
@@ -176,17 +174,7 @@ export default function TvView() {
     return () => clearTimeout(timer);
   }, []);
 
-  const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
-    const saved = localStorage.getItem(`party_representatives_${roomCode}`);
-    if (saved) {
-      try { return JSON.parse(saved); } catch {}
-    }
-    return {};
-  });
 
-  useEffect(() => {
-    localStorage.setItem(`party_representatives_${roomCode}`, JSON.stringify(teamRepresentatives));
-  }, [teamRepresentatives, roomCode]);
 
   // Instancia de sincronización multi-pantalla como pantalla de TV
   const roomSync = useMemo(() => getRoomSync(roomCode, 'tv'), [roomCode]);
@@ -363,9 +351,7 @@ export default function TvView() {
     }
   }, [musicPlaying, currentSong?.previewUrl, currentSong?.id, buzzerLocked, musicRevealed]);
 
-  // Estados de Capitanes
-  const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
-  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
+
 
   // Estados específicos para Trivial
   const [triviaIndex, setTriviaIndex] = useState(0);
@@ -651,50 +637,7 @@ export default function TvView() {
         if (event.payload.totalPhotos) {
           setBabyPhotosCount(event.payload.totalPhotos);
         }
-      } else if (event.type === 'SET_CAPTAIN') {
-        setPlayers((prev) =>
-          prev.map((p) => {
-            if (p.team_id === event.payload.teamId) {
-              return { ...p, is_captain: p.id === event.payload.playerId };
-            }
-            return p;
-          })
-        );
-      } else if (event.type === 'CAPTAIN_DOUBLE_OR_NOTHING') {
-        setCaptainGambles((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
-        soundFX.playPowerCard();
-        confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
-      } else if (event.type === 'CLEAR_CAPTAIN_GAMBLES') {
-        if (event.payload?.teamId) {
-          setCaptainGambles((prev) => {
-            const next = { ...prev };
-            delete next[event.payload!.teamId!];
-            return next;
-          });
-        } else {
-          setCaptainGambles({});
-        }
-      } else if (event.type === 'CAPTAIN_DUEL_STATE') {
-        setCaptainDuel((prev) => {
-          if (!prev?.isActive && event.payload.isActive && isHydratedRef.current) {
-            soundFX.playBuzzer();
-          }
-          return event.payload;
-        });
-      } else if (event.type === 'TEAM_REPRESENTATIVES') {
-        setTeamRepresentatives(event.payload || {});
-      } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
-        setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
-      } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
-        if (event.payload?.teamId) {
-          setTeamRepresentatives((prev) => {
-            const next = { ...prev };
-            delete next[event.payload!.teamId!];
-            return next;
-          });
-        } else {
-          setTeamRepresentatives({});
-        }
+
       } else if (event.type === 'TRIVIA_STATE_UPDATE') {
         setTriviaIndex(event.payload.questionIndex);
         setTriviaRevealed((prev) => {
@@ -929,13 +872,6 @@ export default function TvView() {
   const winningTeamCatalog = buzzerWinner
     ? TEAMS_CATALOG.find((c) => c.index === buzzerWinner.teamIndex)
     : null;
-  const isWinnerCaptain = buzzerWinner
-    ? players.some(
-        (p) =>
-          (p.id === buzzerWinner.playerId || p.nickname === buzzerWinner.playerName) &&
-          p.is_captain
-      )
-    : false;
   const currentSlide = room.presentation_slide || 0;
 
   return (
@@ -1072,7 +1008,6 @@ export default function TvView() {
         <section className="flex-1 h-full min-h-0 flex flex-col justify-center items-center z-10 w-full max-w-6xl mx-auto px-2 sm:px-4 py-1 overflow-hidden">
           <TvGameBriefingCard
             game={activeGame}
-            teamRepresentatives={teamRepresentatives}
             activeTeams={teams.filter((t) => t.is_active)}
           />
         </section>
@@ -1129,7 +1064,6 @@ export default function TvView() {
                   babyPhotoRevealed={babyPhotoRevealed}
                   buzzerLocked={buzzerLocked}
                   buzzerWinner={buzzerWinner}
-                  isWinnerCaptain={false}
                 />
               ) : activeGame.id === 'music' ? (
                 <TvMusicGame
@@ -1139,7 +1073,6 @@ export default function TvView() {
                   musicRevealed={musicRevealed}
                   buzzerWinner={buzzerWinner}
                   players={players}
-                  isWinnerCaptain={false}
                 />
               ) : activeGame.id === 'trivial' ? (
                 <TvTriviaGame
@@ -1364,11 +1297,9 @@ export default function TvView() {
                   (e) => e.sourceTeamId === team.id && e.cardId === 'ave_fenix'
                 );
                 const hasCurse = teamHand.includes('la_maldicion');
-                const hasCaptainGamble = !!captainGambles[team.id];
-                const teamCaptain = players.find(
-                  (p) => (p.team_id === team.id || p.team_index === team.team_index) && p.is_captain
+                const members = players.filter(
+                  (p) => p.team_id === team.id || p.team_index === team.team_index
                 );
-                const members = teamCaptain ? [teamCaptain] : [];
 
                 const roundScore = roundHits[team.id] || 0;
                 const scoreSuffix = isRoundScoreGame ? '' : ' pts';
@@ -1393,7 +1324,6 @@ export default function TvView() {
                       hasRussianRoulette,
                       hasPhoenix,
                       hasCurse,
-                      hasGamble: hasCaptainGamble,
                     }}
                   />
                 );
