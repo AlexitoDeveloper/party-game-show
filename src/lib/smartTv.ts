@@ -2,7 +2,7 @@
  * Módulo de detección y optimizaciones de rendimiento para Smart TVs (LG webOS, Samsung Tizen, TCL, etc.)
  */
 
-const STORAGE_KEY = 'party_tv_lite_mode';
+const STORAGE_KEY = 'party_tv_lite_mode_v2';
 
 /**
  * Detecta si el navegador actual se ejecuta en una Smart TV o dispositivo TV dongle.
@@ -25,7 +25,8 @@ export function isLegacyWebOS(): boolean {
 
 /**
  * Obtiene el estado actual del Modo Ligero OLED/Smart TV.
- * Por defecto es true si se detecta un televisor con motor heredado o si se activó manualmente.
+ * Por defecto solo se activa automáticamente si el navegador es una Smart TV real (webOS, Tizen, etc.)
+ * o si se activó manualmente desde el mando del Host. En un portátil por HDMI mantiene todos los efectos activos.
  */
 export function getTvLiteMode(): boolean {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
@@ -33,9 +34,7 @@ export function getTvLiteMode(): boolean {
   if (saved !== null) {
     return saved === 'true';
   }
-  const path = window.location?.pathname || '';
-  const isTvRoute = path === '/tv' || path.endsWith('/tv');
-  return isTvRoute || isSmartTvBrowser() || isLegacyWebOS();
+  return isSmartTvBrowser() || isLegacyWebOS();
 }
 
 /**

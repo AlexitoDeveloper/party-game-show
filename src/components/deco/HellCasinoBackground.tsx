@@ -28,7 +28,7 @@ export const HellCasinoBackground: React.FC<HellCasinoBackgroundProps> = ({
       <div className={`pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden ${opacityClass}`}>
         <svg
           viewBox="0 0 1000 1000"
-          className="w-[140vw] h-[140vw] max-w-[1500px] max-h-[1500px] -translate-y-12"
+          className="w-[140vw] h-[140vw] max-w-[1500px] max-h-[1500px] -translate-y-12 animate-[spin_240s_linear_infinite] hell-stained-glass-spin"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Palette, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { Award, Palette, Sparkles, AlertCircle, CheckCircle, Timer } from 'lucide-react';
 import { Team } from '../../../lib/types';
 import { TEAMS_CATALOG } from '../../../lib/constants';
 import { ScoringOption } from '../../../lib/games';
@@ -10,6 +10,7 @@ export interface HostDrawingControlsProps {
   onSelectTeamForPoints: (teamId: string) => void;
   roundHits: Record<string, number>;
   onApplyScoreAction: (opt: ScoringOption) => void;
+  onLaunchTimer?: (seconds: number) => void;
 }
 
 export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
@@ -18,6 +19,7 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
   onSelectTeamForPoints,
   roundHits,
   onApplyScoreAction,
+  onLaunchTimer,
 }) => {
   const currentTeam = activeTeams.find((t) => t.id === selectedTeamForPoints) || activeTeams[0];
   const currentCatalog = currentTeam
@@ -53,6 +55,36 @@ export const HostDrawingControls: React.FC<HostDrawingControlsProps> = ({
           <span>J1 decide libremente qué dibujar</span>
         </div>
       </div>
+
+      {/* CRONÓMETRO DE TURNOS EN TV */}
+      {onLaunchTimer && (
+        <div className="bg-[#07070a]/90 border border-[#d4af37]/35 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 text-xs font-broadway uppercase text-amber-200">
+            <Timer className="w-4 h-4 text-amber-400" />
+            <span>Cronómetro en TV por relevo:</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => onLaunchTimer(60)}
+              className="px-3 py-2 rounded-xl bg-gold-gradient text-slate-950 font-broadway font-black text-xs uppercase active:scale-95 transition-all shadow-sm"
+            >
+              🎨 60s Dibujar
+            </button>
+            <button
+              onClick={() => onLaunchTimer(30)}
+              className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 font-broadway font-bold text-xs uppercase active:scale-95 transition-all"
+            >
+              ✍️ 30s Frase
+            </button>
+            <button
+              onClick={() => onLaunchTimer(0)}
+              className="px-3 py-2 rounded-xl bg-[#14141e] hover:bg-[#1f1f2e] border border-[#d4af37]/30 text-amber-100/70 font-broadway text-xs uppercase active:scale-95 transition-all"
+            >
+              ⏹️ Limpiar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SELECTOR DE EQUIPO A CALIFICAR */}
       <div>

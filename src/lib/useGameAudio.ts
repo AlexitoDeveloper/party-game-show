@@ -12,7 +12,7 @@ export function useGameAudio() {
   const [playCountdownRaw] = useSound('/sounds/tick.mp3', { volume: 0.85 });
   const [playCorrectRaw] = useSound('/sounds/success.mp3', { volume: 0.9 });
   const [playWrongRaw] = useSound('/sounds/fail.mp3', { volume: 0.95 });
-  const [playVictoryRaw] = useSound('/sounds/victory.mp3', { volume: 1.0 });
+  const [playVictoryRaw] = useSound('/sounds/success.mp3', { volume: 0.9 });
 
   // Callbacks seguros con fallback inmediato a soundFX
   const playBuzzer = useCallback(() => {
@@ -51,7 +51,7 @@ export function useGameAudio() {
     try {
       playVictoryRaw();
     } catch {
-      soundFX.playVictory();
+      soundFX.playSuccess();
     }
   }, [playVictoryRaw]);
 

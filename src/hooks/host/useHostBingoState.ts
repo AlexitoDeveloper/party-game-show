@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { RoomSync } from '../../lib/roomSync';
-import { BingoClaimPayload } from '../../lib/types';
+import { BingoClaimPayload, Team } from '../../lib/types';
 import { soundFX } from '../../lib/audio';
 
 export interface UseHostBingoStateParams {
   roomSync: RoomSync;
   roomCode?: string;
+  setRoundHits?: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  teams?: Team[];
 }
 
-export function useHostBingoState({ roomSync, roomCode }: UseHostBingoStateParams) {
+export function useHostBingoState({ roomSync, roomCode, setRoundHits, teams }: UseHostBingoStateParams) {
   const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>([]);
   const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(null);
   const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
@@ -193,6 +195,10 @@ export function useHostBingoState({ roomSync, roomCode }: UseHostBingoStateParam
         } catch {}
       }
 
+      if (setRoundHits) {
+        setRoundHits({});
+      }
+
       syncBingoState(null, [], false, false, false, null, null);
     }
   };
@@ -207,10 +213,24 @@ export function useHostBingoState({ roomSync, roomCode }: UseHostBingoStateParam
     let nextLineWinner = lineWinnerRef.current;
     let nextBingoWinner = bingoWinnerRef.current;
 
+    const resolvedTeam = (teams || []).find(
+      (t) =>
+        t.id === claim.teamId ||
+        String(t.team_index) === String(claim.teamIndex) ||
+        (claim.teamId && claim.teamId.startsWith('team_') && String(t.team_index) === claim.teamId.replace(/^.*_/, ''))
+    );
+    const resolvedTeamId = resolvedTeam ? resolvedTeam.id : claim.teamId;
+
     if (accepted) {
       const delta = claim.claimType === 'line' ? 2 : 6;
       if (onScoreChange) {
-        onScoreChange(claim.teamId, delta);
+        onScoreChange(resolvedTeamId, delta);
+      }
+      if (setRoundHits) {
+        setRoundHits((prev) => ({
+          ...prev,
+          [resolvedTeamId]: (prev[resolvedTeamId] || 0) + delta,
+        }));
       }
       soundFX.playVictory();
 
@@ -233,7 +253,7 @@ export function useHostBingoState({ roomSync, roomCode }: UseHostBingoStateParam
         payload: {
           claimType: claim.claimType,
           accepted: true,
-          teamId: claim.teamId,
+          teamId: resolvedTeamId,
           deltaPoints: delta,
           winnerName: claim.playerName,
           teamName: claim.teamName,

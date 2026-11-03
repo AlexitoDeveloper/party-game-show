@@ -15,7 +15,6 @@ tools:
   - list_dir
   - run_command
   - manage_task
-  - browser_subagent
 ---
 
 # Role: QA Agent (Quality Assurance & Testing)

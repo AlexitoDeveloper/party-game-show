@@ -16,6 +16,7 @@ import { PlayerBuzzerSection } from '../components/player/PlayerBuzzerSection';
 import { PlayerBingoSection } from '../components/player/PlayerBingoSection';
 import { PlayerMimicaSection } from '../components/player/PlayerMimicaSection';
 import { PlayerDoubleOrNothingModal } from '../components/player/PlayerDoubleOrNothingModal';
+import { CaptainRepSelectorModal } from '../components/player/CaptainRepSelectorModal';
 import { PlayerHeader } from '../components/player/PlayerHeader';
 import { PlayerFannedHandDrawer } from '../components/player/PlayerFannedHandDrawer';
 import { playerHaptics } from '../lib/playerHaptics';
@@ -91,6 +92,15 @@ export default function PlayerView() {
     }
     return null;
   });
+
+  useEffect(() => {
+    try {
+      if (powerCards) {
+        localStorage.setItem(`party_power_cards_${roomCode}`, JSON.stringify(powerCards));
+      }
+    } catch {}
+  }, [powerCards, roomCode]);
+
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
   const [bannedShake, setBannedShake] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -134,10 +144,62 @@ export default function PlayerView() {
     }
     return [];
   });
-  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
-  const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>({});
-  const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>({});
+  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(() => {
+    const saved = localStorage.getItem(`party_captain_duel_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    try {
+      if (captainDuel) {
+        localStorage.setItem(`party_captain_duel_${roomCode}`, JSON.stringify(captainDuel));
+      } else {
+        localStorage.removeItem(`party_captain_duel_${roomCode}`);
+      }
+    } catch {}
+  }, [captainDuel, roomCode]);
+
+  const [captainGambles, setCaptainGambles] = useState<Record<string, CaptainGamble>>(() => {
+    const saved = localStorage.getItem(`party_gambles_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`party_gambles_${roomCode}`, JSON.stringify(captainGambles));
+    } catch {}
+  }, [captainGambles, roomCode]);
+
+  const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
+    const saved = localStorage.getItem(`party_representatives_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`party_representatives_${roomCode}`, JSON.stringify(teamRepresentatives));
+    } catch {}
+  }, [teamRepresentatives, roomCode]);
+
+  // Recuperar automáticamente selectedTeam si se desalinea pero player tiene team_index
+  useEffect(() => {
+    if (!selectedTeam && player?.team_index) {
+      const found = TEAMS_CATALOG.find((c) => c.index === player.team_index);
+      if (found) setSelectedTeam(found);
+    }
+  }, [selectedTeam, player?.team_index]);
+
   const [isDoubleModalOpen, setIsDoubleModalOpen] = useState(false);
+  const [isRepModalOpen, setIsRepModalOpen] = useState(false);
 
   // Estados de Bingo sincronizados en móvil
   const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>(() => {
@@ -429,6 +491,8 @@ export default function PlayerView() {
         }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
+      } else if (event.type === 'TEAM_REPRESENTATIVES') {
+        setTeamRepresentatives(event.payload || {});
       } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
         setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
       } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
@@ -799,6 +863,48 @@ export default function PlayerView() {
     setTimeout(() => setFeedbackToast(null), 4000);
   };
 
+  const hasCaptainGamble = !!(myTeamId && captainGambles[myTeamId]);
+
+  const maxRepresentatives = useMemo(() => {
+    if (
+      activeGame.participantsMode === 'duo' ||
+      activeGame.participantsMode === 'actor_and_guesser' ||
+      activeGame.participantsMode === 'delegates'
+    ) {
+      return 2;
+    }
+    return 1;
+  }, [activeGame.participantsMode]);
+
+  const myTeamMembers = useMemo(() => {
+    if (!selectedTeam) return [];
+    const members = allPlayers.filter(
+      (p) => p.team_index === selectedTeam.index || (myTeamId && p.team_id === myTeamId)
+    );
+    if (player && !members.some((m) => m.id === player.id)) {
+      return [...members, player];
+    }
+    return members;
+  }, [allPlayers, selectedTeam, myTeamId, player]);
+
+  const handleConfirmRepresentatives = (selectedPlayerIds: string[], selectedPlayerNames: string[]) => {
+    if (!myTeamId) return;
+    const rep: TeamRepresentative = {
+      teamId: myTeamId,
+      representativePlayerIds: selectedPlayerIds,
+      representativeNames: selectedPlayerNames,
+      representativePlayerId: selectedPlayerIds[0],
+      representativeName: selectedPlayerNames[0],
+    };
+    setTeamRepresentatives((prev) => ({ ...prev, [myTeamId]: rep }));
+    roomSync.broadcast({
+      type: 'CAPTAIN_REPRESENTATIVE',
+      payload: rep,
+    });
+    setFeedbackToast('👥 ¡Representantes asignados con éxito!');
+    setTimeout(() => setFeedbackToast(null), 3500);
+  };
+
   const executeCardAction = (card: PowerCard, tTeamId?: string, tPlayerName?: string, tCardId?: string) => {
     if (!myTeamId || !selectedTeam) return;
 
@@ -1023,6 +1129,11 @@ export default function PlayerView() {
                 <span className={`text-xs font-broadway uppercase tracking-wide ${selectedTeam.twText}`}>
                   {selectedTeam.name}
                 </span>
+                {player?.is_captain && (
+                  <span className="flex items-center gap-1 text-[10px] uppercase font-broadway bg-amber-500/20 text-amber-300 border border-amber-400/50 px-2 py-0.5 rounded-full font-black">
+                    <Crown className="w-3 h-3 text-amber-400" /> Capitán
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => setSelectedTeam(null)}
@@ -1031,6 +1142,43 @@ export default function PlayerView() {
                 Cambiar Bando
               </button>
             </div>
+
+            {/* BARRA DE ÓRDENES DEL CAPITÁN */}
+            {player?.is_captain && (
+              <div className="w-full bg-[#161208]/90 border border-amber-500/50 rounded-2xl p-2.5 flex items-center justify-between gap-2 shadow-deco-gold">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="text-xs font-broadway uppercase text-amber-300 truncate font-black">
+                    Órdenes de Capitán
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsRepModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600/30 to-amber-700/30 border border-amber-400/50 text-amber-200 hover:text-white text-xs font-vintage font-bold uppercase transition-all active:scale-95 flex items-center gap-1"
+                    title="Designar representantes del equipo"
+                  >
+                    <Users className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Representantes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDoubleModalOpen(true)}
+                    disabled={hasCaptainGamble}
+                    className={`px-2.5 py-1.5 rounded-xl border text-xs font-broadway uppercase transition-all active:scale-95 flex items-center gap-1 ${
+                      hasCaptainGamble
+                        ? 'bg-amber-950/40 border-amber-700/30 text-amber-400/60 cursor-not-allowed'
+                        : 'bg-gold-gradient text-slate-950 font-black border-[#f5eedb]/40 hover:brightness-110 shadow-sm'
+                    }`}
+                    title={hasCaptainGamble ? 'Doble o Nada ya declarado' : 'Apostar Doble o Nada en esta prueba'}
+                  >
+                    <span>⭐</span>
+                    <span>{hasCaptainGamble ? 'Doble Activo' : 'Doble o Nada'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Pastilla identificativa del juego actual */}
             <div className="w-full bg-[#0c0c14]/90 border border-[#d4af37]/35 rounded-2xl px-3 py-2 flex items-center justify-between backdrop-blur-sm shadow-sm gap-2">
@@ -1191,7 +1339,7 @@ export default function PlayerView() {
               bannedShake={bannedShake}
               onBannedClick={handleBannedClick}
               player={player}
-              selectedTeamIndex={selectedTeam.index}
+              selectedTeamIndex={selectedTeam?.index ?? player?.team_index ?? 1}
               isLocked={isLocked}
               onBuzzerClick={handleBuzzerClick}
               isMeWinner={isMeWinner}
@@ -1372,6 +1520,28 @@ export default function PlayerView() {
           </div>
         </div>
       )}
+
+      {/* MODAL DOBLE O NADA DEL CAPITÁN */}
+      <PlayerDoubleOrNothingModal
+        isOpen={isDoubleModalOpen}
+        onClose={() => setIsDoubleModalOpen(false)}
+        onConfirm={() => {
+          handleTriggerDoubleOrNothing();
+          setIsDoubleModalOpen(false);
+        }}
+      />
+
+      {/* MODAL DESIGNAR REPRESENTANTES DEL CAPITÁN */}
+      <CaptainRepSelectorModal
+        isOpen={isRepModalOpen}
+        onClose={() => setIsRepModalOpen(false)}
+        teamMembers={myTeamMembers}
+        currentRep={myTeamId ? teamRepresentatives[myTeamId] : null}
+        maxRepresentatives={maxRepresentatives}
+        gameTitle={activeGame.title}
+        gameEmoji={activeGame.emoji}
+        onConfirm={handleConfirmRepresentatives}
+      />
 
       {/* FOOTER */}
       <footer className="text-center text-xs text-slate-600 uppercase tracking-widest z-10 shrink-0 select-none">

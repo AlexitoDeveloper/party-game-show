@@ -8,6 +8,8 @@ export interface HostUnDosTresControlsProps {
   aliveTeams: Team[];
   activeTeams: Team[];
   currentUdtTeam: Team | undefined;
+  udtCountdown?: number | null;
+  udtIsTimerRunning?: boolean;
   onResetUdtRound: () => void;
   onStartUdtTimer: () => void;
   onPassUdtRound: () => void;
@@ -19,6 +21,8 @@ export const HostUnDosTresControls: React.FC<HostUnDosTresControlsProps> = ({
   aliveTeams,
   activeTeams,
   currentUdtTeam,
+  udtCountdown,
+  udtIsTimerRunning,
   onResetUdtRound,
   onStartUdtTimer,
   onPassUdtRound,
@@ -82,10 +86,22 @@ export const HostUnDosTresControls: React.FC<HostUnDosTresControlsProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <button
           onClick={onStartUdtTimer}
-          className="p-3.5 rounded-2xl bg-gold-gradient hover:brightness-110 text-slate-950 font-broadway font-black text-xs uppercase flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 border border-[#f5eedb]/40"
+          className={`p-3.5 rounded-2xl font-broadway font-black text-xs uppercase flex items-center justify-center gap-2 shadow-deco-gold active:scale-95 border transition-all ${
+            udtIsTimerRunning
+              ? 'bg-red-600 text-white border-red-400 animate-pulse'
+              : udtCountdown === 0
+              ? 'bg-amber-600 text-white border-amber-300'
+              : 'bg-gold-gradient hover:brightness-110 text-slate-950 border-[#f5eedb]/40'
+          }`}
         >
           <Timer className="w-4 h-4" />
-          <span>⏱️ Iniciar 5 Segundos</span>
+          <span>
+            {udtIsTimerRunning && udtCountdown !== null
+              ? `⏱️ ${udtCountdown}s EN CURSO...`
+              : udtCountdown === 0
+              ? '⏰ ¡TIEMPO AGOTADO! (Reiniciar 5s)'
+              : '⏱️ Iniciar 5 Segundos'}
+          </span>
         </button>
         <button
           onClick={onPassUdtRound}

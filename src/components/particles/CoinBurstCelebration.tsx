@@ -37,6 +37,10 @@ export const CoinBurstCelebration: React.FC<CoinBurstCelebrationProps> = ({
   className = '',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (!active) return;
@@ -85,53 +89,61 @@ export const CoinBurstCelebration: React.FC<CoinBurstCelebrationProps> = ({
     }
 
     let animId: number;
+    const startTime = performance.now();
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
+      const elapsed = performance.now() - startTime;
       let aliveCount = 0;
 
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += p.gravity;
-        p.rotation += p.vRot;
-        p.scaleX = Math.cos(p.rotation * 2);
+      if (elapsed < 2200) {
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.rotation += p.vRot;
+          p.scaleX = Math.cos(p.rotation * 2);
 
-        if (p.y > height - 20) {
-          p.vy *= -0.4; // Bounce on floor
-          p.vx *= 0.8;
-          p.alpha -= 0.03;
-        }
+          if (p.y > height - 20) {
+            p.vy *= -0.4; // Bounce on floor
+            p.vx *= 0.8;
+            p.alpha -= 0.04;
+          }
 
-        if (p.alpha > 0.01) {
-          aliveCount++;
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.rotation);
-          ctx.scale(p.scaleX, 1);
-          ctx.globalAlpha = Math.max(0, p.alpha);
+          if (elapsed > 1600) {
+            p.alpha -= 0.035;
+          }
 
-          // Draw Coin Body
-          ctx.beginPath();
-          ctx.arc(0, 0, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color;
-          ctx.fill();
+          if (p.alpha > 0.01) {
+            aliveCount++;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.scale(p.scaleX, 1);
+            ctx.globalAlpha = Math.max(0, p.alpha);
 
-          // Border & Edge
-          ctx.strokeStyle = p.borderColor;
-          ctx.lineWidth = 2.5;
-          ctx.stroke();
+            // Draw Coin Body
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
 
-          // Symbol
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${Math.floor(p.size * 0.9)}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(p.label, 0, 0);
+            // Border & Edge
+            ctx.strokeStyle = p.borderColor;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
 
-          ctx.restore();
+            // Symbol
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.floor(p.size * 0.9)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(p.label, 0, 0);
+
+            ctx.restore();
+          }
         }
       }
 
@@ -139,7 +151,7 @@ export const CoinBurstCelebration: React.FC<CoinBurstCelebrationProps> = ({
         animId = requestAnimationFrame(render);
       } else {
         ctx.clearRect(0, 0, width, height);
-        if (onComplete) onComplete();
+        if (onCompleteRef.current) onCompleteRef.current();
       }
     };
 
@@ -148,7 +160,7 @@ export const CoinBurstCelebration: React.FC<CoinBurstCelebrationProps> = ({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [active, trigger, count, onComplete, propOriginX, propOriginY]);
+  }, [active, trigger, count, propOriginX, propOriginY]);
 
   if (!active) return null;
 

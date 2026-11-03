@@ -14,6 +14,7 @@ export interface HostBabyPhotosControlsProps {
   onToggleBabyPhotoReveal: () => void;
   onValidateBabyPhotoHit: () => void;
   onValidateBabyPhotoMiss: () => void;
+  onValidateBabyPhotoSelf?: () => void;
   onSelectBabyPhotoDirect: (idx: number) => void;
   onPrevBabyPhoto: () => void;
   onNextBabyPhoto: () => void;
@@ -30,6 +31,7 @@ export const HostBabyPhotosControls: React.FC<HostBabyPhotosControlsProps> = ({
   onToggleBabyPhotoReveal,
   onValidateBabyPhotoHit,
   onValidateBabyPhotoMiss,
+  onValidateBabyPhotoSelf,
   onSelectBabyPhotoDirect,
   onPrevBabyPhoto,
   onNextBabyPhoto,
@@ -123,7 +125,7 @@ export const HostBabyPhotosControls: React.FC<HostBabyPhotosControlsProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button
             onClick={onValidateBabyPhotoHit}
             className="py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-emerald-500 hover:bg-emerald-400 text-slate-950"
@@ -139,6 +141,16 @@ export const HostBabyPhotosControls: React.FC<HostBabyPhotosControlsProps> = ({
             <X className="w-4 h-4 stroke-[3]" />
             <span>Fallo (-1)</span>
           </button>
+
+          {onValidateBabyPhotoSelf && (
+            <button
+              onClick={onValidateBabyPhotoSelf}
+              className="py-3 px-2 rounded-xl text-xs font-broadway font-black uppercase flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-200"
+              title="Penalización por pulsar en su propia foto (-2 pts)"
+            >
+              <span>🚫 Propia (-2)</span>
+            </button>
+          )}
 
           <button
             onClick={onToggleBabyPhotoReveal}

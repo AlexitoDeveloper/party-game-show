@@ -1,4 +1,7 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { AmbientSpeakeasyAtmosphere } from './particles/AmbientSpeakeasyAtmosphere';
+import { getTvLiteMode } from '../lib/smartTv';
 
 interface RetroGridBackgroundProps {
   activeTeamColor?: string;
@@ -7,32 +10,56 @@ interface RetroGridBackgroundProps {
 }
 
 /**
- * RetroGridBackground: Fondo escénico Art Déco / Speakeasy 1930s ultra-optimizado para Smart TVs (60 FPS).
- * Utiliza gradientes radiales nativos sin filtros SVG feTurbulence ni desenfoques gaussianos pesados en CPU/GPU.
+ * RetroGridBackground: Fondo escénico Art Déco / Speakeasy 1930s acelerado por GPU,
+ * con abanico sunburst dorado, halos de latón, grano de celuloide y polvo de oro ambiental.
  */
 export const RetroGridBackground: React.FC<RetroGridBackgroundProps> = ({
   activeTeamColor,
   className = '',
+  showParticles = true,
 }) => {
-  const glowColor = activeTeamColor || '#d4af37';
+  const isLite = getTvLiteMode();
 
   return (
     <div className={`fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#07070a] select-none ${className}`}>
       {/* 1. Abanico Sunburst Art Déco geométrico de fondo */}
       <div className="absolute inset-0 deco-sunburst-bg opacity-30 pointer-events-none" />
 
-      {/* 2. Resplandor reactivo al color del equipo activo mediante gradiente radial nativo (0 coste de blur) */}
+      {/* 2. Resplandor reactivo al color del equipo activo (focos de plató) */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-25 transition-opacity duration-500"
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[550px] rounded-full blur-[150px] transition-colors duration-1000 opacity-20 pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 50% 28%, ${glowColor}33 0%, transparent 55%), radial-gradient(circle at 50% 95%, rgba(212, 175, 55, 0.14) 0%, transparent 50%)`,
+          backgroundColor: activeTeamColor || '#d4af37',
         }}
       />
 
-      {/* 3. Viñeta radial oscura de speakeasy para focalizar el escenario */}
+      {/* 3. Halo inferior cálido de latón / bronce de proscenio */}
+      <div className="absolute -bottom-28 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] rounded-full bg-[#d4af37]/10 blur-[140px] pointer-events-none" />
+
+      {/* 4. Viñeta radial oscura de speakeasy para focalizar el escenario */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#07070a] via-transparent to-[#07070a]/90 pointer-events-none" />
+
+      {/* 5. Luces volumétricas en esquinas superiores de cine clásico */}
+      {!isLite && (
+        <>
+          <motion.div
+            animate={{ opacity: [0.15, 0.3, 0.15] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-16 -left-16 w-96 h-96 rounded-full bg-amber-500/15 blur-[110px] pointer-events-none"
+          />
+          <motion.div
+            animate={{ opacity: [0.15, 0.3, 0.15] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+            className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-amber-300/15 blur-[110px] pointer-events-none"
+          />
+        </>
+      )}
+
+      {/* 6. Partículas de Polvo Dorado en Suspensión */}
+      {showParticles && !isLite && <AmbientSpeakeasyAtmosphere />}
     </div>
   );
 };
+
 
 

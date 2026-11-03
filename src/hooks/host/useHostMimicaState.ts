@@ -9,6 +9,7 @@ export interface UseHostMimicaStateParams {
   teams: Team[];
   selectedTeamCatalog?: (typeof TEAMS_CATALOG)[0] | null;
   activeTeams: Team[];
+  roundHits?: Record<string, number>;
   setRoundHits: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   soundFX: {
     playDecoBell: () => void;
@@ -21,6 +22,7 @@ export function useHostMimicaState({
   teams,
   selectedTeamCatalog,
   activeTeams,
+  roundHits,
   setRoundHits,
   soundFX,
 }: UseHostMimicaStateParams) {
@@ -50,6 +52,22 @@ export function useHostMimicaState({
       },
     });
   };
+
+  useEffect(() => {
+    if (selectedTeamCatalog) {
+      const targetTeam = teams.find((t) => t.team_index === selectedTeamCatalog.index);
+      const teamHits = targetTeam && roundHits ? roundHits[targetTeam.id] || 0 : 0;
+      setMimicaHitsCount(teamHits);
+      const timerToSet =
+        !mimicaIsRunning && (mimicaTimerSeconds === null || mimicaTimerSeconds <= 0)
+          ? 90
+          : mimicaTimerSeconds;
+      if (timerToSet !== mimicaTimerSeconds) {
+        setMimicaTimerSeconds(timerToSet);
+      }
+      syncMimicaState(teamHits, timerToSet, mimicaIsRunning);
+    }
+  }, [selectedTeamCatalog?.index]);
 
   const handleNextMimicaCard = () => {
     const nextIdx = (mimicaCardIndex + 1) % mimicaCards.length;
@@ -136,9 +154,18 @@ export function useHostMimicaState({
   };
 
   const handleResetMimicaRound = () => {
+    const targetTeam = selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : activeTeams[0];
     setMimicaHitsCount(0);
     setMimicaTimerSeconds(90);
     setMimicaIsRunning(false);
+    if (targetTeam) {
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeam.id]: 0,
+      }));
+    }
     syncMimicaState(0, 90, false);
   };
 

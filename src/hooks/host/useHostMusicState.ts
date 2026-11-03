@@ -232,12 +232,13 @@ export function useHostMusicState({
         ...prev,
         [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
       }));
+    } else {
+      soundFX.playVictory();
     }
     setMusicRevealed(true);
     setMusicPlaying(true);
     if (isLocked) resetBuzzer();
     syncMusicState(true, true);
-    soundFX.playVictory();
   };
 
   const handleValidateMusicMiss = () => {
@@ -249,18 +250,21 @@ export function useHostMusicState({
 
     if (targetTeam) {
       handleScoreChange(targetTeam.id, -1);
+    } else {
+      soundFX.playFail();
     }
     setMusicPlaying(true);
     if (isLocked) resetBuzzer();
     syncMusicState(true, false);
-    soundFX.playFail();
   };
 
   return {
     musicBank,
     currentSongTrack,
     musicPlaying,
+    setMusicPlaying,
     musicRevealed,
+    setMusicRevealed,
     musicSearchQuery,
     setMusicSearchQuery,
     musicSearchResults,

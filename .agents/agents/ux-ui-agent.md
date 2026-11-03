@@ -14,7 +14,6 @@ tools:
   - grep_search
   - list_dir
   - generate_image
-  - browser_subagent
 ---
 
 # Role: UX/UI & Design Engineering Specialist

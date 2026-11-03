@@ -89,9 +89,14 @@ export function calculateTestVerdict(params: {
   // 1. Determinar puestos (Ranks)
   // Si se proporcionaron puestos manuales, usarlos; de lo contrario, ordenar por aciertos de la ronda
   const sortedTeams = [...safeTeams].sort((a, b) => {
-    if (manualRanks[a.id] !== undefined && manualRanks[b.id] !== undefined) {
-      return manualRanks[a.id] - manualRanks[b.id];
+    const manualA = manualRanks[a.id];
+    const manualB = manualRanks[b.id];
+    if (manualA !== undefined && manualB !== undefined) {
+      return manualA - manualB;
     }
+    if (manualA !== undefined) return -1;
+    if (manualB !== undefined) return 1;
+
     const hitsA = roundHits[a.id] || 0;
     const hitsB = roundHits[b.id] || 0;
     if (hitsB !== hitsA) return hitsB - hitsA;
@@ -100,7 +105,31 @@ export function calculateTestVerdict(params: {
 
   const teamRanks: Record<string, number> = {};
   sortedTeams.forEach((t, idx) => {
-    teamRanks[t.id] = manualRanks[t.id] !== undefined ? manualRanks[t.id] : idx + 1;
+    if (manualRanks[t.id] !== undefined) {
+      teamRanks[t.id] = manualRanks[t.id];
+    } else if (isBingo) {
+      // En Bingo, sólo quien cantó Bingo (hits >= 6) o Línea (hits > 0) tiene rango premiado
+      const hits = roundHits[t.id] || 0;
+      if (hits >= 6) {
+        teamRanks[t.id] = 1; // BINGO
+      } else if (hits > 0) {
+        teamRanks[t.id] = 2; // Línea
+      } else {
+        teamRanks[t.id] = 3; // Sin premio (0 pts base)
+      }
+    } else {
+      // Si el equipo anterior tiene los mismos aciertos, compartir puesto (empate)
+      if (idx > 0) {
+        const prevTeam = sortedTeams[idx - 1];
+        const hitsCurrent = roundHits[t.id] || 0;
+        const hitsPrev = roundHits[prevTeam.id] || 0;
+        if (hitsCurrent === hitsPrev && manualRanks[prevTeam.id] === undefined) {
+          teamRanks[t.id] = teamRanks[prevTeam.id] || idx + 1;
+          return;
+        }
+      }
+      teamRanks[t.id] = idx + 1;
+    }
   });
 
   // 2. Asignar puntos base por posición
@@ -120,6 +149,18 @@ export function calculateTestVerdict(params: {
   };
 
   const consumedEffectIds: string[] = [];
+
+  // Comprobar si un equipo tiene un Escudo activo que bloquee cartas perjudiciales
+  const isTeamShielded = (teamId: string) => {
+    const shieldEff = safeEffects.find((e) => e.cardId === 'escudo' && e.sourceTeamId === teamId);
+    if (shieldEff) {
+      if (!consumedEffectIds.includes(shieldEff.id)) {
+        consumedEffectIds.push(shieldEff.id);
+      }
+      return true;
+    }
+    return false;
+  };
 
   // Encontrar el equipo en 1.er puesto
   const winnerTeam = safeTeams.find((t) => teamRanks[t.id] === 1);
@@ -199,13 +240,23 @@ export function calculateTestVerdict(params: {
       case 'bomba': {
         if (sourceTeam && targetTeam) {
           if (targetRank > sourceRank) {
-            addImpact(targetTeam.id, {
-              cardId: eff.cardId,
-              cardName: 'Bomba',
-              cardEmoji: '💣',
-              delta: -3,
-              explanation: `Detonada por ${sourceTeam.name} al superarte (−3 pts)`,
-            });
+            if (isTeamShielded(targetTeam.id)) {
+              addImpact(targetTeam.id, {
+                cardId: 'escudo',
+                cardName: 'Escudo',
+                cardEmoji: '🛡️',
+                delta: 0,
+                explanation: `Bomba de ${sourceTeam.name} bloqueada por Escudo de Protección`,
+              });
+            } else {
+              addImpact(targetTeam.id, {
+                cardId: eff.cardId,
+                cardName: 'Bomba',
+                cardEmoji: '💣',
+                delta: -3,
+                explanation: `Detonada por ${sourceTeam.name} al superarte (−3 pts)`,
+              });
+            }
           }
           consumedEffectIds.push(eff.id);
         }
@@ -216,13 +267,23 @@ export function calculateTestVerdict(params: {
       case 'la_sentencia': {
         if (sourceTeam && targetTeam) {
           if (targetRank > sourceRank) {
-            addImpact(targetTeam.id, {
-              cardId: eff.cardId,
-              cardName: 'La Sentencia',
-              cardEmoji: '💀',
-              delta: -4,
-              explanation: `Ejecutada por ${sourceTeam.name} (−4 pts)`,
-            });
+            if (isTeamShielded(targetTeam.id)) {
+              addImpact(targetTeam.id, {
+                cardId: 'escudo',
+                cardName: 'Escudo',
+                cardEmoji: '🛡️',
+                delta: 0,
+                explanation: `La Sentencia de ${sourceTeam.name} bloqueada por Escudo`,
+              });
+            } else {
+              addImpact(targetTeam.id, {
+                cardId: eff.cardId,
+                cardName: 'La Sentencia',
+                cardEmoji: '💀',
+                delta: -4,
+                explanation: `Ejecutada por ${sourceTeam.name} (−4 pts)`,
+              });
+            }
           }
           consumedEffectIds.push(eff.id);
         }
@@ -236,20 +297,30 @@ export function calculateTestVerdict(params: {
           if (leader && leader.id && leader.id !== sourceTeam.id) {
             const leaderRank = teamRanks[leader.id] || 99;
             if (sourceRank < leaderRank) {
-              addImpact(sourceTeam.id, {
-                cardId: eff.cardId,
-                cardName: 'Caza al Líder',
-                cardEmoji: '👑',
-                delta: 3,
-                explanation: `Robas 3 pts a ${leader.name} al superarlo`,
-              });
-              addImpact(leader.id, {
-                cardId: eff.cardId,
-                cardName: 'Caza al Líder',
-                cardEmoji: '👑',
-                delta: -3,
-                explanation: `Puntos robados por ${sourceTeam.name} (−3 pts)`,
-              });
+              if (isTeamShielded(leader.id)) {
+                addImpact(leader.id, {
+                  cardId: 'escudo',
+                  cardName: 'Escudo',
+                  cardEmoji: '🛡️',
+                  delta: 0,
+                  explanation: `Robo de Caza al Líder bloqueado por Escudo`,
+                });
+              } else {
+                addImpact(sourceTeam.id, {
+                  cardId: eff.cardId,
+                  cardName: 'Caza al Líder',
+                  cardEmoji: '👑',
+                  delta: 3,
+                  explanation: `Robas 3 pts a ${leader.name} al superarlo`,
+                });
+                addImpact(leader.id, {
+                  cardId: eff.cardId,
+                  cardName: 'Caza al Líder',
+                  cardEmoji: '👑',
+                  delta: -3,
+                  explanation: `Puntos robados por ${sourceTeam.name} (−3 pts)`,
+                });
+              }
             }
           }
           consumedEffectIds.push(eff.id);
@@ -276,23 +347,35 @@ export function calculateTestVerdict(params: {
 
       // 🎩 EL IMPUESTO DEL PADRINO (50% de los puntos del 1.er puesto al equipo del Padrino)
       case 'impuesto_padrino': {
-        if (sourceTeam && winnerTeam && winnerTeam.id && winnerTeam.id !== sourceTeam.id) {
-          const winnerBase = basePointsMap[winnerTeam.id] || 0;
-          const tax = Math.max(1, Math.round(winnerBase * 0.5));
-          addImpact(sourceTeam.id, {
-            cardId: eff.cardId,
-            cardName: 'El Impuesto del Padrino',
-            cardEmoji: '🎩',
-            delta: tax,
-            explanation: `Comisión del 50% cobrada a ${winnerTeam.name} (+${tax} pts)`,
-          });
-          addImpact(winnerTeam.id, {
-            cardId: eff.cardId,
-            cardName: 'El Impuesto del Padrino',
-            cardEmoji: '🎩',
-            delta: -tax,
-            explanation: `Comisión obligatoria entregada a ${sourceTeam.name} (−${tax} pts)`,
-          });
+        if (sourceTeam) {
+          if (winnerTeam && winnerTeam.id && winnerTeam.id !== sourceTeam.id) {
+            if (isTeamShielded(winnerTeam.id)) {
+              addImpact(winnerTeam.id, {
+                cardId: 'escudo',
+                cardName: 'Escudo',
+                cardEmoji: '🛡️',
+                delta: 0,
+                explanation: `Impuesto del Padrino bloqueado por Escudo`,
+              });
+            } else {
+              const winnerBase = basePointsMap[winnerTeam.id] || 0;
+              const tax = Math.max(1, Math.round(winnerBase * 0.5));
+              addImpact(sourceTeam.id, {
+                cardId: eff.cardId,
+                cardName: 'El Impuesto del Padrino',
+                cardEmoji: '🎩',
+                delta: tax,
+                explanation: `Comisión del 50% cobrada a ${winnerTeam.name} (+${tax} pts)`,
+              });
+              addImpact(winnerTeam.id, {
+                cardId: eff.cardId,
+                cardName: 'El Impuesto del Padrino',
+                cardEmoji: '🎩',
+                delta: -tax,
+                explanation: `Comisión obligatoria entregada a ${sourceTeam.name} (−${tax} pts)`,
+              });
+            }
+          }
           consumedEffectIds.push(eff.id);
         }
         break;
@@ -301,24 +384,36 @@ export function calculateTestVerdict(params: {
       // 👑 EL ROBO DEL SIGLO (50% de los puntos del rival objetivo)
       case 'robo_siglo': {
         if (sourceTeam && targetTeam) {
-          const targetBase = basePointsMap[targetTeam.id] || 0;
-          if (targetBase > 0) {
-            const steal = Math.max(1, Math.round(targetBase * 0.5));
-            addImpact(sourceTeam.id, {
-              cardId: eff.cardId,
-              cardName: 'El Robo del Siglo',
-              cardEmoji: '👑',
-              delta: steal,
-              explanation: `Robo del 50% de los puntos de ${targetTeam.name} (+${steal} pts)`,
-            });
+          if (isTeamShielded(targetTeam.id)) {
             addImpact(targetTeam.id, {
-              cardId: eff.cardId,
-              cardName: 'El Robo del Siglo',
-              cardEmoji: '👑',
-              delta: -steal,
-              explanation: `Robado por ${sourceTeam.name} (−${steal} pts)`,
+              cardId: 'escudo',
+              cardName: 'Escudo',
+              cardEmoji: '🛡️',
+              delta: 0,
+              explanation: `Robo del Siglo de ${sourceTeam.name} bloqueado por Escudo`,
             });
+          } else {
+            const targetBase = basePointsMap[targetTeam.id] || 0;
+            if (targetBase > 0) {
+              const steal = Math.max(1, Math.round(targetBase * 0.5));
+              addImpact(sourceTeam.id, {
+                cardId: eff.cardId,
+                cardName: 'El Robo del Siglo',
+                cardEmoji: '👑',
+                delta: steal,
+                explanation: `Robo del 50% de los puntos de ${targetTeam.name} (+${steal} pts)`,
+              });
+              addImpact(targetTeam.id, {
+                cardId: eff.cardId,
+                cardName: 'El Robo del Siglo',
+                cardEmoji: '👑',
+                delta: -steal,
+                explanation: `Robado por ${sourceTeam.name} (−${steal} pts)`,
+              });
+            }
           }
+          consumedEffectIds.push(eff.id);
+        } else if (eff.id) {
           consumedEffectIds.push(eff.id);
         }
         break;
@@ -326,36 +421,49 @@ export function calculateTestVerdict(params: {
 
       // 💥 EL GOLPE MAESTRO (Si ganas 1.º, cada rival te transfiere 1 punto)
       case 'golpe_maestro': {
-        if (sourceTeam && sourceRank === 1) {
-          let totalStolen = 0;
-          safeTeams.forEach((rival) => {
-            if (rival.id !== sourceTeam.id && (rival.score || 0) > 0) {
-              totalStolen += 1;
-              addImpact(rival.id, {
+        if (sourceTeam) {
+          if (sourceRank === 1) {
+            let totalStolen = 0;
+            safeTeams.forEach((rival) => {
+              if (rival.id !== sourceTeam.id && (rival.score || 0) > 0) {
+                if (isTeamShielded(rival.id)) {
+                  addImpact(rival.id, {
+                    cardId: 'escudo',
+                    cardName: 'Escudo',
+                    cardEmoji: '🛡️',
+                    delta: 0,
+                    explanation: `Golpe Maestro bloqueado por Escudo de Protección`,
+                  });
+                } else {
+                  totalStolen += 1;
+                  addImpact(rival.id, {
+                    cardId: eff.cardId,
+                    cardName: 'El Golpe Maestro',
+                    cardEmoji: '💥',
+                    delta: -1,
+                    explanation: `Transferencia obligatoria al campeón ${sourceTeam.name} (−1 pt)`,
+                  });
+                }
+              }
+            });
+            if (totalStolen > 0) {
+              addImpact(sourceTeam.id, {
                 cardId: eff.cardId,
                 cardName: 'El Golpe Maestro',
                 cardEmoji: '💥',
-                delta: -1,
-                explanation: `Transferencia obligatoria al campeón ${sourceTeam.name} (−1 pt)`,
+                delta: totalStolen,
+                explanation: `Bote recolectado de los rivales (+${totalStolen} pts)`,
               });
             }
-          });
-          if (totalStolen > 0) {
-            addImpact(sourceTeam.id, {
-              cardId: eff.cardId,
-              cardName: 'El Golpe Maestro',
-              cardEmoji: '💥',
-              delta: totalStolen,
-              explanation: `Bote recolectado de los rivales (+${totalStolen} pts)`,
-            });
           }
           consumedEffectIds.push(eff.id);
         }
         break;
       }
 
-      // Escudos y limitaciones sensoriales se consumen al finalizar la prueba
+      // Escudos, limitaciones sensoriales y mal de ojo se consumen al finalizar la prueba
       case 'escudo':
+      case 'mal_de_ojo':
       case 'el_cuarto_mono':
       case 'titiritero':
       case 'cambio_forzoso':

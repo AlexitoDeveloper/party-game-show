@@ -239,7 +239,7 @@ export const PlayerBingoSection: React.FC<PlayerBingoSectionProps> = ({
       claimType: claimModal.type,
       playerId,
       playerName: player?.nickname || 'Jugador',
-      teamId: selectedTeam ? `team_${selectedTeam.index}` : player?.team_id || 'team_0',
+      teamId: player?.team_id || (selectedTeam ? `team_${selectedTeam.index}` : 'team_0'),
       teamName: selectedTeam?.name || 'Equipo',
       teamColorHex: selectedTeam?.colorHex || '#d4af37',
       teamIndex: selectedTeam?.index ?? player?.team_index ?? 0,

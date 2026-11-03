@@ -123,13 +123,23 @@ export const HostTriviaControls: React.FC<HostTriviaControlsProps> = ({
       {/* BOTONES GRANDES DE PULGAR PARA VEREDICTO */}
       <div className="grid grid-cols-3 gap-2">
         {triviaReboundActive ? (
-          <button
-            onClick={onValidateTriviaReboundHit}
-            className="col-span-2 py-3 px-3 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-deco-gold active:scale-95"
-          >
-            <Check className="w-4 h-4 stroke-[3]" />
-            <span>Validar Rebote (+2)</span>
-          </button>
+          <>
+            <button
+              onClick={onValidateTriviaReboundHit}
+              className="py-3 px-2 bg-gold-gradient text-slate-950 font-broadway font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1 shadow-deco-gold active:scale-95"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>Acierto (+2)</span>
+            </button>
+            <button
+              onClick={onValidateTriviaFail}
+              className="py-3 px-2 bg-red-600/85 hover:bg-red-600 text-white font-broadway font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1 shadow-md active:scale-95"
+              title="Fallo en rebote: resta 1 pt y mantiene pulsador abierto para los demás equipos"
+            >
+              <X className="w-4 h-4 stroke-[3]" />
+              <span>Fallo (-1)</span>
+            </button>
+          </>
         ) : (
           <>
             <button

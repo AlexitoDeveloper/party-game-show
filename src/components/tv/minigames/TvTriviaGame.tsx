@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
 import { TriviaQuestion } from '../../../lib/triviaData';
 import { BuzzerPressPayload } from '../../../lib/types';
+import { DiceBearStyle, generateAvatarDataUri } from '../../../lib/dicebear';
+import { TwemojiText } from '../../TwemojiText';
 
 interface TvTriviaGameProps {
   currentTriviaQuestion: TriviaQuestion;
@@ -21,6 +23,10 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
   buzzerLocked,
   buzzerWinner,
 }) => {
+  const winnerSeed = buzzerWinner?.avatarSeed || buzzerWinner?.playerName || 'player';
+  const winnerStyle = (buzzerWinner?.avatarStyle || 'avataaars') as DiceBearStyle;
+  const winnerEmoji = buzzerWinner?.badgeEmoji;
+
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       <div className="w-full bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
@@ -82,48 +88,80 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
           </div>
         )}
 
-        {/* Revelación de Solución */}
+        {/* Revelación sutil y compacta de Solución */}
         {triviaRevealed && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mt-5 p-6 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
+            className="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
           >
-            <span className="text-sm sm:text-base uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-1">
+            <span className="text-xs sm:text-sm uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-0.5">
               🎉 RESPUESTA CORRECTA
             </span>
-            <div className="text-3xl sm:text-5xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
+            <div className="text-2xl sm:text-4xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
               {currentTriviaQuestion.correctAnswer}
             </div>
             {currentTriviaQuestion.hint && (
-              <p className="text-base sm:text-lg text-amber-200/90 font-vintage mt-2 italic">
+              <p className="text-xs sm:text-sm text-amber-200/90 font-vintage mt-1.5 italic">
                 💡 {currentTriviaQuestion.hint}
               </p>
+            )}
+            {buzzerWinner && (
+              <div className="mt-2 text-xs text-amber-300/80 font-vintage">
+                Pulsado por: <strong className="text-white">{buzzerWinner.playerName}</strong> ({buzzerWinner.teamName})
+              </div>
             )}
           </motion.div>
         )}
 
-        {/* Turno activo de respuesta */}
+        {/* Turno activo de respuesta cuando alguien pulsa el timbre */}
         <AnimatePresence mode="wait">
-          {buzzerLocked && buzzerWinner && (
+          {buzzerLocked && buzzerWinner && !triviaRevealed && (
             <motion.div
-              key="buzzer-active"
+              key="buzzer-active-trivia"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-6 p-4 sm:p-5 rounded-2xl border-2 border-amber-400 bg-[#1a1408]/95 backdrop-blur-md flex items-center justify-between shadow-xl"
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-5 p-3.5 sm:p-4 rounded-2xl border-2 bg-[#07070a]/95 backdrop-blur-md flex items-center justify-between shadow-xl"
+              style={{
+                borderColor: buzzerWinner.teamColorHex || '#d4af37',
+                boxShadow: `0 0 25px ${buzzerWinner.teamColorHex || '#d4af37'}40`,
+              }}
             >
               <div className="flex items-center gap-3.5">
-                <span className="text-3xl sm:text-4xl animate-bounce">⚡</span>
+                <div className="relative shrink-0">
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-black border-2 shadow-md flex items-center justify-center p-0.5"
+                    style={{ borderColor: buzzerWinner.teamColorHex || '#d4af37' }}
+                  >
+                    <img
+                      src={generateAvatarDataUri(winnerSeed, winnerStyle)}
+                      alt={buzzerWinner.playerName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {winnerEmoji ? (
+                    <div className="absolute -top-1.5 -right-1.5 text-xs bg-black/90 rounded-full px-1 py-0.5 border border-[#d4af37]/60 shadow">
+                      <TwemojiText>{winnerEmoji}</TwemojiText>
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="text-left">
-                  <span className="text-xs sm:text-sm uppercase font-broadway tracking-wider text-amber-300">
-                    {triviaReboundActive ? '¡Rebote cazado por:' : '¡Pulsó primero:'}
+                  <span className="text-xs uppercase font-broadway tracking-wider text-amber-300 block">
+                    {triviaReboundActive ? '⚡ ¡Rebote cazado por:' : '⚡ ¡Pulsó primero:'} {buzzerWinner.playerName}!
                   </span>
-                  <div className="text-2xl sm:text-3xl font-broadway text-gold-gradient">{buzzerWinner.teamName}</div>
+                  <div
+                    className="text-xl sm:text-2xl font-broadway"
+                    style={{ color: buzzerWinner.teamColorHex || '#f5eedb' }}
+                  >
+                    {buzzerWinner.teamName}
+                  </div>
                 </div>
               </div>
-              <div className="text-sm sm:text-base font-vintage font-bold text-amber-300 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
+
+              <div className="text-xs sm:text-sm font-vintage font-bold text-amber-300 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
                 <span>Respondiendo...</span>
               </div>
             </motion.div>
@@ -133,3 +171,4 @@ export const TvTriviaGame: React.FC<TvTriviaGameProps> = ({
     </div>
   );
 };
+

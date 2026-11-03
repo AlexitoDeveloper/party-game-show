@@ -77,6 +77,7 @@ export type RoomSyncEvent =
   | { type: 'CAPTAIN_DOUBLE_OR_NOTHING'; payload: CaptainGamble }
   | { type: 'CAPTAIN_DUEL_STATE'; payload: CaptainDuelState }
   | { type: 'CAPTAIN_REPRESENTATIVE'; payload: TeamRepresentative }
+  | { type: 'TEAM_REPRESENTATIVES'; payload: Record<string, TeamRepresentative> }
   | { type: 'PLAY_SOUND'; payload: { sound: string } }
   | { type: 'LAUNCH_TIMER'; payload: { seconds: number } }
   | { type: 'CLEAR_CAPTAIN_GAMBLES'; payload?: { teamId?: string } }

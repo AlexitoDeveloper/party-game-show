@@ -167,6 +167,15 @@ export default function TvView() {
   const [showTvCoinBurst, setShowTvCoinBurst] = useState(false);
   const [showTvQrModal, setShowTvQrModal] = useState(false);
 
+  // Bandera para evitar disparar fanfarrias o confeti falsos durante la hidratación inicial o recargas
+  const isHydratedRef = useRef(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      isHydratedRef.current = true;
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
     const saved = localStorage.getItem(`party_representatives_${roomCode}`);
     if (saved) {
@@ -375,12 +384,24 @@ export default function TvView() {
   const currentUdtChallenge = remoteUdtChallenge || OFFICIAL_UN_DOS_TRES_CHALLENGES[udtPromptIndex % OFFICIAL_UN_DOS_TRES_CHALLENGES.length] || OFFICIAL_UN_DOS_TRES_CHALLENGES[0];
 
   // Estados específicos para BINGO
-  const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(null);
-  const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>([]);
+  const [bingoCurrentBall, setBingoCurrentBall] = useState<number | null>(() => {
+    const saved = localStorage.getItem(`party_bingo_current_${roomCode}`);
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [bingoDrawnBalls, setBingoDrawnBalls] = useState<number[]>(() => {
+    const saved = localStorage.getItem(`party_bingo_drawn_${roomCode}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [bingoIsSpinning, setBingoIsSpinning] = useState(false);
   const [bingoCelebration, setBingoCelebration] = useState<BingoClaimPayload | null>(null);
-  const [bingoLineAwarded, setBingoLineAwarded] = useState(false);
-  const [bingoAwarded, setBingoAwarded] = useState(false);
+  const [bingoLineAwarded, setBingoLineAwarded] = useState<boolean>(() => {
+    const saved = localStorage.getItem(`party_bingo_line_awarded_${roomCode}`);
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [bingoAwarded, setBingoAwarded] = useState<boolean>(() => {
+    const saved = localStorage.getItem(`party_bingo_bingo_awarded_${roomCode}`);
+    return saved ? JSON.parse(saved) : false;
+  });
   const [bingoLineWinner, setBingoLineWinner] = useState<{ playerName: string; teamName: string } | null>(null);
   const [bingoWinner, setBingoWinner] = useState<{ playerName: string; teamName: string } | null>(null);
 
@@ -391,7 +412,10 @@ export default function TvView() {
   const [mimicaIsRunning, setMimicaIsRunning] = useState(false);
 
   // Puntuación de partida / ronda en curso (adivinar canción, trivial, etc.)
-  const [roundHits, setRoundHits] = useState<Record<string, number>>({});
+  const [roundHits, setRoundHits] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem(`party_round_hits_${roomCode}`);
+    return saved ? JSON.parse(saved) : {};
+  });
 
   // Juego activo según ID
   const activeGame: GameDefinition = useMemo(() => {
@@ -481,7 +505,6 @@ export default function TvView() {
 
     const unsubscribe = roomSync.onEvent((event) => {
       if (event.type === 'PLAYER_JOINED') {
-        soundFX.playJoin();
         const merged = mergePlayersList(playersRef.current, [event.payload]);
         playersRef.current = merged;
         setPlayers(merged);
@@ -509,18 +532,16 @@ export default function TvView() {
         }
       } else if (event.type === 'REQUEST_ROOM_SYNC') {
         roomSync.broadcast({ type: 'JUKEBOX_STATE_SYNC', payload: speakeasyJukebox.getState() });
-        setTimeout(() => {
-          if (playersRef.current.length > 0) {
-            roomSync.broadcast({ type: 'PLAYERS_UPDATE', payload: playersRef.current });
-          }
-          roomSync.broadcast({ type: 'ROOM_UPDATE', payload: roomRef.current });
-          roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
-        }, 350);
       } else if (event.type === 'RETURN_TO_LOBBY') {
         setRoom((prev) => ({ ...prev, status: 'lobby' }));
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
+        setTriviaRevealed(false);
+        setMovieRevealed(false);
+        setMusicRevealed(false);
+        setBabyPhotoRevealed(false);
+        setShowTvCoinBurst(false);
       } else if (event.type === 'PRESENTATION_SLIDE') {
         setRoom((prev) => ({ ...prev, status: 'presentation', presentation_slide: event.payload.slide }));
       } else if (event.type === 'TEST_FINISHED') {
@@ -558,6 +579,11 @@ export default function TvView() {
         resetBuzzer();
         setTimerSeconds(null);
         setMusicPlaying(false);
+        setTriviaRevealed(false);
+        setMovieRevealed(false);
+        setMusicRevealed(false);
+        setBabyPhotoRevealed(false);
+        setShowTvCoinBurst(false);
       } else if (event.type === 'GAME_PHASE_UPDATE') {
         setRoom((prev) => ({
           ...prev,
@@ -566,6 +592,9 @@ export default function TvView() {
       } else if (event.type === 'ROOM_UPDATE') {
         setRoom((prev) => {
           const next = { ...prev, ...event.payload };
+          if (next.status === 'lobby' && prev.status !== 'lobby') {
+            setShowTvCoinBurst(false);
+          }
           return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
         });
       } else if (event.type === 'TEAMS_UPDATE') {
@@ -574,25 +603,29 @@ export default function TvView() {
         );
       } else if (event.type === 'MUSIC_STATE_UPDATE') {
         setMusicPlaying(event.payload.isPlaying);
-        setMusicRevealed(event.payload.isRevealed);
+        setMusicRevealed((prev) => {
+          if (!prev && event.payload.isRevealed && roomRef.current.status === 'playing' && isHydratedRef.current) {
+            triggerVictoryConfetti(false);
+          }
+          return event.payload.isRevealed;
+        });
         if (event.payload.trackData !== undefined) {
           setRemoteMusicTrack(event.payload.trackData || null);
-        }
-        if (event.payload.isRevealed) {
-          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'MOVIE_STATE_UPDATE') {
         setMovieIndex(event.payload.movieIndex);
         setMovieFrameLevel(event.payload.frameLevel);
-        setMovieRevealed(event.payload.isRevealed);
+        setMovieRevealed((prev) => {
+          if (!prev && event.payload.isRevealed && roomRef.current.status === 'playing' && isHydratedRef.current) {
+            triggerVictoryConfetti(false);
+          }
+          return event.payload.isRevealed;
+        });
         if (event.payload.categoryFilter) {
           setMovieCategoryFilter(event.payload.categoryFilter as any);
         }
         if (event.payload.movieData) {
           setRemoteMovie(event.payload.movieData);
-        }
-        if (event.payload.isRevealed) {
-          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'POWER_CARDS_STATE_UPDATE') {
         setPowerCards(event.payload);
@@ -606,15 +639,17 @@ export default function TvView() {
         setActiveCardAnimation(null);
       } else if (event.type === 'BABY_PHOTO_UPDATE') {
         setBabyPhotoIndex(event.payload.photoIndex);
-        setBabyPhotoRevealed(event.payload.isRevealed);
+        setBabyPhotoRevealed((prev) => {
+          if (!prev && event.payload.isRevealed && roomRef.current.status === 'playing' && isHydratedRef.current) {
+            triggerVictoryConfetti(false);
+          }
+          return event.payload.isRevealed;
+        });
         if (event.payload.photoData) {
           setRemoteBabyPhoto(event.payload.photoData);
         }
         if (event.payload.totalPhotos) {
           setBabyPhotosCount(event.payload.totalPhotos);
-        }
-        if (event.payload.isRevealed) {
-          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'SET_CAPTAIN') {
         setPlayers((prev) =>
@@ -640,10 +675,14 @@ export default function TvView() {
           setCaptainGambles({});
         }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
-        setCaptainDuel(event.payload);
-        if (event.payload.isActive) {
-          soundFX.playBuzzer();
-        }
+        setCaptainDuel((prev) => {
+          if (!prev?.isActive && event.payload.isActive && isHydratedRef.current) {
+            soundFX.playBuzzer();
+          }
+          return event.payload;
+        });
+      } else if (event.type === 'TEAM_REPRESENTATIVES') {
+        setTeamRepresentatives(event.payload || {});
       } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
         setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
       } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
@@ -658,13 +697,15 @@ export default function TvView() {
         }
       } else if (event.type === 'TRIVIA_STATE_UPDATE') {
         setTriviaIndex(event.payload.questionIndex);
-        setTriviaRevealed(event.payload.isRevealed);
+        setTriviaRevealed((prev) => {
+          if (!prev && event.payload.isRevealed && roomRef.current.status === 'playing' && isHydratedRef.current) {
+            triggerVictoryConfetti(false);
+          }
+          return event.payload.isRevealed;
+        });
         setTriviaReboundActive(event.payload.isReboundActive);
         if (event.payload.questionData) {
           setRemoteTriviaQuestion(event.payload.questionData);
-        }
-        if (event.payload.isRevealed) {
-          triggerVictoryConfetti(false);
         }
       } else if (event.type === 'UN_DOS_TRES_STATE') {
         setUdtPromptIndex(event.payload.promptIndex);
@@ -679,6 +720,9 @@ export default function TvView() {
         setBingoCurrentBall(event.payload.currentBall);
         setBingoDrawnBalls(event.payload.drawnBalls);
         setBingoIsSpinning(!!event.payload.isSpinning);
+        if (!event.payload.currentBall && (event.payload.drawnBalls || []).length === 0) {
+          setBingoCelebration(null);
+        }
         if (typeof event.payload.lineAwarded === 'boolean') {
           setBingoLineAwarded(event.payload.lineAwarded);
         }
@@ -691,6 +735,16 @@ export default function TvView() {
         if (event.payload.bingoWinner !== undefined) {
           setBingoWinner(event.payload.bingoWinner);
         }
+        try {
+          localStorage.setItem(`party_bingo_current_${roomCode}`, JSON.stringify(event.payload.currentBall));
+          localStorage.setItem(`party_bingo_drawn_${roomCode}`, JSON.stringify(event.payload.drawnBalls));
+          if (typeof event.payload.lineAwarded === 'boolean') {
+            localStorage.setItem(`party_bingo_line_awarded_${roomCode}`, JSON.stringify(event.payload.lineAwarded));
+          }
+          if (typeof event.payload.bingoAwarded === 'boolean') {
+            localStorage.setItem(`party_bingo_bingo_awarded_${roomCode}`, JSON.stringify(event.payload.bingoAwarded));
+          }
+        } catch {}
       } else if (event.type === 'BINGO_CLAIM') {
         setBingoCelebration(event.payload);
         if (event.payload.claimType === 'line') {
@@ -727,7 +781,7 @@ export default function TvView() {
       } else if (event.type === 'PLAY_SOUND') {
         soundFX.playSound(event.payload.sound);
       } else if (event.type === 'LAUNCH_TIMER') {
-        setTimerSeconds(event.payload.seconds);
+        setTimerSeconds(event.payload.seconds > 0 ? event.payload.seconds : null);
       } else if (event.type === 'TRIGGER_CONFETTI') {
         playVictory();
         triggerTeamConfetti(event.payload?.teamId || winningTeamCatalog?.index);
@@ -745,7 +799,9 @@ export default function TvView() {
       } else if (event.type === 'PODIUM_PAGE_CHANGE') {
         setPodiumPage(event.payload.page);
       } else if (event.type === 'ROUND_HITS_UPDATE') {
-        setRoundHits(event.payload.roundHits || {});
+        const hits = event.payload.roundHits || {};
+        setRoundHits(hits);
+        try { localStorage.setItem(`party_round_hits_${roomCode}`, JSON.stringify(hits)); } catch {}
       } else if (event.type === 'SHOW_TV_QR') {
         setShowTvQrModal(event.payload.isOpen);
       } else if (event.type === 'TOGGLE_TV_QR') {
@@ -1062,6 +1118,8 @@ export default function TvView() {
                   currentMovie={currentMovie}
                   movieFrameLevel={movieFrameLevel}
                   movieRevealed={movieRevealed}
+                  buzzerLocked={buzzerLocked}
+                  buzzerWinner={buzzerWinner}
                 />
               ) : activeGame.id === 'fotos_proyector' ? (
                 <TvBabyPhotosGame
@@ -1082,6 +1140,15 @@ export default function TvView() {
                   buzzerWinner={buzzerWinner}
                   players={players}
                   isWinnerCaptain={false}
+                />
+              ) : activeGame.id === 'trivial' ? (
+                <TvTriviaGame
+                  currentTriviaQuestion={currentTriviaQuestion}
+                  triviaIndex={triviaIndex}
+                  triviaRevealed={triviaRevealed}
+                  triviaReboundActive={triviaReboundActive}
+                  buzzerLocked={buzzerLocked}
+                  buzzerWinner={buzzerWinner}
                 />
               ) : (
                 <AnimatePresence mode="wait">
@@ -1139,16 +1206,7 @@ export default function TvView() {
                         </p>
                       </motion.div>
                     );
-                  })() : activeGame.id === 'trivial' ? (
-                    <TvTriviaGame
-                      currentTriviaQuestion={currentTriviaQuestion}
-                      triviaIndex={triviaIndex}
-                      triviaRevealed={triviaRevealed}
-                      triviaReboundActive={triviaReboundActive}
-                      buzzerLocked={buzzerLocked}
-                      buzzerWinner={buzzerWinner}
-                    />
-                  ) : (
+                  })() : (
                     <motion.div
                       key="waiting"
                       initial={{ opacity: 0 }}
@@ -1195,6 +1253,7 @@ export default function TvView() {
                 <TvMimicaGame
                   mimicaTimerSeconds={mimicaTimerSeconds}
                   mimicaHitsCount={mimicaHitsCount}
+                  activeTeam={activeTeams.find((t) => t.id === mimicaActiveTeamId)}
                 />
               ) : activeGame.id === 'beer_pong' ? (
                 /* ESCENARIO BEER PONG */

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UnDosTresChallenge, OFFICIAL_UN_DOS_TRES_CHALLENGES } from '../../lib/unDosTresData';
 import { RoomSync } from '../../lib/roomSync';
 import { Team } from '../../lib/types';
@@ -36,6 +36,22 @@ export function useHostUnDosTresState({
   const currentUdtTeam =
     aliveTeams[udtActiveTeamIndex % (aliveTeams.length || 1)] || teams.find((t) => t.is_active);
 
+  // Temporizador local de 5 segundos sincronizado con el Host
+  useEffect(() => {
+    if (!udtIsTimerRunning || udtCountdown === null || udtCountdown <= 0) return;
+    const interval = setInterval(() => {
+      setUdtCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setUdtIsTimerRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [udtIsTimerRunning, udtCountdown]);
+
   const syncUdtState = (
     promptIdx: number,
     activeTeamId?: string,
@@ -66,6 +82,12 @@ export function useHostUnDosTresState({
   const handlePassUdtRound = () => {
     setUdtIsTimerRunning(false);
     setUdtCountdown(null);
+    if (currentUdtTeam) {
+      setRoundHits((prev) => ({
+        ...prev,
+        [currentUdtTeam.id]: (prev[currentUdtTeam.id] || 0) + 1,
+      }));
+    }
     const nextPrompt = (udtPromptIndex + 1) % udtBank.length;
     const nextTeamIdx = (udtActiveTeamIndex + 1) % (aliveTeams.length || 1);
     setUdtPromptIndex(nextPrompt);
@@ -83,21 +105,28 @@ export function useHostUnDosTresState({
     setUdtCountdown(null);
     soundFX.playFail();
 
+    // Registrar aciertos de supervivencia según orden de eliminación
+    setRoundHits((prev) => ({
+      ...prev,
+      [currentUdtTeam.id]: nextEliminated.length,
+    }));
+
     const remaining = teams.filter((t) => t.is_active && !nextEliminated.includes(t.id));
     if (remaining.length === 1) {
       // ¡ÚLTIMO EQUIPO EN PIE GANA!
       const winnerId = remaining[0].id;
       setRoundHits((prev) => ({
         ...prev,
-        [winnerId]: (prev[winnerId] || 0) + 1,
+        [winnerId]: nextEliminated.length + 5,
       }));
-      handleScoreChange(winnerId, 5);
       soundFX.playVictory();
     }
 
+    const nextPrompt = (udtPromptIndex + 1) % udtBank.length;
+    setUdtPromptIndex(nextPrompt);
     const nextTeamIdx = udtActiveTeamIndex % (remaining.length || 1);
     setUdtActiveTeamIndex(nextTeamIdx);
-    syncUdtState(udtPromptIndex, remaining[nextTeamIdx]?.id, nextEliminated, null, false);
+    syncUdtState(nextPrompt, remaining[nextTeamIdx]?.id, nextEliminated, null, false);
   };
 
   const handleResetUdtRound = () => {
@@ -106,6 +135,7 @@ export function useHostUnDosTresState({
     setUdtActiveTeamIndex(0);
     setUdtCountdown(null);
     setUdtIsTimerRunning(false);
+    setRoundHits({});
     syncUdtState(0, teams.find((t) => t.is_active)?.id, [], null, false);
   };
 

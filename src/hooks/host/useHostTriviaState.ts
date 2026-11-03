@@ -99,12 +99,13 @@ export function useHostTriviaState({
         ...prev,
         [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
       }));
+    } else {
+      soundFX.playVictory();
     }
     setTriviaRevealed(true);
     setTriviaReboundActive(false);
     resetBuzzer();
     syncTriviaState(triviaIndex, true, false);
-    soundFX.playVictory();
   };
 
   const handleValidateTriviaFail = () => {
@@ -116,11 +117,12 @@ export function useHostTriviaState({
 
     if (targetTeam) {
       handleScoreChange(targetTeam.id, -1);
+    } else {
+      soundFX.playFail();
     }
     setTriviaReboundActive(true);
     resetBuzzer();
     syncTriviaState(triviaIndex, triviaRevealed, true);
-    soundFX.playFail();
   };
 
   const handleValidateTriviaReboundHit = () => {
@@ -136,19 +138,22 @@ export function useHostTriviaState({
         ...prev,
         [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
       }));
+    } else {
+      soundFX.playVictory();
     }
     setTriviaRevealed(true);
     setTriviaReboundActive(false);
     resetBuzzer();
     syncTriviaState(triviaIndex, true, false);
-    soundFX.playVictory();
   };
 
   return {
     triviaBank,
     triviaIndex,
     triviaRevealed,
+    setTriviaRevealed,
     triviaReboundActive,
+    setTriviaReboundActive,
     currentTriviaQuestion,
     syncTriviaState,
     handleNextTrivia,

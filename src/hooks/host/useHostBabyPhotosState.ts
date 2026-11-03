@@ -242,11 +242,12 @@ export function useHostBabyPhotosState({
           [targetTeam.id]: (prev[targetTeam.id] || 0) + 1,
         }));
       }
+    } else {
+      soundFX?.playVictory();
     }
     setBabyPhotoRevealed(true);
     if (isLocked) resetBuzzer();
     syncBabyPhotoState(babyPhotoIndex, true);
-    soundFX?.playVictory();
   };
 
   const handleValidateBabyPhotoMiss = () => {
@@ -258,9 +259,25 @@ export function useHostBabyPhotosState({
 
     if (targetTeam && handleScoreChange) {
       handleScoreChange(targetTeam.id, -1);
+    } else {
+      soundFX?.playFail();
     }
     if (isLocked) resetBuzzer();
-    soundFX?.playFail();
+  };
+
+  const handleValidateBabyPhotoSelf = () => {
+    const targetTeam = winner?.teamId
+      ? teams.find((t) => t.team_index === winner.teamIndex || t.id === winner.teamId)
+      : selectedTeamCatalog
+      ? teams.find((t) => t.team_index === selectedTeamCatalog.index)
+      : teams.find((t) => t.is_active);
+
+    if (targetTeam && handleScoreChange) {
+      handleScoreChange(targetTeam.id, -2);
+    } else {
+      soundFX?.playFail();
+    }
+    if (isLocked) resetBuzzer();
   };
 
   return {
@@ -283,5 +300,6 @@ export function useHostBabyPhotosState({
     handleSelectBabyPhotoDirect,
     handleValidateBabyPhotoHit,
     handleValidateBabyPhotoMiss,
+    handleValidateBabyPhotoSelf,
   };
 }

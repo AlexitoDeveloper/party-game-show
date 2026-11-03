@@ -215,6 +215,8 @@ export function useHostMoviesState({
 
     if (handleScoreChange) {
       handleScoreChange(targetTeam.id, autoMoviePoints);
+    } else {
+      soundFX?.playVictory();
     }
     if (setRoundHits) {
       setRoundHits((prev) => ({
@@ -227,7 +229,6 @@ export function useHostMoviesState({
       resetBuzzer();
     }
     syncMovieState(movieIndex, movieFrameLevel, true);
-    soundFX?.playVictory();
   };
 
   const handleValidateMovieMissAuto = () => {
@@ -239,11 +240,12 @@ export function useHostMoviesState({
 
     if (targetTeam && handleScoreChange) {
       handleScoreChange(targetTeam.id, -1);
+    } else {
+      soundFX?.playFail();
     }
     if (isLocked) {
       resetBuzzer();
     }
-    soundFX?.playFail();
   };
 
   return {
@@ -252,6 +254,7 @@ export function useHostMoviesState({
     movieIndex,
     movieFrameLevel,
     movieRevealed,
+    setMovieRevealed,
     movieCategoryFilter,
     filteredMovies,
     currentMovie,

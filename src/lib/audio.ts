@@ -6,7 +6,7 @@ const SOUND_FILES: Record<string, string> = {
   buzzer: '/sounds/buzzer.opus',
   fail: '/sounds/fail.mp3',
   buzzer_wrong: '/sounds/fail.mp3',
-  victory: '/sounds/victory.opus',
+  victory: '/sounds/success.opus',
   success: '/sounds/success.opus',
   drumroll: '/sounds/drumroll.opus',
   applause: '/sounds/applause.opus',
@@ -14,12 +14,11 @@ const SOUND_FILES: Record<string, string> = {
   suspense: '/sounds/suspense.opus',
   power_card: '/sounds/power_card.opus',
   tick: '/sounds/tick.opus',
-  join: '/sounds/success.opus',
   card_snap: '/sounds/power_card.opus',
   card_slam: '/sounds/power_card.opus',
   chips: '/sounds/tick.opus',
   deco_bell: '/sounds/buzzer.opus',
-  speakeasy_brass: '/sounds/victory.opus',
+  speakeasy_brass: '/sounds/success.opus',
   wah_wah: '/sounds/fail.mp3',
 };
 
@@ -441,7 +440,7 @@ class SoundFX {
   }
 
   playVictory() {
-    this.playAudioFile('victory', 1.0);
+    this.playSuccess();
   }
 
   playDrumRoll() {
@@ -469,7 +468,7 @@ class SoundFX {
   }
 
   playJoin() {
-    this.playAudioFile('success', 0.7);
+    // Silenciado para evitar que el sonido de check suene al conectarse o entre en bucle
   }
 
   playSound(name: string) {

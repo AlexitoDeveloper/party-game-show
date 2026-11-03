@@ -57,12 +57,13 @@ export function useBuzzerRace({
         }
       } else if (event.type === 'BUZZER_LOCKED') {
         const lockedPayload = event.payload;
+        const alreadyLocked = lockRef.current;
         lockRef.current = true;
         setIsLocked(true);
         setWinner(lockedPayload);
 
-        // Si somos oyentes / visualizadores (TV o jugador), reproducir feedback sonoro
-        if (!isArbitrator) {
+        // Si somos oyentes / visualizadores (TV o jugador), reproducir feedback sonoro solo si no estaba ya bloqueado
+        if (!isArbitrator && !alreadyLocked) {
           soundFX.playBuzzer();
         }
       } else if (event.type === 'BUZZER_RESET') {

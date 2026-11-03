@@ -125,7 +125,24 @@ export default function HostView() {
     };
   });
 
-  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(null);
+  const [captainDuel, setCaptainDuel] = useState<CaptainDuelState | null>(() => {
+    const saved = localStorage.getItem(`party_captain_duel_${roomCode}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    try {
+      if (captainDuel) {
+        localStorage.setItem(`party_captain_duel_${roomCode}`, JSON.stringify(captainDuel));
+      } else {
+        localStorage.removeItem(`party_captain_duel_${roomCode}`);
+      }
+    } catch {}
+  }, [captainDuel, roomCode]);
+
   const [captainGambles, setCaptainGambles] = useState<Record<string, { teamId: string; teamName: string; playerName: string }>>({});
   const [teamRepresentatives, setTeamRepresentatives] = useState<Record<string, TeamRepresentative>>(() => {
     const saved = localStorage.getItem(`party_representatives_${roomCode}`);
@@ -165,7 +182,7 @@ export default function HostView() {
   // El Host es 100% silencioso y retransmite todos los sonidos y fanfarrias exclusivamente a la TV
   const hostTvAudioProxy = useMemo(() => ({
     playSound: (sound: string) => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound } }),
-    playVictory: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'victory' } }),
+    playVictory: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'success' } }),
     playFail: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'fail' } }),
     playSuccess: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'success' } }),
     playBuzzer: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'buzzer' } }),
@@ -176,7 +193,7 @@ export default function HostView() {
     playSuspense: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'suspense' } }),
     playPowerCard: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'power_card' } }),
     playTick: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'tick' } }),
-    playJoin: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'join' } }),
+    playJoin: () => {},
     playDecoBell: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'deco_bell' } }),
     playSpeakeasyBrass: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'brass' } }),
     playWahWahFail: () => roomSync.broadcast({ type: 'PLAY_SOUND', payload: { sound: 'wah_wah' } }),
@@ -207,6 +224,10 @@ export default function HostView() {
   const powerCardsRef = useRef<PowerCardsState | null>(null);
   const captainDuelRef = useRef(captainDuel);
   useEffect(() => { captainDuelRef.current = captainDuel; }, [captainDuel]);
+  const teamRepresentativesRef = useRef(teamRepresentatives);
+  useEffect(() => { teamRepresentativesRef.current = teamRepresentatives; }, [teamRepresentatives]);
+  const captainGamblesRef = useRef(captainGambles);
+  useEffect(() => { captainGamblesRef.current = captainGambles; }, [captainGambles]);
   const roundHitsRef = useRef(roundHits);
   useEffect(() => {
     roundHitsRef.current = roundHits;
@@ -229,16 +250,6 @@ export default function HostView() {
         String(t.team_index) === teamId
     );
     const resolvedTeamId = targetTeam ? targetTeam.id : teamId;
-
-    // EFECTO DOBLE (Carta de Poder): Si el equipo tiene el efecto Doble activo y gana puntos
-    const hasDobleActive = powerCardsRef.current?.activeEffects.some(
-      (e: any) =>
-        (e.sourceTeamId === resolvedTeamId || e.sourceTeamId === teamId) &&
-        e.cardId === 'doble'
-    );
-    if (hasDobleActive && delta > 0) {
-      effectiveDelta = effectiveDelta * 2;
-    }
 
     const teamGamble = captainGambles[resolvedTeamId] || captainGambles[teamId];
     if (teamGamble && delta !== 0) {
@@ -265,7 +276,7 @@ export default function HostView() {
 
     if (!silent) {
       if (delta > 0) {
-        hostTvAudioProxy.playVictory();
+        hostTvAudioProxy.playSuccess();
         setShowCoinBurst(true);
         setTimeout(() => setShowCoinBurst(false), 2000);
       } else {
@@ -339,7 +350,12 @@ export default function HostView() {
     soundFX: hostTvAudioProxy,
   });
 
-  const bingoState = useHostBingoState({ roomSync, roomCode });
+  const bingoState = useHostBingoState({
+    roomSync,
+    roomCode,
+    setRoundHits,
+    teams,
+  });
   const bingoStateRef = useRef(bingoState);
   useEffect(() => {
     bingoStateRef.current = bingoState;
@@ -350,6 +366,7 @@ export default function HostView() {
     teams,
     selectedTeamCatalog,
     activeTeams,
+    roundHits,
     setRoundHits,
     soundFX: hostTvAudioProxy,
   });
@@ -512,27 +529,29 @@ export default function HostView() {
       roomSync.broadcast({ type: 'BUZZER_RESET' });
     }
 
-    const activeId = curRoom.active_game_id;
-    if (activeId === 'music') {
-      const ms = musicStateRef.current;
-      ms.syncMusicState(ms.musicPlaying, ms.musicRevealed);
-    } else if (activeId === 'movies') {
-      const mvs = moviesStateRef.current;
-      mvs.syncMovieState(mvs.movieIndex, mvs.movieFrameLevel, mvs.movieRevealed, mvs.movieCategoryFilter, mvs.currentMovie);
-    } else if (activeId === 'trivial') {
-      const ts = triviaStateRef.current;
-      ts.syncTriviaState(ts.triviaIndex, ts.triviaRevealed, ts.triviaReboundActive, ts.currentTriviaQuestion);
-    } else if (activeId === 'fotos_proyector') {
-      const bps = babyPhotosStateRef.current;
-      bps.syncBabyPhotoState(bps.babyPhotoIndex, bps.babyPhotoRevealed, bps.currentBabyPhoto, bps.babyPhotosList.length);
-    } else if (activeId === 'un_dos_tres') {
-      const udt = unDosTresStateRef.current;
-      udt.syncUdtState(udt.udtPromptIndex, udt.currentUdtTeam?.id, udt.udtEliminatedTeamIds, udt.udtCountdown, udt.udtIsTimerRunning, udt.currentUdtChallenge);
-    } else if (activeId === 'bingo') {
-      bingoStateRef.current.syncBingoState();
-    } else if (activeId === 'mimica') {
-      const mms = mimicaStateRef.current;
-      mms.syncMimicaState(mms.mimicaHitsCount, mms.mimicaTimerSeconds, mms.mimicaIsRunning);
+    if (curRoom.status === 'playing') {
+      const activeId = curRoom.active_game_id;
+      if (activeId === 'music') {
+        const ms = musicStateRef.current;
+        ms.syncMusicState(ms.musicPlaying, ms.musicRevealed);
+      } else if (activeId === 'movies') {
+        const mvs = moviesStateRef.current;
+        mvs.syncMovieState(mvs.movieIndex, mvs.movieFrameLevel, mvs.movieRevealed, mvs.movieCategoryFilter, mvs.currentMovie);
+      } else if (activeId === 'trivial') {
+        const ts = triviaStateRef.current;
+        ts.syncTriviaState(ts.triviaIndex, ts.triviaRevealed, ts.triviaReboundActive, ts.currentTriviaQuestion);
+      } else if (activeId === 'fotos_proyector') {
+        const bps = babyPhotosStateRef.current;
+        bps.syncBabyPhotoState(bps.babyPhotoIndex, bps.babyPhotoRevealed, bps.currentBabyPhoto, bps.babyPhotosList.length);
+      } else if (activeId === 'un_dos_tres') {
+        const udt = unDosTresStateRef.current;
+        udt.syncUdtState(udt.udtPromptIndex, udt.currentUdtTeam?.id, udt.udtEliminatedTeamIds, udt.udtCountdown, udt.udtIsTimerRunning, udt.currentUdtChallenge);
+      } else if (activeId === 'bingo') {
+        bingoStateRef.current.syncBingoState();
+      } else if (activeId === 'mimica') {
+        const mms = mimicaStateRef.current;
+        mms.syncMimicaState(mms.mimicaHitsCount, mms.mimicaTimerSeconds, mms.mimicaIsRunning);
+      }
     }
 
     roomSync.broadcast({
@@ -542,6 +561,30 @@ export default function HostView() {
         gameId: curRoom.active_game_id || curRoom.current_game,
       },
     });
+
+    roomSync.broadcast({
+      type: 'CAPTAIN_DUEL_STATE',
+      payload: captainDuelRef.current || { isActive: false, title: '' },
+    });
+
+    const curRepresentatives = teamRepresentativesRef.current;
+    if (curRepresentatives && Object.keys(curRepresentatives).length > 0) {
+      roomSync.broadcast({
+        type: 'TEAM_REPRESENTATIVES',
+        payload: curRepresentatives,
+      });
+      Object.values(curRepresentatives).forEach((rep) => {
+        roomSync.broadcast({ type: 'CAPTAIN_REPRESENTATIVE', payload: rep });
+      });
+    } else {
+      roomSync.broadcast({ type: 'CLEAR_TEAM_REPRESENTATIVES' });
+    }
+
+    if (captainGamblesRef.current && Object.keys(captainGamblesRef.current).length > 0) {
+      Object.values(captainGamblesRef.current).forEach((gamble) => {
+        roomSync.broadcast({ type: 'CAPTAIN_DOUBLE_OR_NOTHING', payload: gamble as any });
+      });
+    }
   };
 
   // Escuchar eventos de sincronización entrantes y pulso periódico de auto-curación para móviles Android/iOS
@@ -552,23 +595,7 @@ export default function HostView() {
     // Pulso periódico cada 6s para garantizar que ningún móvil Android/iOS o TV quede desincronizado tras micro-cortes de red
     const syncPulseInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      const curRoom = roomRef.current;
-      roomSync.broadcast({
-        type: 'ROOM_UPDATE',
-        payload: {
-          status: curRoom.status,
-          current_game: curRoom.current_game,
-          active_game_id: curRoom.active_game_id,
-          active_teams_count: curRoom.active_teams_count,
-          game_phase: curRoom.game_phase || 'briefing',
-          presentation_slide: curRoom.presentation_slide,
-          title: curRoom.title,
-        },
-      });
-      roomSync.broadcast({ type: 'TEAMS_UPDATE', payload: teamsRef.current });
-      if (buzzerStateRef.current.isLocked && buzzerStateRef.current.winner) {
-        roomSync.broadcast({ type: 'BUZZER_LOCKED', payload: buzzerStateRef.current.winner });
-      }
+      broadcastFullRoomSnapshot();
     }, 6000);
 
     const unsubscribe = roomSync.onEvent((event) => {
@@ -649,6 +676,8 @@ export default function HostView() {
         }
       } else if (event.type === 'CAPTAIN_DUEL_STATE') {
         setCaptainDuel(event.payload);
+      } else if (event.type === 'TEAM_REPRESENTATIVES') {
+        setTeamRepresentatives(event.payload || {});
       } else if (event.type === 'CAPTAIN_REPRESENTATIVE') {
         setTeamRepresentatives((prev) => ({ ...prev, [event.payload.teamId]: event.payload }));
       } else if (event.type === 'CLEAR_TEAM_REPRESENTATIVES') {
@@ -749,6 +778,7 @@ export default function HostView() {
 
   const handleReturnToLobby = async () => {
     powerCardsHook.handleClearAllActiveEffects();
+    setShowCoinBurst(false);
     const updatedRoom: Room = { ...room, status: 'lobby' };
     roomRef.current = updatedRoom;
     setRoom(updatedRoom);
@@ -766,6 +796,7 @@ export default function HostView() {
   };
 
   const handleSelectGame = async (game: GameDefinition) => {
+    setShowCoinBurst(false);
     setRoundHits({});
     setManualPodiumRanks({});
     const updatedRoom: Room = {
@@ -804,6 +835,18 @@ export default function HostView() {
     }
     if (game.id === 'fotos_proyector') {
       babyPhotosState.syncBabyPhotoState(babyPhotosState.babyPhotoIndex, babyPhotosState.babyPhotoRevealed);
+    }
+    if (game.id === 'trivial') {
+      triviaState.syncTriviaState(triviaState.triviaIndex, triviaState.triviaRevealed, triviaState.triviaReboundActive, triviaState.currentTriviaQuestion);
+    }
+    if (game.id === 'mimica') {
+      mimicaState.syncMimicaState(mimicaState.mimicaHitsCount, mimicaState.mimicaTimerSeconds, mimicaState.mimicaIsRunning);
+    }
+    if (game.id === 'un_dos_tres') {
+      unDosTresState.syncUdtState(unDosTresState.udtPromptIndex, unDosTresState.currentUdtTeam?.id, unDosTresState.udtEliminatedTeamIds, unDosTresState.udtCountdown, unDosTresState.udtIsTimerRunning, unDosTresState.currentUdtChallenge);
+    }
+    if (game.id === 'bingo') {
+      bingoState.syncBingoState();
     }
 
     if (isSupabaseConfigured) {
@@ -902,6 +945,18 @@ export default function HostView() {
       activeTeams[0]?.id;
     if (!targetTeamId) return;
 
+    if (option.type === 'podium') {
+      // Las opciones de tipo 'podium' determinan la posición final en la prueba para el veredicto oficial.
+      // Setean los aciertos/posición para el podio sin sumar score en vivo para evitar doble suma al aplicar veredicto.
+      const hitsForRank = option.delta;
+      setRoundHits((prev) => ({
+        ...prev,
+        [targetTeamId]: hitsForRank,
+      }));
+      hostTvAudioProxy.playVictory();
+      return;
+    }
+
     handleScoreChange(targetTeamId, option.delta);
     const hitsToAdd = option.hitsDelta !== undefined ? option.hitsDelta : (option.delta > 0 ? 1 : 0);
     if (hitsToAdd !== 0) {
@@ -913,16 +968,30 @@ export default function HostView() {
 
     if (room.active_game_id === 'music') {
       if (option.delta > 0) {
-        musicState.handleValidateMusicHit();
-      } else {
-        musicState.handleValidateMusicMiss();
+        musicState.setMusicRevealed(true);
       }
+      musicState.setMusicPlaying(true);
+      if (isLocked) resetBuzzer();
+      musicState.syncMusicState(option.delta > 0, true);
     } else if (room.active_game_id === 'movies') {
       if (option.delta > 0) {
-        moviesState.handleValidateMovieHitAuto();
-      } else {
-        moviesState.handleValidateMovieMissAuto();
+        moviesState.setMovieRevealed(true);
+        moviesState.syncMovieState(moviesState.movieIndex, moviesState.movieFrameLevel, true);
       }
+      if (isLocked) resetBuzzer();
+    } else if (room.active_game_id === 'trivial') {
+      if (option.delta > 0) {
+        triviaState.setTriviaRevealed(true);
+        triviaState.setTriviaReboundActive(false);
+        triviaState.syncTriviaState(triviaState.triviaIndex, true, false);
+      }
+      if (isLocked) resetBuzzer();
+    } else if (room.active_game_id === 'fotos_proyector') {
+      if (option.delta > 0) {
+        babyPhotosState.setBabyPhotoRevealed(true);
+        babyPhotosState.syncBabyPhotoState(babyPhotosState.babyPhotoIndex, true);
+      }
+      if (isLocked) resetBuzzer();
     } else {
       if (isLocked) resetBuzzer();
     }
@@ -973,12 +1042,25 @@ export default function HostView() {
   const handleApplyAutomatedVerdict = () => {
     if (!testFinishedModal || !currentVerdict?.results || currentVerdict.results.length === 0) return;
 
+    const isBingo = testFinishedModal.gameId === 'bingo';
     const updatedTeams = teams.map((t) => {
       const res = currentVerdict.results.find((r) => r.teamId === t.id);
       if (!res) return t;
+
+      let pointsToAdd = res.finalPoints || 0;
+      // En Bingo, los puntos base (+2 Línea, +6 Bingo) ya fueron otorgados en vivo durante la partida mediante handleResolveClaim.
+      // Al aplicar el veredicto, sólo se deben sumar los puntos adicionales por Cartas de Poder (totalCardDelta),
+      // salvo que el MC haya reasignado puestos manuales a un equipo sin aciertos previos.
+      if (isBingo) {
+        const liveHits = roundHits[t.id] || 0;
+        if (liveHits > 0) {
+          pointsToAdd = res.totalCardDelta || 0;
+        }
+      }
+
       return {
         ...t,
-        score: Math.max(0, (t.score || 0) + (res.finalPoints || 0)),
+        score: Math.max(0, (t.score || 0) + pointsToAdd),
       };
     });
     teamsRef.current = updatedTeams;
@@ -1206,6 +1288,7 @@ export default function HostView() {
                 onStartActiveRound={handleStartActiveRound}
                 onToggleBriefing={handleToggleBriefing}
                 onFinishTest={() => handleFinishTest()}
+                onLaunchTimer={(seconds) => roomSync.broadcast({ type: 'LAUNCH_TIMER', payload: { seconds } })}
                 teamRepresentatives={teamRepresentatives}
                 players={players}
               />

@@ -1,6 +1,7 @@
 export interface BabyPhotoItem {
   id: string;
   imageUrl: string; // Ruta local (ej: '/photos/bebes/foto1.jpg') o URL web
+  personName?: string;
 }
 
 // ============================================================================

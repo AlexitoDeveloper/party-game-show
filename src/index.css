@@ -533,13 +533,14 @@ body {
 
 /* Grano sutil de celuloide */
 .film-grain-overlay {
-  display: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
+  background-size: 3px 3px;
 }
 
 /* ==========================================================================
    SMART TV & OLED LITE MODE OPTIMIZATIONS
    Desactiva filtros GPU costosos (backdrop-filter), orbes de desenfoque y
-   animaciones CSS de fondo infinitas para garantizar 60 FPS en TCL / LG webOS
+   animaciones CSS de fondo infinitas únicamente cuando tv-lite-mode está activo
    ========================================================================== */
 .tv-lite-mode,
 .tv-lite-mode * {
@@ -548,6 +549,7 @@ body {
 }
 
 .tv-lite-mode .foil-shimmer::after,
+.tv-lite-mode .film-grain-overlay,
 .tv-lite-mode .blur-\[80px\],
 .tv-lite-mode .blur-\[100px\],
 .tv-lite-mode .blur-\[110px\],
@@ -560,6 +562,7 @@ body {
   display: none !important;
 }
 
+.tv-lite-mode .hell-stained-glass-spin,
 .tv-lite-mode .lobby-border-agua,
 .tv-lite-mode .lobby-border-fuego,
 .tv-lite-mode .lobby-border-electricidad,

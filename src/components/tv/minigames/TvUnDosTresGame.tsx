@@ -21,33 +21,56 @@ export const TvUnDosTresGame: React.FC<TvUnDosTresGameProps> = ({
 }) => {
   return (
     <div className="bg-[#0c0c14]/95 border-2 border-[#d4af37]/60 rounded-3xl p-6 sm:p-8 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
-      <div className="flex items-center justify-center mb-4">
+      <div className="flex flex-col items-center justify-center gap-2 mb-3">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-gradient text-slate-950 text-xs sm:text-sm font-broadway font-black uppercase tracking-wider border border-[#f5eedb]/50 shadow-md">
           <span>⚡</span> {currentUdtChallenge.level} (Nivel {currentUdtChallenge.levelNumber})
         </div>
+
+        {/* Indicador del equipo en turno activo */}
+        {(() => {
+          const activeTeam = activeTeams.find((t) => t.id === udtActiveTeamId);
+          return activeTeam ? (
+            <div
+              className="px-4 py-1.5 rounded-full border-2 bg-black/85 flex items-center gap-2 shadow-lg animate-pulse"
+              style={{ borderColor: activeTeam.color_hex || '#d4af37' }}
+            >
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeTeam.color_hex }} />
+              <span className="text-xs sm:text-sm font-broadway uppercase tracking-wide text-white">
+                🎙️ Turno: <strong style={{ color: activeTeam.color_hex }}>{activeTeam.name}</strong>
+              </span>
+            </div>
+          ) : null;
+        })()}
       </div>
 
       {/* TEMPORIZADOR GIGANTE DE 5 SEGUNDOS (CRONÓMETRO DE BRONCE) */}
-      <div className="my-4">
+      <div className="my-3">
         <div
           className={`text-8xl sm:text-9xl font-broadway transition-all drop-shadow-[0_0_35px_rgba(212,175,55,0.4)] ${
-            udtCountdown !== null && udtCountdown <= 2
+            udtCountdown === 0
+              ? 'text-red-500 animate-bounce scale-105 drop-shadow-[0_0_40px_rgba(239,68,68,0.8)]'
+              : udtCountdown !== null && udtCountdown <= 2
               ? 'text-red-500 animate-pulse scale-110 drop-shadow-[0_0_35px_rgba(239,68,68,0.7)]'
               : udtCountdown !== null && udtCountdown > 0
               ? 'text-gold-gradient'
               : 'text-amber-200/40'
           }`}
         >
-          {udtCountdown !== null ? `${udtCountdown}s` : '5s'}
+          {udtCountdown === 0 ? '¡FIN!' : udtCountdown !== null ? `${udtCountdown}s` : '5s'}
         </div>
+        {udtCountdown === 0 && (
+          <span className="text-xs uppercase font-broadway font-black text-red-400 tracking-widest mt-1 block animate-pulse">
+            💀 ¡TIEMPO AGOTADO!
+          </span>
+        )}
       </div>
 
       {/* RETO ACTIVO */}
-      <div className="p-6 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 my-4 shadow-inner">
+      <div className="p-5 sm:p-6 rounded-2xl bg-[#07070a]/90 border border-[#d4af37]/40 my-3 shadow-inner">
         <span className="text-xs sm:text-sm uppercase font-broadway font-black text-gold-gradient block mb-1">
           {currentUdtChallenge.category}
         </span>
-        <h2 className="text-3xl sm:text-5xl font-broadway text-amber-50 drop-shadow-sm">
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-broadway text-amber-50 drop-shadow-sm leading-tight">
           {currentUdtChallenge.prompt}
         </h2>
       </div>

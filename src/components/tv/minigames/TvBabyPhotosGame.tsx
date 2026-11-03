@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Crown } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { BabyPhotoItem } from '../../../lib/babyPhotosData';
 import { BuzzerPressPayload } from '../../../lib/types';
+import { DiceBearStyle, generateAvatarDataUri } from '../../../lib/dicebear';
+import { TwemojiText } from '../../TwemojiText';
 
 export interface TvBabyPhotosGameProps {
   currentBabyPhoto: BabyPhotoItem;
@@ -21,8 +23,11 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
   babyPhotoRevealed,
   buzzerLocked,
   buzzerWinner,
-  isWinnerCaptain,
 }) => {
+  const winnerSeed = buzzerWinner?.avatarSeed || buzzerWinner?.playerName || 'player';
+  const winnerStyle = (buzzerWinner?.avatarStyle || 'avataaars') as DiceBearStyle;
+  const winnerEmoji = buzzerWinner?.badgeEmoji;
+
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       <div className="w-full bg-[#0c0c14]/90 border-2 border-[#d4af37]/50 rounded-3xl p-4 sm:p-5 shadow-deco-gold relative overflow-hidden backdrop-blur-xl hell-card-frame">
@@ -54,53 +59,83 @@ export const TvBabyPhotosGame: React.FC<TvBabyPhotosGameProps> = ({
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-400/15 blur-3xl pointer-events-none" />
         </div>
 
-        {/* OVERLAY: VEREDICTO DE ACIERTO EN TV */}
-        <AnimatePresence>
-          {babyPhotoRevealed && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#07070a]/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center hell-card-frame"
-            >
-              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-500 text-slate-950 text-sm font-broadway font-black uppercase tracking-widest mb-3 border border-emerald-300 shadow-[0_0_25px_rgba(52,211,153,0.5)]">
-                🎉 ¡RESPUESTA CORRECTA!
+        {/* REVELACIÓN SUTIL DE ACIERTO SIN TAPAR LA FOTO */}
+        {babyPhotoRevealed && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-3 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-[#07070a] to-emerald-950/90 border-2 border-emerald-400/80 text-center shadow-2xl"
+          >
+            <span className="text-xs uppercase font-broadway font-black tracking-widest text-emerald-300 block mb-0.5">
+              🎉 ¡IDENTIDAD DESCUBIERTA!
+            </span>
+            <div className="text-2xl sm:text-3xl font-broadway text-emerald-200 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">
+              {currentBabyPhoto.personName && !currentBabyPhoto.personName.startsWith('Participante #')
+                ? currentBabyPhoto.personName
+                : '¡Respuesta Correcta! (+2 pts)'}
+            </div>
+            {buzzerWinner && (
+              <div className="mt-2 text-xs text-amber-300/80 font-vintage">
+                Identificado por: <strong className="text-white">{buzzerWinner.playerName}</strong> ({buzzerWinner.teamName})
               </div>
-              <h2 className="text-3xl md:text-5xl font-broadway uppercase text-gold-gradient drop-shadow-[0_0_35px_rgba(212,175,55,0.6)]">
-                ¡Punto Concedido! (+2 pts)
-              </h2>
+            )}
+          </motion.div>
+        )}
+
+        {/* Turno activo de respuesta cuando alguien pulsa el timbre */}
+        <AnimatePresence mode="wait">
+          {buzzerLocked && buzzerWinner && !babyPhotoRevealed && (
+            <motion.div
+              key="buzzer-active-baby"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-3 w-full p-3.5 sm:p-4 rounded-2xl border-2 bg-[#07070a]/95 backdrop-blur-md flex items-center justify-between shadow-xl"
+              style={{
+                borderColor: buzzerWinner.teamColorHex || '#d4af37',
+                boxShadow: `0 0 25px ${buzzerWinner.teamColorHex || '#d4af37'}40`,
+              }}
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="relative shrink-0">
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-black border-2 shadow-md flex items-center justify-center p-0.5"
+                    style={{ borderColor: buzzerWinner.teamColorHex || '#d4af37' }}
+                  >
+                    <img
+                      src={generateAvatarDataUri(winnerSeed, winnerStyle)}
+                      alt={buzzerWinner.playerName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {winnerEmoji ? (
+                    <div className="absolute -top-1.5 -right-1.5 text-xs bg-black/90 rounded-full px-1 py-0.5 border border-[#d4af37]/60 shadow">
+                      <TwemojiText>{winnerEmoji}</TwemojiText>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="text-left">
+                  <span className="text-xs uppercase font-broadway tracking-wider text-amber-300 block">
+                    ⚡ ¡Pulsó primero: {buzzerWinner.playerName}!
+                  </span>
+                  <div
+                    className="text-xl sm:text-2xl font-broadway"
+                    style={{ color: buzzerWinner.teamColorHex || '#f5eedb' }}
+                  >
+                    {buzzerWinner.teamName}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-xs sm:text-sm font-vintage font-bold text-amber-300 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                <span>Respondiendo...</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* OVERLAY DEL BUZZER CUANDO ALGUIEN PULSA */}
-      <AnimatePresence>
-        {buzzerLocked && buzzerWinner && (
-          <motion.div
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 15, opacity: 0 }}
-            className="mt-3 w-full bg-black/95 border-2 rounded-2xl p-3 sm:p-4 shadow-deco-gold backdrop-blur-xl flex items-center justify-between gap-2.5 hell-card-frame"
-            style={{ borderColor: buzzerWinner.teamColorHex }}
-          >
-            <div className="flex items-center gap-3 text-left">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-950 font-black text-lg shadow-md"
-                style={{ backgroundColor: buzzerWinner.teamColorHex }}
-              >
-                ⚡
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-lg sm:text-xl font-black text-white font-broadway">
-                  {buzzerWinner.playerName}{' '}
-                  <span style={{ color: buzzerWinner.teamColorHex }}>({buzzerWinner.teamName})</span>
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

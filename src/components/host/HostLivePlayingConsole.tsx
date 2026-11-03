@@ -42,6 +42,7 @@ export interface HostLivePlayingConsoleProps {
   onStartActiveRound?: () => void;
   onToggleBriefing?: () => void;
   onFinishTest?: () => void;
+  onLaunchTimer?: (seconds: number) => void;
   teamRepresentatives?: Record<string, TeamRepresentative>;
   players?: Player[];
 }
@@ -80,6 +81,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
   onStartActiveRound,
   onToggleBriefing,
   onFinishTest,
+  onLaunchTimer,
 }) => {
   // Auto-seleccionar el equipo del ganador del pulsador para asignación inmediata de puntos sin fricción
   React.useEffect(() => {
@@ -332,6 +334,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           onToggleBabyPhotoReveal={babyPhotosState.handleToggleBabyPhotoReveal}
           onValidateBabyPhotoHit={babyPhotosState.handleValidateBabyPhotoHit}
           onValidateBabyPhotoMiss={babyPhotosState.handleValidateBabyPhotoMiss}
+          onValidateBabyPhotoSelf={babyPhotosState.handleValidateBabyPhotoSelf}
           onSelectBabyPhotoDirect={babyPhotosState.handleSelectBabyPhotoDirect}
           onPrevBabyPhoto={babyPhotosState.handlePrevBabyPhoto}
           onNextBabyPhoto={babyPhotosState.handleNextBabyPhoto}
@@ -364,6 +367,8 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           aliveTeams={unDosTresState.aliveTeams}
           activeTeams={activeTeams}
           currentUdtTeam={unDosTresState.currentUdtTeam}
+          udtCountdown={unDosTresState.udtCountdown}
+          udtIsTimerRunning={unDosTresState.udtIsTimerRunning}
           onResetUdtRound={unDosTresState.handleResetUdtRound}
           onStartUdtTimer={unDosTresState.handleStartUdtTimer}
           onPassUdtRound={unDosTresState.handlePassUdtRound}
@@ -421,6 +426,7 @@ export const HostLivePlayingConsole: React.FC<HostLivePlayingConsoleProps> = ({
           onSelectTeamForPoints={onSelectTeamForPoints}
           roundHits={roundHits || {}}
           onApplyScoreAction={onApplyScoreAction}
+          onLaunchTimer={onLaunchTimer}
         />
       )}
 
